@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.dawb.common.ui.menu.CheckableActionGroup;
 import org.dawb.common.ui.util.EclipseUtils;
+import org.dawb.common.util.io.IOpenFileAction;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IProgressMonitor;
