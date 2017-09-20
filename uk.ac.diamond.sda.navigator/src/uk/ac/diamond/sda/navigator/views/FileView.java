@@ -616,7 +616,7 @@ public final class FileView extends ViewPart implements IFileView {
 	private IOpenFileAction getFirstPertinentAction() {
 		
 		try {
-			IConfigurationElement[] eles = Platform.getExtensionRegistry().getConfigurationElementsFor("uk.ac.diamond.sda.navigator.openFile");
+			IConfigurationElement[] eles = Platform.getExtensionRegistry().getConfigurationElementsFor("org.dawnsci.fileviewer.openFile");
 			final String perspectiveId   = EclipseUtils.getPage().getPerspective().getId();
 			
 			for (IConfigurationElement e : eles) {
