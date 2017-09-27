@@ -20,6 +20,7 @@ import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.metadata.IMetadata;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -321,7 +322,7 @@ public class TextDataExplorer extends AbstractExplorer implements ISelectionProv
 				}
 			}
 
-			Dataset autoAxis = DatasetFactory.createRange(len, Dataset.INT32);
+			Dataset autoAxis = DatasetFactory.createRange(IntegerDataset.class, len);
 			autoAxis.setName(AbstractExplorer.DIM_PREFIX + (j+1));
 			AxisChoice newChoice = new AxisChoice(autoAxis);
 			newChoice.setAxisNumber(j);

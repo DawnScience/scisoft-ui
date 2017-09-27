@@ -21,6 +21,7 @@ import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.ILazyDataset;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.metadata.AxesMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +123,7 @@ public class HDF5Utils {
 						sel.setChoices(a);
 					}
 					// add in an automatically generated axis with top order so it appears after primary axes
-					Dataset axis = DatasetFactory.createRange(len, Dataset.INT32);
+					Dataset axis = DatasetFactory.createRange(IntegerDataset.class, len);
 					int[] ashape = new int[rank];
 					Arrays.fill(ashape, 1);
 					ashape[i] = len;

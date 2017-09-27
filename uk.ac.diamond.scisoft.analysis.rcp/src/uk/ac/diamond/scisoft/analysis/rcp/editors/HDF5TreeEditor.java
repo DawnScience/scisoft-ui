@@ -80,13 +80,13 @@ public class HDF5TreeEditor extends EditorPart implements IPageChangedListener, 
 	/**
 	 * H5MultiEditor requires this to be public
 	 */
-    @Override
+	@Override
 	public void setInput(IEditorInput input) {
-        super.setInput(input);
-    	tree = input instanceof HDF5Input ? ((HDF5Input) input).getTree() : null;
-    }
+		super.setInput(input);
+		tree = input instanceof HDF5Input ? ((HDF5Input) input).getTree() : null;
+	}
 
-    protected boolean loadHDF5Tree() {
+	protected boolean loadHDF5Tree() {
 		if (tree != null && hdfxp != null) {
 			hdfxp.setTree(tree);
 			return true;
@@ -242,38 +242,16 @@ public class HDF5TreeEditor extends EditorPart implements IPageChangedListener, 
 		});
 		//EclipseUtils.getActivePage().activate(this);
 
-		//selection of hedf5 tree element no working
+		// selection of hdf5 tree element no working
 		final Cursor cursor = hdfxp.getCursor();
 		Cursor tempCursor = hdfxp.getDisplay().getSystemCursor(SWT.CURSOR_WAIT);
 		if (tempCursor != null)
 			hdfxp.setCursor(tempCursor);
 
 		try {
-			
-			
-			
 			TreePath navTreePath1 = tSelection.getPaths()[0];
 			hdfxp.expandToLevel(navTreePath1, 2);
 			hdfxp.setSelection(tSelection);
-			//TreePath[] editorTreePaths=hdfxp.getExpandedTreePaths();
-
-			//hdfxp.setSelection(structuredSelection);
-			//HDF5TableTree tableTree=hdfxp.getTableTree();
-			//tableTree.setSelection(structuredSelection);
-			//HDF5TableTree tableTree=hdfxp.getTableTree();
-			//tableTree.setInput(link);
-			
-		//	hdfxp.expandToLevel(navTreePath1,0);
-//			for (int i = 0; i < hdfxp.getTabList().; i++) {
-//				String name = viewer.getTable().getItem(i).getText();
-//				if (name.equals(srsData.getName())) {
-//					viewer.getTable().setSelection(i);
-//					selectItemAction.run();
-//					break;
-//				}
-//			}
-			
-			//hdfxp.getTableTree().getViewer().setSelection(structuredSelection);
 			
 			hdfxp.selectHDF5Node(path, link);
 		} catch (Exception e) {
@@ -285,16 +263,16 @@ public class HDF5TreeEditor extends EditorPart implements IPageChangedListener, 
 
 		// new focus event
 		EclipseUtils.getActivePage().activate(original);
-
 	}
-	
+
 	/**
 	 * The Value view uses adapters to get an IContentProvider for its content.
 	 * 
 	 * This is used on the workflow perspective to show selected value in the tree.
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-    public Object getAdapter(@SuppressWarnings("rawtypes") final Class clazz) {
+	public Object getAdapter(@SuppressWarnings("rawtypes") final Class clazz) {
 		
 		if (clazz == IContentProvider.class) {
 			return new HDF5ValuePage();

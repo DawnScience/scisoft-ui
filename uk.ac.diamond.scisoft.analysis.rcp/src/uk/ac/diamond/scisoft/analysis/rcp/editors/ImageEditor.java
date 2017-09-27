@@ -50,8 +50,8 @@ public class ImageEditor extends EditorPart implements IReusableEditor {
 	public void init(IEditorSite site, IEditorInput input) throws PartInitException {
 		
 		setSite(site);
-        setInput(input);
-        try {
+		setInput(input);
+		try {
 			createFile();
 		} catch (Exception e) {
 			logger.error("Cannot create file!", e);
@@ -94,16 +94,16 @@ public class ImageEditor extends EditorPart implements IReusableEditor {
 	@Override
 	public void setInput(IEditorInput input) {
 		super.setInput(input);
-        try {
+		try {
 			createFile();
 		} catch (Exception e) {
 			logger.error("Cannot create file!", e);
 		}
 
-        if (imgxp == null)
-        	return;
+		if (imgxp == null)
+			return;
 
-        try {
+		try {
 			imgxp.loadFileAndDisplay(file.getPath(), null);
 		} catch (Exception e) {
 			return;

@@ -25,6 +25,7 @@ import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.ILazyDataset;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.dataset.Slice;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
@@ -596,15 +597,15 @@ public class DatasetInspector extends Composite {
 			int[] shape = cData.getShape();
 			int rank = shape.length;
 			
-            inspection = (oldSelection == null || oldSelection.getAxes() == null || oldSelection.getAxes().size() != rank) ? new Inspection(dSelection) :
-            	new Inspection(dSelection, oldSelection.getType()); // allow old selection to override type
+			inspection = (oldSelection == null || oldSelection.getAxes() == null || oldSelection.getAxes().size() != rank) ? new Inspection(dSelection) :
+				new Inspection(dSelection, oldSelection.getType()); // allow old selection to override type
 			storedInspections.put(dSelection, inspection);
 
 			int aNum = inspection.getNumAxes();
 			if (aNum < rank) { // add auto-axes if necessary
 				for (int i = aNum; i < rank; i++) {
 					AxisSelection aSel = new AxisSelection(i, shape[i]);
-					Dataset axis = DatasetFactory.createRange(shape[i], Dataset.INT32);
+					Dataset axis = DatasetFactory.createRange(IntegerDataset.class, shape[i]);
 					axis.setName(AbstractExplorer.DIM_PREFIX + (i+1));
 					AxisChoice newChoice = new AxisChoice(axis);
 					newChoice.setAxisNumber(i);
