@@ -10,17 +10,20 @@
 package uk.ac.diamond.scisoft.analysis.rcp.hdf5;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.dawb.common.ui.util.EclipseUtils;
 import org.eclipse.dawnsci.analysis.api.io.IDataHolder;
 import org.eclipse.dawnsci.analysis.api.io.IFileLoader;
 import org.eclipse.dawnsci.analysis.api.tree.DataNode;
+import org.eclipse.dawnsci.analysis.api.tree.IFindInTree;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
 import org.eclipse.dawnsci.analysis.api.tree.TreeAdaptable;
 import org.eclipse.dawnsci.analysis.api.tree.TreeFile;
+import org.eclipse.dawnsci.analysis.api.tree.TreeUtils;
 import org.eclipse.january.IMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
@@ -49,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.diamond.scisoft.analysis.io.DataHolder;
 import uk.ac.diamond.scisoft.analysis.io.HDF5Loader;
 import uk.ac.diamond.scisoft.analysis.io.LoaderFactory;
+import uk.ac.diamond.scisoft.analysis.io.NexusTreeUtils;
 import uk.ac.diamond.scisoft.analysis.rcp.DataExplorationPerspective;
 import uk.ac.diamond.scisoft.analysis.rcp.explorers.AbstractExplorer;
 import uk.ac.diamond.scisoft.analysis.rcp.explorers.MetadataSelection;
@@ -319,7 +323,7 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 			LoaderFactory.cacheData(holder);
 			setFilename(fileName);
 
-			setTree(ltree);
+			setTree(ltree, loader);
 			startUpdateThread(holder, loader);
 		}
 	}
@@ -364,6 +368,10 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 	}
 
 	public void setTree(Tree htree) {
+		setTree(htree, null);
+	}
+
+	private void setTree(Tree htree, final IFileLoader loader) {
 		if (htree == null)
 			return;
 
@@ -383,8 +391,50 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 				display.update();
 			}
 		});
+
+		if (loader == null) {
+			findAndSelectData();
+		} else {
+			new Thread(new Runnable() { // wait till loader completion whilst periodically refreshing viewer
+				@Override
+				public void run() {
+					while (!findAndSelectData() && loader.isLoading()) {
+						try {
+							Thread.sleep(REFRESH_PERIOD);
+						} catch (InterruptedException e) {
+						}
+					}
+				}
+			}).start();
+		}
 	}
 
+	private boolean findAndSelectData() {
+		// try for an NXdata class
+		Map<String, NodeLink> map = TreeUtils.treeBreadthFirstSearch(tree.getGroupNode(), new IFindInTree() {
+			@Override
+			public boolean found(NodeLink node) {
+				return NexusTreeUtils.isNXClass(node.getDestination(), NexusTreeUtils.NX_DATA);
+			}
+		}, true, null);
+
+		// then a dataset called "data"
+		if (map.size() == 0) {
+			map = TreeUtils.treeBreadthFirstSearch(tree.getGroupNode(), new IFindInTree() {
+				@Override
+				public boolean found(NodeLink node) {
+					return node.isDestinationData() && "data".equals(node.getName());
+				}
+			}, true, null);
+		}
+
+		if (map.size() > 0) {
+			String key = map.keySet().iterator().next();
+			selectHDF5Node(key, map.get(key));
+			return true;
+		}
+		return false;
+	}
 
 	public void expandAll() {
 		tableTree.expandAll();
