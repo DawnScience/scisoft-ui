@@ -418,13 +418,20 @@ public class ScriptingConnection implements IObservable {
 	 * Sets the visibility of region according to Plot type
 	 * @param type
 	 */
-	protected void setVisibleByPlotType(PlotType type) {
-		Collection<IRegion> regions = plottingSystem.getRegions();
+	protected void setVisibleByPlotType(final PlotType type) {
+		final Collection<IRegion> regions = plottingSystem.getRegions();
 		if (regions == null)
 			return;
-		for (IRegion iRegion : regions) {
-			iRegion.setVisible(iRegion.getPlotType().equals(type));
-		}
+
+		plottingSystem.getPlotComposite().getDisplay().syncExec(new Runnable() {
+			@Override
+			public void run() {
+				for (IRegion iRegion : regions) {
+					iRegion.setVisible(iRegion.getPlotType().equals(type));
+				}
+			}
+		});
+
 	}
 
 	/**

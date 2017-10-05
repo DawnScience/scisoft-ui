@@ -169,8 +169,7 @@ public abstract class AbstractPlotWindow extends ScriptingConnection implements 
 
 	@Override
 	protected void changePlotMode(GuiPlotMode plotMode) {
-		
-		super.changePlotMode(plotMode);		
+		super.changePlotMode(plotMode);
 		addDuplicateAction();
 		addClearAction();
 	}
@@ -182,6 +181,6 @@ public abstract class AbstractPlotWindow extends ScriptingConnection implements 
 	@Override
 	public void dispose() {
 		PlotWindowManager.getPrivateManager().unregisterPlotWindow(this);
-        super.dispose();
+		super.dispose();
 	}
 }
