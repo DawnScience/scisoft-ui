@@ -581,6 +581,8 @@ public class DatasetInspector extends Composite {
 		} else {
 			inspection = null;
 			boolean found = false;
+			String file = dSelection.getFileName();
+			DatasetSelection storedSelection = null; // stored selection to remove
 			for (Entry<DatasetSelection, Inspection> e: storedInspections.entrySet()) {
 				DatasetSelection stored = e.getKey();
 				if (dSelection.almostEquals(stored)) {
@@ -588,7 +590,12 @@ public class DatasetInspector extends Composite {
 					storedInspections.put(dSelection, inspection);
 					found = true;
 					break;
+				} else if (file.equals(stored.getFileName())) {
+					storedSelection = stored;
 				}
+			}
+			if (storedSelection != null) {
+				storedInspections.remove(storedSelection);
 			}
 			useClonedInspection = found;
 		}
