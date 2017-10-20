@@ -155,9 +155,9 @@ public class ImageExplorer extends AbstractExplorer implements ISelectionProvide
 				if (index == 0)
 					return dataset.getName();
 				if (index == 1)
-					return dataset.min().toString();
+					return dataset.min(true).toString();
 				if (index == 2)
-					return dataset.max().toString();
+					return dataset.max(true).toString();
 				if (index == 3) {
 					String[] parts = dataset.getElementClass().toString().split("\\.");
 					return parts[parts.length - 1];
