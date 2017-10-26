@@ -22,6 +22,7 @@ import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.SymbolicNode;
 import org.eclipse.january.DatasetException;
+import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.jface.viewers.ILabelProviderListener;
@@ -482,20 +483,6 @@ class HDF5LabelProvider implements ITableLabelProvider {
 				return "SDS";
 			}
 
-			if (dataset.isString()) {
-				switch (columnIndex) {
-				case 3:
-					msg = dataset.getTypeName();
-					break;
-				case 4:
-					msg = dataset.getString();
-					if (msg.length() > 100) // restrict to 100 characters
-						msg = msg.substring(0, 100) + "...";
-					break;
-				}
-				return msg;
-			}
-
 			if (!dataset.isSupported()) {
 				return columnIndex == 4 ? "Not supported" : msg;
 			}
@@ -521,26 +508,30 @@ class HDF5LabelProvider implements ITableLabelProvider {
 				msg = dataset.getTypeName();
 				break;
 			case 4: // data
+				msg = dataset.getString();
+				if (msg != null) {
+					if (msg.length() > 100) {// restrict to 100 characters
+						msg = msg.substring(0, 100) + "...";
+					}
+					break;
+				}
+				if (data.getSize() == 1) {
+					try {
+						data = data.getSlice();
+					} catch (DatasetException e) {
+						msg = "Could not read single-item dataset";
+						break;
+					}
+				}
 				if (data instanceof IDataset) {
 					// show a single value
-					msg = data.getRank() == 0 ? ((IDataset) data).getString() :
-						((IDataset) data).getString(0);
+					msg = DatasetUtils.convertToDataset((IDataset) data).getString();
 					Attribute units = dataset.getAttribute("units");
 					if (units != null && units.isString()) {
 						msg += " " + units.getFirstElement();
 					}
 				} else if (data == null || data.getSize() == 0) {
 					msg = "none available as dataset is zero-sized";
-				} else if (data.getSize() == 1) {
-					try {
-						msg = data.getSlice().getString(0);
-					} catch (DatasetException e) {
-						msg = "Could not read single-item dataset";
-					}
-					Attribute units = dataset.getAttribute("units");
-					if (units != null && units.isString()) {
-						msg += " " + units.getFirstElement();
-					}
 				} else {
 					msg = "double-click to view";
 				}
