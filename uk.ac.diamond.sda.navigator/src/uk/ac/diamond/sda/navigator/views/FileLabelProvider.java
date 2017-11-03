@@ -20,11 +20,11 @@ import java.util.regex.Matcher;
 
 import org.dawb.common.services.ServiceManager;
 import org.dawb.common.util.io.FileUtils;
-import org.dawnsci.io.h5.H5Loader;
 import org.eclipse.dawnsci.analysis.api.io.IDataHolder;
 import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
+import org.eclipse.dawnsci.hdf5.HDF5Utils;
 import org.eclipse.dawnsci.plotting.api.image.IFileIconService;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
@@ -199,7 +199,7 @@ class FileLabelProvider extends ColumnLabelProvider {
 	private Map<Integer, String> getH5Attributes(Path node) throws Exception {
 		
 		if (Files.isDirectory(node))          return null;
-		if (!H5Loader.isH5(node.toAbsolutePath().toString())) return null;
+		if (!HDF5Utils.isHDF5(node.toAbsolutePath().toString())) return null;
 		
 		if (attributes==null) attributes = new HashMap<Path, Map<Integer, String>>(89);
 		if (attributes.containsKey(node)) return attributes.get(node);
