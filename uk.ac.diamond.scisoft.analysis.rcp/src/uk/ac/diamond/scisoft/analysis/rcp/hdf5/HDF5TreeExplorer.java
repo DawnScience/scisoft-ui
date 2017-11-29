@@ -293,10 +293,22 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 		return textView;
 	}
 
+	private boolean isTreeComplete = false;
+
 	@Override
 	public IDataHolder loadFile(String fileName, IMonitor mon) throws Exception {
-		if (fileName == filename)
+		if (fileName == filename) {
+			if (holder == null) {
+				holder = loader.createDataHolder(getTree());
+			}
+			if (loader.isLoading()) {
+				HDF5Loader.updateDataHolder(holder, true);
+			} else if (!isTreeComplete) {
+				HDF5Loader.updateDataHolder(holder, true);
+				isTreeComplete = true;
+			}
 			return holder;
+		}
 
 		final String extension = FileUtils.getFileExtension(fileName).toLowerCase();
 		return LoaderFactory.getData(LoaderFactory.getLoaderClass(extension), fileName, true, mon);
@@ -312,6 +324,7 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 				holder = tHolder;
 				setFilename(fileName);
 				setTree(holder.getTree());
+				isTreeComplete = true;
 			}
 			return;
 		}
@@ -320,9 +333,11 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 		loader.setAsyncLoad(true);
 		final Tree ltree = loader.loadTree(mon);
 		if (ltree != null) {
-			LoaderFactory.cacheData(holder);
 			setFilename(fileName);
-
+			if (holder == null) {
+				holder = loader.createDataHolder(ltree);
+			}
+			LoaderFactory.cacheData(holder);
 			setTree(ltree, loader);
 			startUpdateThread(holder, loader);
 		}
