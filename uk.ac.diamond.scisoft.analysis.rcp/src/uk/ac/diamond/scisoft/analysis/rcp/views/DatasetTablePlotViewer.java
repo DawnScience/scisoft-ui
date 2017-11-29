@@ -23,6 +23,11 @@ import java.util.List;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystemViewer;
 import org.eclipse.dawnsci.plotting.api.trace.ITableDataTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
+import org.eclipse.january.DatasetException;
+import org.eclipse.january.dataset.DatasetUtils;
+import org.eclipse.january.dataset.IDataset;
+import org.eclipse.january.dataset.ILazyDataset;
+import org.eclipse.january.metadata.AxesMetadata;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
@@ -40,8 +45,77 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 	public boolean addTrace(ITrace trace){
 		if (trace instanceof ITableDataTrace) {
 			ITableDataTrace t = (ITableDataTrace)trace;
+		
+			IDataset data = t.getData();
+			if (data.getRank() != 2)
+				return false;
 			
-			table.setData(t.getData(),null,null);
+			IDataset rows = null;
+			IDataset cols = null;
+			if (data.getShape()[1] == 1) {
+				// 1D mode
+				AxesMetadata firstMetadata = data.getFirstMetadata(AxesMetadata.class);
+				ILazyDataset[] axes = firstMetadata.getAxis(0);
+				if (axes == null)
+					axes = new ILazyDataset[0];
+				ILazyDataset axis = null;
+				for (ILazyDataset tempAxis : axes) {
+					if (tempAxis != null && tempAxis.getShape()[0] == data.getShape()[0]) {
+						axis = tempAxis;
+						break;
+					}
+				}
+				try {
+					rows = DatasetUtils.sliceAndConvertLazyDataset(axis);
+					if (rows != null)
+						rows.squeeze();
+				} catch (DatasetException e) {
+					// do nothing, rows stays null
+				}
+			} else {
+				// 2D mode
+				AxesMetadata firstMetadata = data.getFirstMetadata(AxesMetadata.class);
+				ILazyDataset[] axesX = firstMetadata.getAxis(0); // rows
+				ILazyDataset[] axesY = firstMetadata.getAxis(1); // cols
+
+				
+				if (axesX == null)
+					axesX = new ILazyDataset[0];
+				ILazyDataset axisX = null;
+				for (ILazyDataset tempAxisX : axesX) {
+					if (tempAxisX != null && tempAxisX.getShape()[0] == data.getShape()[0]) {
+						axisX = tempAxisX;
+						break;
+					}
+				}
+				
+				if (axesY == null)
+					axesY = new ILazyDataset[0];
+				ILazyDataset axisY = null;
+				for (ILazyDataset tempAxisY : axesY) {
+					if (tempAxisY != null && tempAxisY.getShape()[1] == data.getShape()[1]) {
+						axisY = tempAxisY;
+						break;
+					}
+				}
+				
+				try {
+					rows = DatasetUtils.sliceAndConvertLazyDataset(axisX);
+					if (rows != null)
+						rows.squeeze();
+				} catch (DatasetException e) {
+					// do nothing, rows stays null
+				}
+				try {
+					cols = DatasetUtils.sliceAndConvertLazyDataset(axisY);
+					if (cols != null)
+						cols.squeeze();
+				} catch (DatasetException e) {
+					// do nothing, rows stays null
+				}
+			}
+			
+			table.setData(t.getData(), rows, cols);
 			return true;
 		}
 		return false;
@@ -52,6 +126,7 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 		
 	}
 	
+	@Override
 	public Composite getControl() {
 		if (table == null) return null;
 		return table;
@@ -68,10 +143,7 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 	
 	@Override
 	public boolean isTraceTypeSupported(Class<? extends ITrace> trace) {
-		if (ITableDataTrace.class.isAssignableFrom(trace)) {
-			return true;
-		}
-		return false;
+		return ITableDataTrace.class.isAssignableFrom(trace);
 	}
 	
 	@Override
