@@ -264,6 +264,10 @@ public class AxisSlicer {
 		if (adata.getRank() == 0)
 			adata.setShape(1);
 
+		if (adata.getSize() != length) {
+			length = adata.getSize();
+			slice.setLength(length);
+		}
 		assert adata.getRank() == 1 : Arrays.toString(adata.getShape());
 	}
 
