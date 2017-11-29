@@ -154,8 +154,7 @@ public class AxisSelection extends InspectorProperty implements Iterable<String>
 		@Override
 		public boolean evaluate(Object obj) {
 			AxisSelData a = (AxisSelData) obj;
-			int o = a.getOrder();
-			return o == 0 || order < o;
+			return order < a.getOrder();
 		}
 	}
 
