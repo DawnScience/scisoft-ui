@@ -26,8 +26,8 @@ import org.eclipse.swt.widgets.Composite;
 
 public class DatasetTableComposite extends Composite {
 
-	private NatTable table = null;
-	private DatasetGridLayerStack dStack = null;
+	private final NatTable table;
+	private final DatasetGridLayerStack dStack;
 	
 	public DatasetTableComposite(Composite parent, int style) {
 		super(parent, style);
@@ -45,5 +45,7 @@ public class DatasetTableComposite extends Composite {
 		dStack.setData(dataset, rows, cols);
 	}
 	
-
+	public NatTable getTable() {
+		return table;
+	}
 }

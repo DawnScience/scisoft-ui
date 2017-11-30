@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystemViewer;
 import org.eclipse.dawnsci.plotting.api.trace.ITableDataTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
@@ -28,19 +30,96 @@ import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.metadata.AxesMetadata;
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.nebula.widgets.nattable.copy.command.CopyDataToClipboardCommand;
+import org.eclipse.nebula.widgets.nattable.export.command.ExportCommand;
+import org.eclipse.nebula.widgets.nattable.print.command.TurnViewportOffCommand;
+import org.eclipse.nebula.widgets.nattable.print.command.TurnViewportOnCommand;
+import org.eclipse.nebula.widgets.nattable.selection.command.ClearAllSelectionsCommand;
+import org.eclipse.nebula.widgets.nattable.selection.command.SelectAllCommand;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IActionBars;
+
+import uk.ac.diamond.scisoft.analysis.rcp.AnalysisRCPActivator;
 
 public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite> {
 
-	private DatasetTableComposite table;
-	
+	private DatasetTableComposite tableComposite;
+
 	@Override
 	public void createControl(final Composite parent) {
-		table = new DatasetTableComposite(parent, SWT.None);
+		tableComposite = new DatasetTableComposite(parent, SWT.None);
+		IActionBars actionBars = system.getActionBars();
+		createToolbar(actionBars);
 	}
 	
-	
+	private void createToolbar(IActionBars bars) {
+		Action selAction = new Action() {
+			@Override
+			public void run() {
+				tableComposite.getTable().doCommand(new SelectAllCommand());
+				tableComposite.getTable().redraw();
+			}
+		};
+		selAction.setToolTipText("Select all in table");
+		selAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/table_add.png"));
+
+		Action deselAction = new Action() {
+			@Override
+			public void run() {
+				tableComposite.getTable().doCommand(new ClearAllSelectionsCommand());
+				tableComposite.getTable().redraw();
+			}
+		};
+		deselAction.setToolTipText("Clear selection");
+		deselAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/table_delete.png"));
+
+		Action clipboardAction = new Action() {
+			@Override
+			public void run() {
+				tableComposite.getTable().doCommand(new CopyDataToClipboardCommand("\t", "\n", tableComposite.getTable().getConfigRegistry()));
+			}
+		};
+		clipboardAction.setToolTipText("Copy selection to clipboard");
+		clipboardAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/table_go.png"));
+
+		Action excelAction = new Action() {
+			@Override
+			public void run() {
+				try {
+					tableComposite.getTable().doCommand(new TurnViewportOffCommand());
+					tableComposite.getTable().doCommand(new ExportCommand(tableComposite.getTable().getConfigRegistry(), tableComposite.getTable().getShell()));
+					tableComposite.getTable().doCommand(new TurnViewportOnCommand());
+				} catch (Exception e) {
+					Status status = new Status(IStatus.ERROR, AnalysisRCPActivator.PLUGIN_ID, e.getCause().getMessage(), e); 
+					ErrorDialog.openError(tableComposite.getTable().getShell(), "Excel export error", "Error exporting Excel table", status);
+				}
+			}
+		};
+		excelAction.setToolTipText("Export all as Excel");
+		excelAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/page_excel.png"));
+
+		Action saveAction = new Action() {
+			@Override
+			public void run() {
+				tableComposite.getTable().doCommand(new ExportSelectionCommand(tableComposite.getTable().getShell()));
+			}
+		};
+		saveAction.setToolTipText("Export selection");
+		saveAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/table_save.png"));
+
+		IToolBarManager mgr = bars.getToolBarManager();
+		mgr.add(selAction);
+		mgr.add(deselAction);
+		mgr.add(clipboardAction);
+		mgr.add(excelAction);
+		mgr.add(saveAction);
+		bars.updateActionBars();
+	}
+
 	@Override
 	public boolean addTrace(ITrace trace){
 		if (trace instanceof ITableDataTrace) {
@@ -115,7 +194,7 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 				}
 			}
 			
-			table.setData(t.getData(), rows, cols);
+			tableComposite.setData(t.getData(), rows, cols);
 			return true;
 		}
 		return false;
@@ -128,14 +207,14 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 	
 	@Override
 	public Composite getControl() {
-		if (table == null) return null;
-		return table;
+		if (tableComposite == null)
+			return null;
+		return tableComposite;
 	}
 	
 	@Override
 	public  <U extends ITrace> U createTrace(String name, Class<? extends ITrace> clazz) {
 		if (clazz == ITableDataTrace.class) {
-
 			return null;
 		}
 		return null;
