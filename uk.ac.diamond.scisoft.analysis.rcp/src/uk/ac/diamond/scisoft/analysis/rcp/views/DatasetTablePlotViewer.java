@@ -22,7 +22,10 @@ import java.util.List;
 
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.dawnsci.plotting.api.ActionType;
+import org.eclipse.dawnsci.plotting.api.IPlotActionSystem;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystemViewer;
+import org.eclipse.dawnsci.plotting.api.ManagerType;
 import org.eclipse.dawnsci.plotting.api.trace.ITableDataTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
 import org.eclipse.january.DatasetException;
@@ -47,16 +50,17 @@ import uk.ac.diamond.scisoft.analysis.rcp.AnalysisRCPActivator;
 
 public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite> {
 
+	private static final String DATASETTABLE_PLOTVIEWER_ACTIONS = "datasettable.plotviewer.actions";
 	private DatasetTableComposite tableComposite;
 
 	@Override
 	public void createControl(final Composite parent) {
 		tableComposite = new DatasetTableComposite(parent, SWT.None);
-		IActionBars actionBars = system.getActionBars();
-		createToolbar(actionBars);
+		createToolbar();
 	}
 	
-	private void createToolbar(IActionBars bars) {
+	private void createToolbar() {
+		IPlotActionSystem plotActionSystem = system.getPlotActionSystem();
 		Action selAction = new Action() {
 			@Override
 			public void run() {
@@ -111,13 +115,12 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 		saveAction.setToolTipText("Export selection");
 		saveAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/table_save.png"));
 
-		IToolBarManager mgr = bars.getToolBarManager();
-		mgr.add(selAction);
-		mgr.add(deselAction);
-		mgr.add(clipboardAction);
-		mgr.add(excelAction);
-		mgr.add(saveAction);
-		bars.updateActionBars();
+		plotActionSystem.registerGroup(DATASETTABLE_PLOTVIEWER_ACTIONS, ManagerType.TOOLBAR);
+		plotActionSystem.registerAction(DATASETTABLE_PLOTVIEWER_ACTIONS, selAction, ActionType.DATA, ManagerType.TOOLBAR);
+		plotActionSystem.registerAction(DATASETTABLE_PLOTVIEWER_ACTIONS, deselAction, ActionType.DATA, ManagerType.TOOLBAR);
+		plotActionSystem.registerAction(DATASETTABLE_PLOTVIEWER_ACTIONS, clipboardAction, ActionType.DATA, ManagerType.TOOLBAR);
+		plotActionSystem.registerAction(DATASETTABLE_PLOTVIEWER_ACTIONS, excelAction, ActionType.DATA, ManagerType.TOOLBAR);
+		plotActionSystem.registerAction(DATASETTABLE_PLOTVIEWER_ACTIONS, saveAction, ActionType.DATA, ManagerType.TOOLBAR);
 	}
 
 	@Override
