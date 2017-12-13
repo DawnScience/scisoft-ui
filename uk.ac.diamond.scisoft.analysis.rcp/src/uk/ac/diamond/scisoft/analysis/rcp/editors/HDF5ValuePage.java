@@ -169,25 +169,7 @@ public class HDF5ValuePage extends Page  implements ISelectionListener, IPartLis
 		if (sel instanceof NodeLink) {
 			final NodeLink node = (NodeLink)sel;
 			createH5Value(node);
- 		} 
-//		else if (sel instanceof H5Path) { // Might be nexus part.
-//			
-//			try {
-//				final H5Path h5Path = (H5Path)sel;
-//				final String path   = h5Path.getPath();
-//				final IEditorPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-//				if (part instanceof IH5Editor) {
-//					final String filePath = ((IH5Editor)part).getFilePath();
-//					final IHierarchicalDataFile file = HierarchicalDataFactory.getReader(filePath);
-//					final HObject ob = file.getData(path);
-//					createH5Value(ob);
-//				}
-//				
-//			} catch (Exception ne) {
-//				logger.error(ne.getMessage()); // Not serious, no need for stack.
-//			}
-//			
-//		}
+		}
 	}
 	
 	private void createH5Value(NodeLink ob) {
