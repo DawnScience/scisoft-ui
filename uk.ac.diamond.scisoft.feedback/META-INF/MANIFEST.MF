@@ -7,8 +7,8 @@ Bundle-Activator: uk.ac.diamond.scisoft.feedback.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  uk.ac.diamond.scisoft.system.info;bundle-version="1.0.0",
- org.apache.httpcomponents.httpclient;bundle-version="[4.3.2,4.4.0)",
- org.apache.httpcomponents.httpcore;bundle-version="[4.3.1,4.4.0)",
+ org.apache.httpcomponents.httpclient;bundle-version="4.3.2",
+ org.apache.httpcomponents.httpcore;bundle-version="4.3.1",
  uk.ac.diamond.proxyvole;bundle-version="[1.0.20120727,1.1.0)",
  org.dawnsci.common.widgets,
  org.dawb.common.util
