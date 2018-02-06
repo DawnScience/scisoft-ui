@@ -10,7 +10,7 @@ public class PowderServiceManager {
 	private static EventAdmin eventAdmin;
 	private static IPersistenceService pservice;
 
-	public static void setLoaderService(ILoaderService s) {
+	public void setLoaderService(ILoaderService s) {
 		lservice = s;
 	}
 	
@@ -22,11 +22,11 @@ public class PowderServiceManager {
 		return eventAdmin;
 	}
 
-	public static void setEventAdmin(EventAdmin eAdmin) {
+	public void setEventAdmin(EventAdmin eAdmin) {
 		eventAdmin = eAdmin;
 	}
 	
-	public static void setPersistenceService(IPersistenceService s) {
+	public void setPersistenceService(IPersistenceService s) {
 		pservice = s;
 	}
 	

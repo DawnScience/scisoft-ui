@@ -28,7 +28,7 @@ public class ServiceHolder {
 		return loaderservice;
 	}
 
-	public static void setLoaderService(ILoaderService loaderservice) {
+	public void setLoaderService(ILoaderService loaderservice) {
 		ServiceHolder.loaderservice = loaderservice;
 	}
 }

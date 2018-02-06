@@ -26,7 +26,7 @@ public class FileIconServiceHolder {
 		return fileIconService;
 	}
 
-	public static void setFileIconService(IFileIconService fileIconService) {
+	public void setFileIconService(IFileIconService fileIconService) {
 		FileIconServiceHolder.fileIconService = fileIconService;
 	}
 }

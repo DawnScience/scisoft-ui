@@ -22,7 +22,7 @@ public class ServiceHolder {
 		return pservice;
 	}
 
-	public static void setPaletteService(IPaletteService ps) {
+	public void setPaletteService(IPaletteService ps) {
 		pservice = ps;
 	}
 }

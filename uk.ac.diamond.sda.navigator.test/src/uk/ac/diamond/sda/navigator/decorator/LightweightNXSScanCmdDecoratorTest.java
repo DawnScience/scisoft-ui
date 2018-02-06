@@ -29,7 +29,7 @@ public class LightweightNXSScanCmdDecoratorTest {
 	@Before
 	public void init() {
 		//initialise loader server
-		ServiceHolder.setLoaderService(new LoaderServiceImpl());
+		new ServiceHolder().setLoaderService(new LoaderServiceImpl());
 	}
 
 	@Test
