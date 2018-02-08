@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Powder Service Manager">
-   <implementation class="uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.LocalServiceManager"/>
+   <implementation class="uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.PowderServiceManager"/>
    <reference bind="setLoaderService" cardinality="1..1" interface="org.eclipse.dawnsci.analysis.api.io.ILoaderService" name="ILoaderService" policy="static"/>
    <reference bind="setEventAdmin" cardinality="1..1" interface="org.osgi.service.event.EventAdmin" name="EventAdmin" policy="static"/>
    <reference bind="setPersistenceService" cardinality="1..1" interface="org.eclipse.dawnsci.analysis.api.persistence.IPersistenceService" name="IPersistenceService" policy="static"/>

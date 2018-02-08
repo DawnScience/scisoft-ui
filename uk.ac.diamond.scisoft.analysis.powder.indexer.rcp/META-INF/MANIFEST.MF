@@ -39,4 +39,4 @@ Import-Package: org.apache.log4j.spi;version="1.2.17",
  org.eclipse.ui.part,
  org.slf4j;version="1.7.18",
  uk.ac.diamond.scisoft.analysis.powder.indexer.indexers
-Service-Component: OSGI-INF/localServiceManager.xml
+Service-Component: OSGI-INF/powderServiceManager.xml
