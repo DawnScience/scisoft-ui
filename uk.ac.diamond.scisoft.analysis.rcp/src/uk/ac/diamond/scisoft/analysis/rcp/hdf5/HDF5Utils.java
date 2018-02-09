@@ -18,6 +18,7 @@ import org.eclipse.dawnsci.analysis.api.tree.DataNode;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
+import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.ILazyDataset;
@@ -51,9 +52,9 @@ public class HDF5Utils {
 			GroupNode gNode = (GroupNode) node;
 			// see if chosen node is a NXdata class
 			Attribute attr;
-			if (NexusTreeUtils.isNXClass(gNode, NexusTreeUtils.NX_DATA)) {
+			if (NexusTreeUtils.isNXClass(gNode, NexusConstants.DATA)) {
 				// check if group has signal attribute
-				String n = NexusTreeUtils.getFirstString(gNode.getAttribute(NexusTreeUtils.NX_SIGNAL));
+				String n = NexusTreeUtils.getFirstString(gNode.getAttribute(NexusConstants.DATA_SIGNAL));
 				if (n != null) {
 					if (gNode.containsDataNode(n)) {
 						dNode = gNode.getDataNode(n);
@@ -68,7 +69,7 @@ public class HDF5Utils {
 					for (NodeLink l : gNode) {
 						if (l.isDestinationData()) {
 							dNode = (DataNode) l.getDestination();
-							attr = dNode.getAttribute(NexusTreeUtils.NX_SIGNAL);
+							attr = dNode.getAttribute(NexusConstants.DATA_SIGNAL);
 							if (attr != null && NexusTreeUtils.parseFirstInt(attr) == 1 && dNode.isSupported()) {
 								link = l;
 								break; // only one signal per NXdata item
@@ -78,9 +79,9 @@ public class HDF5Utils {
 					}
 				}
 			}
-			if (dNode == null && gNode.containsDataNode(NexusTreeUtils.DATA)) {
+			if (dNode == null && gNode.containsDataNode(NexusConstants.DATA_DATA)) {
 				// fallback to "data" when no signal attribute is found
-				dNode = gNode.getDataNode(NexusTreeUtils.DATA);
+				dNode = gNode.getDataNode(NexusConstants.DATA_DATA);
 			}
 		} else if (link.isDestinationData()) {
 			dNode = (DataNode) link.getDestination();

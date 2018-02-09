@@ -24,6 +24,7 @@ import org.eclipse.dawnsci.analysis.api.tree.Tree;
 import org.eclipse.dawnsci.analysis.api.tree.TreeAdaptable;
 import org.eclipse.dawnsci.analysis.api.tree.TreeFile;
 import org.eclipse.dawnsci.analysis.api.tree.TreeUtils;
+import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.january.IMonitor;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
@@ -429,7 +430,7 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 		Map<String, NodeLink> map = TreeUtils.treeBreadthFirstSearch(tree.getGroupNode(), new IFindInTree() {
 			@Override
 			public boolean found(NodeLink node) {
-				return NexusTreeUtils.isNXClass(node.getDestination(), NexusTreeUtils.NX_DATA);
+				return NexusTreeUtils.isNXClass(node.getDestination(), NexusConstants.DATA);
 			}
 		}, true, null);
 

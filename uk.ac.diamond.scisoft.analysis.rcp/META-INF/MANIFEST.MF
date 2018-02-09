@@ -32,7 +32,8 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.dawnsci.hdf5.editor;bundle-version="1.2.0",
  uk.ac.diamond.scisoft.analysis.plotclient;bundle-version="1.0.0",
  uk.ac.diamond.scisoft.imagegrid,
- org.dawnsci.datavis.api
+ org.dawnsci.datavis.api,
+ org.eclipse.dawnsci.nexus
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: com.swtdesigner,
  uk.ac.diamond.scisoft.analysis.rcp,

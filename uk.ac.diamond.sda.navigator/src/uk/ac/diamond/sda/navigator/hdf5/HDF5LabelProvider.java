@@ -14,6 +14,7 @@ import org.eclipse.dawnsci.analysis.api.tree.Attribute;
 import org.eclipse.dawnsci.analysis.api.tree.DataNode;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
+import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.jface.viewers.ILabelDecorator;
@@ -22,8 +23,6 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.navigator.IDescriptionProvider;
-
-import uk.ac.diamond.scisoft.analysis.io.NexusTreeUtils;
 
 /**
  * Provides a label and icon for objects of type {@HDF5NodeLink}.
@@ -116,7 +115,7 @@ public class HDF5LabelProvider extends LabelProvider implements ILabelProvider, 
 		NodeLink link = (NodeLink) element;
 		Node node = link.getDestination();
 		// class
-		Attribute attr = node.getAttribute(NexusTreeUtils.NX_CLASS);
+		Attribute attr = node.getAttribute(NexusConstants.NXCLASS);
 		if(attr!=null)
 			label += attr.getFirstElement()+" ";
 		//label += attr.getFirstElement()+" ";

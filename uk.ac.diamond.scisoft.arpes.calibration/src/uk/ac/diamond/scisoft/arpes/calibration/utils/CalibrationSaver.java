@@ -15,14 +15,13 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.dawnsci.analysis.api.message.DataMessageComponent;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.tree.impl.AttributeImpl;
+import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.dawnsci.nexus.NexusException;
 import org.eclipse.dawnsci.nexus.NexusFile;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import uk.ac.diamond.scisoft.analysis.io.NexusTreeUtils;
 
 public class CalibrationSaver implements IRunnableWithProgress {
 
@@ -119,10 +118,10 @@ public class CalibrationSaver implements IRunnableWithProgress {
 				nodePath = nodePath.concat("/" + node);
 				GroupNode group = nexus.getGroup(nodePath, true);
 				if (i < nodes.length - 1) {
-					nexus.addAttribute(group, new AttributeImpl(NexusTreeUtils.NX_CLASS, "NXEntry"));
+					nexus.addAttribute(group, new AttributeImpl(NexusConstants.NXCLASS, NexusConstants.ENTRY));
 				} else {
-					nexus.addAttribute(group, new AttributeImpl(NexusTreeUtils.NX_CLASS, NexusTreeUtils.NX_DATA));
-					data.setName(NexusTreeUtils.DATA);
+					nexus.addAttribute(group, new AttributeImpl(NexusConstants.NXCLASS, NexusConstants.DATA));
+					data.setName(NexusConstants.DATA_DATA);
 					nexus.createData(group, data);
 					if (yaxisData != null) {
 						nexus.createData(group, yaxisData);

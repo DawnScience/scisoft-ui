@@ -18,13 +18,13 @@ import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.TreeFile;
+import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.io.HDF5Loader;
-import uk.ac.diamond.scisoft.analysis.io.NexusTreeUtils;
 
 public class HDF5ContentProvider implements ITreeContentProvider {
 	private TreeFilter treeFilter;
@@ -39,7 +39,7 @@ public class HDF5ContentProvider implements ITreeContentProvider {
 	private static final Logger logger = LoggerFactory.getLogger(HDF5ContentProvider.class);
 
 	public HDF5ContentProvider() {
-		this.treeFilter = new TreeFilter(new String[] { "target", NexusTreeUtils.NX_CLASS});
+		this.treeFilter = new TreeFilter(new String[] { "target", NexusConstants.NXCLASS});
 	}
 
 	@Override

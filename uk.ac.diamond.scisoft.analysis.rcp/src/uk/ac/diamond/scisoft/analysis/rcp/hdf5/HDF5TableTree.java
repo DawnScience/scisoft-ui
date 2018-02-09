@@ -21,6 +21,7 @@ import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.SymbolicNode;
+import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
@@ -50,7 +51,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 
-import uk.ac.diamond.scisoft.analysis.io.NexusTreeUtils;
 import uk.ac.diamond.scisoft.analysis.rcp.adapters.HDF5Adaptable;
 
 /**
@@ -82,7 +82,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 		this.clistener = clistener;
 
 		// set up tree filter to omit following node names
-		treeFilter = new TreeFilter(new String[] { "target", NexusTreeUtils.NX_CLASS});
+		treeFilter = new TreeFilter(new String[] { "target", NexusConstants.NXCLASS});
 
 		// set up tree and its columns
 		tViewer = new TreeViewer(this, SWT.BORDER|SWT.VIRTUAL);
@@ -448,7 +448,7 @@ class HDF5LabelProvider implements ITableLabelProvider {
 			msg = link.getName();
 			break;
 		case 1: // class
-			Attribute attr = node.getAttribute(NexusTreeUtils.NX_CLASS);
+			Attribute attr = node.getAttribute(NexusConstants.NXCLASS);
 			msg = attr != null ? attr.getFirstElement() : "Group";
 			break;
 		}
