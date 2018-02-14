@@ -10,7 +10,7 @@ public class PlotModeDataTable2D extends PlotModeImage {
 
 	@Override
 	public String[] getOptions() {
-		return options;
+		return new String[]{"Column", "Row"};
 	}
 
 	@Override

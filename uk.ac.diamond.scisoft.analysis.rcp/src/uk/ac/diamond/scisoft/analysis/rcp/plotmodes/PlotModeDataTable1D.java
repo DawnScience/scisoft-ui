@@ -10,7 +10,7 @@ public class PlotModeDataTable1D extends PlotModeXY {
 
 	@Override
 	public String[] getOptions() {
-		return options;
+		return new String[]{"Row"};
 	}
 
 	@Override
