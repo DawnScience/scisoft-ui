@@ -99,4 +99,20 @@
             id="uk.ac.diamond.scisoft.analysis.rcp.views.DatasetTablePlotViewer">
       </plottingViewer>
    </extension>
+   <extension
+         point="org.dawnsci.datavis.api.plotmode">
+      <plotmode
+            class="uk.ac.diamond.scisoft.analysis.rcp.plotmodes.PlotModeDataTable1D"
+            name="Text Table 1D"
+            priority="0">
+      </plotmode>
+   </extension>
+   <extension
+         point="org.dawnsci.datavis.api.plotmode">
+      <plotmode
+            class="uk.ac.diamond.scisoft.analysis.rcp.plotmodes.PlotModeDataTable2D"
+            name="Text Table 2D"
+            priority="0">
+      </plotmode>
+   </extension>
 </plugin>
