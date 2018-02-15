@@ -143,9 +143,6 @@ public class PollingView extends ViewPart implements IPollMonitor {
 			getSharedImages().getImage(ISharedImages.IMG_OBJ_ELEMENT);
 		}
 	}
-	
-	class NameSorter extends ViewerSorter {
-	}
 
 	/**
 	 * The constructor.
@@ -179,7 +176,7 @@ public class PollingView extends ViewPart implements IPollMonitor {
 		
 		viewer.setContentProvider(new ViewContentProvider());
 		viewer.setLabelProvider(new ViewLabelProvider());
-		viewer.setSorter(new NameSorter());
+		viewer.setSorter(new ViewerSorter());
 		viewer.setInput(getViewSite());
 
 		// Create the help context id for the viewer's control
