@@ -219,6 +219,11 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			plottingSystem.addTrace(l);
 			l.setData(x, r);
 		}
+		if (reset) {
+			plottingSystem.autoscaleAxes();
+		} else {
+			plottingSystem.repaint();
+		}
 	}
 
 	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
