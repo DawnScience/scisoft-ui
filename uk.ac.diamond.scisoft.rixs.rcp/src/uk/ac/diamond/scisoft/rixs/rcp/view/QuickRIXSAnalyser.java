@@ -149,7 +149,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			elModel.setRoiB(null);
 			elModel.addPropertyChangeListener(this);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -161,14 +160,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		});
 
-		/*
-		 * Create limited number of ModelFields from model
-		 * and create own OperationModelViewer
-		 * 
-		 */
-		// bind models to GUI
+		// Create custom set of ModelFields from models
 		parent.setLayout(new FillLayout());
-//		Composite c = new Composite(parent, SWT.NONE);
 		ModelViewer modelViewer = new ModelViewer();
 		modelViewer.createPartControl(parent);
 		modelViewer.setModelFields(new ModelField(bgModel, "ratio"),
@@ -177,7 +170,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(elModel, "cutoff"),
 				new ModelField(plotModel, "plotOption")
 		);
-//		c.setLayoutData(new FormData());
 	}
 
 	@Override
@@ -257,7 +249,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 			LoadedFile f = j.getFile();
 			Dataset v = f.getLabelValue();
-//			String n = String.format(plotNameFormat, f.getName());
 			Dataset pd = get0DPlotData(j.getSumData(), dataName);
 
 			if (v == null) {
@@ -412,21 +403,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				auxData = od.getAuxData();
 				sumData = od.getSummaryData();
 			}
-//			List<Dataset> s = eop.getSpectra(0);
-//			return s.isEmpty() ? null : s.get(s.size() - 1);
-//			return i.sum(2, true);
 		}
-}
-
-	// check for reduction parameters state changes
-	// if none, then only process new images
-	
-	// synchronised wait for all reductions
-	// plot all successful spectra
+	}
 
 	// post-process:
 	//  fitting to peaks in selected region and plot FWHM
 	//  align peaks or turning points in selected region
-
-	
 }
