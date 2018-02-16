@@ -53,6 +53,7 @@ import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.ILazyDataset;
+import org.eclipse.january.dataset.IndexIterator;
 import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
@@ -94,17 +95,31 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private static final String ZERO = "0";
 	private enum PlotOption {
-		Spectrum(ElasticLineReduction.ES_PREFIX + ZERO),
-		SpectrumWithFit(ElasticLineReduction.ESF_PREFIX + ZERO),
-		FWHM(ElasticLineReduction.ESFWHM_PREFIX + ZERO);
+		Spectrum(ElasticLineReduction.ES_PREFIX + ZERO, true, "%s"),
+		SpectrumWithFit(ElasticLineReduction.ESF_PREFIX + ZERO, true, "%s-fit"),
+		FWHM(ElasticLineReduction.ESFWHM_PREFIX + ZERO, true, "FWHM"),
+		Slope("line_0_m", false, "slope"),
+		Intercept("line_0_c", false, "intercept");
 
 		private final String dName;
-		PlotOption(String dataName) {
+		private final boolean isSum;
+		private String plotFormat;
+		PlotOption(String dataName, boolean isSum, String plotFormat) {
 			dName = dataName;
+			this.isSum = isSum;
+			this.plotFormat = plotFormat;
 		}
 
 		public String getDataName() {
 			return dName;
+		}
+
+		public boolean isSum() {
+			return isSum;
+		}
+
+		public String getPlotFormat() {
+			return plotFormat;
 		}
 	}
 
@@ -209,7 +224,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		for (LoadedFile f : files) {
 			String path = f.getFilePath();
 			ProcessFileJob j = cachedJobs.get(path);
-			if (j == null || j.getSumData() == null) {
+			if (j == null || j.getData(true) == null) {
 				j = new ProcessFileJob("QR per file: " + f.getName(), f);
 				j.setJobGroup(jg);
 				j.setPriority(Job.LONG);
@@ -224,7 +239,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				jg.join(0, null);
 				
 				for (ProcessFileJob j : jobs) {
-					if (j.getResult().getCode() == IStatus.WARNING || j.getSumData() == null) {
+					if (j.getResult().getCode() == IStatus.WARNING || j.getData(true) == null) {
 						retry = true;
 						return;
 					}
@@ -258,9 +273,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		String xName = null;
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
-			Dataset x = MetadataUtils.getAxesAndMakeMissing(r)[0];
+			Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(r);
+			Dataset x = axes.length > 0 ? axes[0] : null;
 
-			if (x.peakToPeak(true).doubleValue() <= Double.MIN_NORMAL) {
+			if (x == null || x.peakToPeak(true).doubleValue() <= Double.MIN_NORMAL) {
 				x = DatasetFactory.createRange(IntegerDataset.class, r.getSize());
 			}
 			if (xName == null) {
@@ -276,24 +292,29 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
 		Map<String, Dataset> plots = new LinkedHashMap<>();
-		String dataName = plotOption.getDataName();
 		switch (plotOption) {
+		case Intercept:
+			addPointData(plots, plotOption);
+			break;
+		case Slope:
+			addPointData(plots, plotOption);
+			break;
 		case FWHM:
-			addPointData(plots, dataName, "FWHM");
+			addPointData(plots, plotOption);
 			break;
 		case SpectrumWithFit:
-			addSpectrumData(plots, dataName, "%s-fit");
-			addSpectrumData(plots, PlotOption.Spectrum.getDataName(), "%s");
+			addSpectrumData(plots, plotOption);
+			addSpectrumData(plots, PlotOption.Spectrum);
 			break;
 		case Spectrum:
 		default:
-			addSpectrumData(plots, dataName, "%s");
+			addSpectrumData(plots, plotOption);
 			break;
 		}
 		return plots;
 	}
 
-	private void addPointData(Map<String, Dataset> plots, String dataName, String plotName) {
+	private void addPointData(Map<String, Dataset> plots, PlotOption option) {
 		List<Double> x = new ArrayList<>();
 		List<Double> y = new ArrayList<>();
 		String xName = null;
@@ -303,31 +324,43 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 			LoadedFile f = j.getFile();
 			Dataset v = f.getLabelValue();
-			Dataset pd = get0DPlotData(j.getSumData(), dataName);
+			Dataset pd = get0DPlotData(j.getData(option.isSum()), option.getDataName());
 
 			if (v == null) {
-				v = MetadataUtils.getAxesAndMakeMissing(pd)[0];
+				Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(pd);
+				if (axes.length > 0) {
+					v = axes[0];
+				}
 			}
-			if (xName == null) {
+			if (xName == null && v != null) {
 				xName = v.getName();
 			}
 			System.err.println(v);
 			System.err.println(pd);
 
-			BroadcastIterator it = BroadcastPairIterator.createIterator(v, pd);
-			it.setOutputDouble(true);
-			while (it.hasNext()) {
-				x.add(it.aDouble);
-				y.add(it.bDouble);
+			if (v == null) {
+				IndexIterator it = pd.getIterator();
+				while (it.hasNext()) {
+					y.add(pd.getElementDoubleAbs(it.index));
+				}
+			} else {
+				BroadcastIterator it = BroadcastPairIterator.createIterator(v, pd);
+				it.setOutputDouble(true);
+				while (it.hasNext()) {
+					x.add(it.aDouble);
+					y.add(it.bDouble);
+				}
 			}
 		}
 
 		if (!y.isEmpty()) {
 			Dataset r = DatasetFactory.createFromList(y);
-			Dataset xd = DatasetFactory.createFromList(x);
-			xd.setName(xName);
-			MetadataUtils.setAxes(r, xd);
-			plots.put(plotName, r);
+			if (!x.isEmpty()) {
+				Dataset xd = DatasetFactory.createFromList(x);
+				xd.setName(xName);
+				MetadataUtils.setAxes(r, xd);
+			}
+			plots.put(option.getPlotFormat(), r);
 		}
 	}
 
@@ -346,14 +379,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		return null;
 	}
 
-	private void addSpectrumData(Map<String, Dataset> plots, String dataName, String plotNameFormat) {
+	private void addSpectrumData(Map<String, Dataset> plots, PlotOption option) {
 		for (ProcessFileJob j : jobs) {
 			if (!j.getResult().isOK()) {
 				continue;
 			}
 			LoadedFile f = j.getFile();
-			String n = String.format(plotNameFormat, f.getName());
-			List<Dataset> pd = get1DPlotData(j.getSumData(), dataName);
+			String n = String.format(option.getPlotFormat(), f.getName());
+			List<Dataset> pd = get1DPlotData(j.getData(option.isSum()), option.getDataName());
 			Dataset v = f.getLabelValue();
 			
 			if (pd.size() > 1) {
@@ -394,7 +427,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					Dataset d = (Dataset) a;
 					if (name.equals(d.getName())) {
 						int[] shape = d.getShapeRef();
-						if (shape.length != 1) { // assumes only 1D scan
+						if (shape.length > 1) { // assumes only 1D scan
 							int[] axes = new int[shape.length - 1];
 							for (int i = 1; i < shape.length; i++) {
 								axes[i-1] = i;
@@ -420,27 +453,26 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private class ProcessFileJob extends Job {
 		private LoadedFile file;
-//		private Serializable[] auxData;
+		private List<Dataset> auxList;
+		private SoftReference<Serializable[]> auxData;
 		private SoftReference<Serializable[]> sumData;
 
 		public ProcessFileJob(String name, LoadedFile file) {
 			super(name);
 			this.file = file;
+			auxList = new ArrayList<>();
 		}
 
 		public LoadedFile getFile() {
 			return file;
 		}
 
-//		public Serializable[] getAuxData() {
-//			return auxData;
-//		}
-
 		/**
 		 * @return may return null if pushed out by memory pressure
 		 */
-		public Serializable[] getSumData() {
-			return sumData == null ? null : sumData.get();
+		public Serializable[] getData(boolean sum) {
+			return sum ? (sumData == null ? null : sumData.get()) :
+				(auxData == null ? null : auxData.get());
 		}
 
 		@Override
@@ -488,9 +520,61 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		private void processImage(SubtractFittedBackgroundOperation bop, ElasticLineReduction eop, Dataset image, SliceInformation si) {
 			Dataset i = DatasetUtils.convertToDataset(bop.process(image, null).getData()).squeeze();
 			OperationData od = eop.process(i, null);
+			Serializable[] aux = od.getAuxData(); // need to accumulate these
+			for (Serializable s : aux) {
+				if (s instanceof Dataset) {
+					Dataset d = (Dataset) s;
+					if (d.getRank() == 0) {
+						auxList.add(d.reshape(1));
+					} else {
+						auxList.add(d.reshape(1, d.getSize()));
+					}
+				}
+			}
 			if (si.isLastSlice()) {
-//				auxData = od.getAuxData();
 				sumData = new SoftReference<Serializable[]> (od.getSummaryData());
+
+				Dataset[] axes = null; // extract axes to decorate aux data
+				for (Serializable s : od.getSummaryData()) {
+					if (s instanceof Dataset) {
+						axes = MetadataUtils.getAxes((Dataset) s);
+						if (axes != null) {
+							break;
+						}
+					}
+				}
+
+				int smax = si.getTotalSlices();
+				int n = auxList.size() / smax;
+				aux = new Serializable[n];
+				Dataset[] ds = new Dataset[smax];
+				for (int j = 0; j < n; j++) {
+					String dName = null;
+					Dataset d;
+					for (int s = 0; s < smax; s++) { // pass on name
+						d = auxList.get(j + s*n);
+						ds[s] = d;
+						if (dName == null) {
+							dName = d.getName();
+						}
+					}
+					d = DatasetUtils.concatenate(ds, 0);
+					d.setName(dName);
+
+					if (axes != null) { // ensure shapes match
+						int r = d.getRank();
+						for (int k = 0; k < axes.length; k++) {
+							Dataset a = axes[k];
+							if (a != null && a.getRank() != r) {
+								axes[k] = a.reshape(d.getShapeRef());
+							}
+						}
+						MetadataUtils.setAxes(d, axes);
+					}
+					aux[j] = d;
+				}
+				auxData = new SoftReference<Serializable[]> (aux);
+				auxList.clear();
 			}
 		}
 	}
