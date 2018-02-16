@@ -254,6 +254,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		} else {
 			reset = true;
 		}
+		String xName = null;
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
 			Dataset x = MetadataUtils.getAxesAndMakeMissing(r)[0];
@@ -261,15 +262,15 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			if (x.peakToPeak(true).doubleValue() <= Double.MIN_NORMAL) {
 				x = DatasetFactory.createRange(IntegerDataset.class, r.getSize());
 			}
+			if (xName == null) {
+				xName = x.getName();
+			}
 			ILineTrace l = plottingSystem.createLineTrace(n);
 			plottingSystem.addTrace(l);
 			l.setData(x, r);
 		}
-		if (reset) {
-			plottingSystem.autoscaleAxes();
-		} else {
-			plottingSystem.repaint(false);
-		}
+		plottingSystem.getSelectedXAxis().setTitle(xName);
+		plottingSystem.repaint(reset);
 	}
 
 	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
@@ -294,6 +295,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private void addPointData(Map<String, Dataset> plots, String dataName, String plotName) {
 		List<Double> x = new ArrayList<>();
 		List<Double> y = new ArrayList<>();
+		String xName = null;
 		for (ProcessFileJob j : jobs) {
 			if (!j.getResult().isOK()) {
 				continue;
@@ -304,6 +306,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 			if (v == null) {
 				v = MetadataUtils.getAxesAndMakeMissing(pd)[0];
+			}
+			if (xName == null) {
+				xName = v.getName();
 			}
 			System.err.println(v);
 			System.err.println(pd);
@@ -318,7 +323,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 		if (!y.isEmpty()) {
 			Dataset r = DatasetFactory.createFromList(y);
-			MetadataUtils.setAxes(r, DatasetFactory.createFromList(x));
+			Dataset xd = DatasetFactory.createFromList(x);
+			xd.setName(xName);
+			MetadataUtils.setAxes(r, xd);
 			plots.put(plotName, r);
 		}
 	}
@@ -346,6 +353,13 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			LoadedFile f = j.getFile();
 			String n = String.format(plotNameFormat, f.getName());
 			List<Dataset> pd = get1DPlotData(j.getSumData(), dataName);
+			Dataset v = f.getLabelValue();
+			if (v == null && pd.size() > 1) {
+				v = pd.remove(pd.size() - 1);
+			}
+			if (v != null) {
+				v.squeeze();
+			}
 			int i = -1;
 			for (Dataset r : pd) {
 				i++;
@@ -353,7 +367,13 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					continue;
 				}
 				r.squeeze();
-				plots.put(n + ":" + i, r);
+				String name;
+				if (v == null) {
+					name = String.format("%s:%d", n, i);
+				} else {
+					name = String.format("%s:%d (%s)", n, i, v.getObject(i));
+				}
+				plots.put(name, r);
 			}
 		}
 	}
@@ -366,7 +386,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					Dataset d = (Dataset) a;
 					if (name.equals(d.getName())) {
 						int[] shape = d.getShapeRef();
-						if (shape.length != 1) {
+						if (shape.length != 1) { // assumes only 1D scan
 							int[] axes = new int[shape.length - 1];
 							for (int i = 1; i < shape.length; i++) {
 								axes[i-1] = i;
@@ -376,6 +396,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 							while (it.hasNext()) {
 								pd.add(d.getSliceView(s).squeeze());
 							}
+							Dataset[] ads = MetadataUtils.getAxes(d);
+							pd.add(ads == null ? null : ads[0]);
 						} else {
 							pd.add(d);
 						}
