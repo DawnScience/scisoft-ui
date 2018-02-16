@@ -354,11 +354,18 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			String n = String.format(plotNameFormat, f.getName());
 			List<Dataset> pd = get1DPlotData(j.getSumData(), dataName);
 			Dataset v = f.getLabelValue();
-			if (v == null && pd.size() > 1) {
-				v = pd.remove(pd.size() - 1);
+			
+			if (pd.size() > 1) {
+				Dataset x = pd.remove(pd.size() - 1);
+				if (v == null) {
+					v = x;
+				}
 			}
 			if (v != null) {
 				v.squeeze();
+				if (v.getRank() == 0) {
+					v.setShape(1);
+				}
 			}
 			int i = -1;
 			for (Dataset r : pd) {
