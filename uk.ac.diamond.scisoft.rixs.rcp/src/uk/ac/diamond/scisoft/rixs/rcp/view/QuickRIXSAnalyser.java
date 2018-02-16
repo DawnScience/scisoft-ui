@@ -192,6 +192,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private void runProcessing(boolean reset) {
 		List<LoadedFile> files = fileController.getSelectedFiles();
 		if (files.isEmpty()) {
+			plottingSystem.clear();
 			return;
 		}
 
