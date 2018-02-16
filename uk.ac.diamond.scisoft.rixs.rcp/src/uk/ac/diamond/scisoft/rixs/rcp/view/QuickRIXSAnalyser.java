@@ -12,7 +12,9 @@ package uk.ac.diamond.scisoft.rixs.rcp.view;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +53,7 @@ import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.ILazyDataset;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
 import org.eclipse.swt.layout.FillLayout;
@@ -67,6 +70,8 @@ import uk.ac.diamond.scisoft.rixs.rcp.QuickRIXSPerspective;
  * Part to configure reduction and plot result
  */
 public class QuickRIXSAnalyser implements PropertyChangeListener {
+
+	private static final int MAX_THREADS = 3; // limited to reduce memory usage
 
 	@Inject IPlottingService plottingService;
 
@@ -85,11 +90,13 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private ElasticLineReductionModel elModel;
 
 	private List<ProcessFileJob> jobs;
+	private Map<String, ProcessFileJob> cachedJobs;
 
+	private static final String ZERO = "0";
 	private enum PlotOption {
-		Spectrum(ElasticLineReduction.ES_PREFIX + "0"),
-		SpectrumWithFit(ElasticLineReduction.ESF_PREFIX + "0"),
-		FWHM(ElasticLineReduction.ESFWHM_PREFIX + "0");
+		Spectrum(ElasticLineReduction.ES_PREFIX + ZERO),
+		SpectrumWithFit(ElasticLineReduction.ESF_PREFIX + ZERO),
+		FWHM(ElasticLineReduction.ESFWHM_PREFIX + ZERO);
 
 		private final String dName;
 		PlotOption(String dataName) {
@@ -119,9 +126,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private PlotModel plotModel;
 
+	private int maxThreads;
+
 	public QuickRIXSAnalyser() {
 		jobs = new ArrayList<>();
 		plotModel = new PlotModel();
+		maxThreads = Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), MAX_THREADS);
+		System.err.println("Number of threads: " + maxThreads);
+		cachedJobs = new HashMap<>();
 	}
 
 	@PostConstruct
@@ -131,7 +143,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			@Override
 			public void stateChanged(FileControllerStateEvent event) {
 				if (!event.isSelectedDataChanged() && !event.isSelectedFileChanged()) return;
-				runProcessing();
+				runProcessing(event.isSelectedDataChanged());
 			}
 
 		};
@@ -173,48 +185,82 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	@Override
-	public void propertyChange(PropertyChangeEvent evt) {
-		runProcessing();
+	public void propertyChange(PropertyChangeEvent event) {
+		runProcessing(false);
 	}
 
-	private void runProcessing() {
+	private void runProcessing(boolean reset) {
 		List<LoadedFile> files = fileController.getSelectedFiles();
 		if (files.isEmpty()) {
 			return;
 		}
 
-		final JobGroup jg = new JobGroup("QR jobs", Math.max(1, Runtime.getRuntime().availableProcessors() - 1), files.size());
+		do {
+			dispatchJobs(files, reset);
+		} while (retry);
+
+	}
+
+	boolean retry = false;
+	private void dispatchJobs(List<LoadedFile> files, final boolean reset) {
+		final JobGroup jg = new JobGroup("QR jobs", maxThreads, files.size());
 		jobs.clear();
 		for (LoadedFile f : files) {
-			ProcessFileJob j = new ProcessFileJob("QR per file: " + f.getName(), f);
+			String path = f.getFilePath();
+			ProcessFileJob j = cachedJobs.get(path);
+			if (j == null || j.getSumData() == null) {
+				j = new ProcessFileJob("QR per file: " + f.getName(), f);
+				j.setJobGroup(jg);
+				j.setPriority(Job.LONG);
+				j.schedule();
+				cachedJobs.put(path, j);
+			}
 			jobs.add(j);
-			j.setJobGroup(jg);
-			j.setPriority(Job.LONG);
-			j.schedule();
 		}
+		retry = false;
 		Thread t = new Thread(() -> {
 			try {
 				jg.join(0, null);
 				
-				plotResults(false);
+				for (ProcessFileJob j : jobs) {
+					if (j.getResult().getCode() == IStatus.WARNING || j.getSumData() == null) {
+						retry = true;
+						return;
+					}
+				}
+				plotResults(reset);
 			} catch (OperationCanceledException | InterruptedException e) {
 			}
 		});
 		t.start();
+		if (retry) {
+			Runtime.getRuntime().gc();
+		}
 	}
 
 	private void plotResults(boolean reset) {
+		if (jobs.isEmpty()) {
+			return;
+		}
 		Map<String, Dataset> plots = createPlotData(plotModel.getPlotOption());
+		if (plots.isEmpty()) {
+			return;
+		}
 
 		if (reset) {
 			plottingSystem.reset();
 		} else if (!plottingSystem.getTraces().isEmpty()) {
 			plottingSystem.clear();
+		} else {
+			reset = true;
 		}
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
 			Dataset x = MetadataUtils.getAxesAndMakeMissing(r)[0];
 
+			if (x.peakToPeak(true).doubleValue() <= Double.MIN_NORMAL) {
+				x = DatasetFactory.createRange(IntegerDataset.class, r.getSize());
+			}
 			ILineTrace l = plottingSystem.createLineTrace(n);
 			plottingSystem.addTrace(l);
 			l.setData(x, r);
@@ -222,7 +268,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		if (reset) {
 			plottingSystem.autoscaleAxes();
 		} else {
-			plottingSystem.repaint();
+			plottingSystem.repaint(false);
 		}
 	}
 
@@ -270,9 +316,11 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		}
 
-		Dataset r = DatasetFactory.createFromList(y);
-		MetadataUtils.setAxes(r, DatasetFactory.createFromList(x));
-		plots.put(plotName, r);
+		if (!y.isEmpty()) {
+			Dataset r = DatasetFactory.createFromList(y);
+			MetadataUtils.setAxes(r, DatasetFactory.createFromList(x));
+			plots.put(plotName, r);
+		}
 	}
 
 	private Dataset get0DPlotData(Serializable[] data, String name) {
@@ -342,8 +390,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private class ProcessFileJob extends Job {
 		private LoadedFile file;
-		private Serializable[] auxData;
-		private Serializable[] sumData;
+//		private Serializable[] auxData;
+		private SoftReference<Serializable[]> sumData;
 
 		public ProcessFileJob(String name, LoadedFile file) {
 			super(name);
@@ -354,12 +402,15 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			return file;
 		}
 
-		public Serializable[] getAuxData() {
-			return auxData;
-		}
+//		public Serializable[] getAuxData() {
+//			return auxData;
+//		}
 
+		/**
+		 * @return may return null if pushed out by memory pressure
+		 */
 		public Serializable[] getSumData() {
-			return sumData;
+			return sumData == null ? null : sumData.get();
 		}
 
 		@Override
@@ -395,6 +446,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 						processImage(bop, eop, image, si);
 					} catch (DatasetException e) {
 						break;
+					} catch (OutOfMemoryError e) {
+						sumData = null;
+						return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "Out of memory");
 					}
 				}
 			}
@@ -405,8 +459,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			Dataset i = DatasetUtils.convertToDataset(bop.process(image, null).getData()).squeeze();
 			OperationData od = eop.process(i, null);
 			if (si.isLastSlice()) {
-				auxData = od.getAuxData();
-				sumData = od.getSummaryData();
+//				auxData = od.getAuxData();
+				sumData = new SoftReference<Serializable[]> (od.getSummaryData());
 			}
 		}
 	}
