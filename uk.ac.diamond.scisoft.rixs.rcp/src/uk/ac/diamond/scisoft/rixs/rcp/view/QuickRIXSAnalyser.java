@@ -46,6 +46,7 @@ import org.eclipse.dawnsci.analysis.dataset.slicer.SourceInformation;
 import org.eclipse.dawnsci.plotting.api.IPlottingService;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
+import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.BroadcastIterator;
 import org.eclipse.january.dataset.BroadcastPairIterator;
@@ -286,6 +287,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				xName = x.getName();
 			}
 			ILineTrace l = plottingSystem.createLineTrace(n);
+			if (r.getSize() == 1) {
+				l.setPointStyle(PointStyle.XCROSS);
+			}
 			plottingSystem.addTrace(l);
 			l.setData(x, r);
 		}
