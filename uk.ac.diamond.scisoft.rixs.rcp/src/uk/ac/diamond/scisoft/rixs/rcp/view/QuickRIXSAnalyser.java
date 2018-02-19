@@ -23,7 +23,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.dawnsci.datavis.model.DataOptions;
-import org.dawnsci.datavis.model.FileController;
 import org.dawnsci.datavis.model.FileControllerStateEvent;
 import org.dawnsci.datavis.model.FileControllerStateEventListener;
 import org.dawnsci.datavis.model.IFileController;
@@ -158,7 +157,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 			@Override
 			public void stateChanged(FileControllerStateEvent event) {
-				if (!QuickRIXSPerspective.LOADED_FILE_ID.equals(((FileController) fileController).getCurrentId())) {
+				if (!QuickRIXSPerspective.LOADED_FILE_ID.equals(fileController.getID())) {
 					return; // ignore other sources of state changes
 				}
 				if (!event.isSelectedDataChanged() && !event.isSelectedFileChanged()) return;
