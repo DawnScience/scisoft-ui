@@ -14,6 +14,7 @@ import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,6 +48,7 @@ import org.eclipse.dawnsci.plotting.api.IPlottingService;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
+import org.eclipse.dawnsci.plotting.api.trace.MetadataPlotUtils;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.BroadcastIterator;
 import org.eclipse.january.dataset.BroadcastPairIterator;
@@ -58,6 +60,7 @@ import org.eclipse.january.dataset.IndexIterator;
 import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
+import org.eclipse.january.metadata.AxesMetadata;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 
@@ -142,7 +145,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	class PlotModel extends AbstractOperationModel {
-		@OperationModelField(label = "Plot option", hint = "What to plot: Spectrum, Spectrum w/ fit, FWHM, ")
+		@OperationModelField(label = "Plot option", hint = "What to plot: Spectrum, Spectrum w/ fit, FWHM, Slope, Intercept")
 		private PlotOption plotOption = PlotOption.Spectrum;
 
 		/**
@@ -532,6 +535,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				if (shape.length != 3) {
 					return new Status(IStatus.WARNING, "", "");
 				}
+				ILazyDataset[] axes = ld.getFirstMetadata(AxesMetadata.class).getAxes();
 				SubMonitor sub = SubMonitor.convert(monitor, shape[0]);
 				sub.setTaskName("Processing images in " + file.getName());
 				SliceNDIterator iter = new SliceNDIterator(new SliceND(shape), 1, 2);
@@ -544,7 +548,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					try {
 						Dataset image = DatasetUtils.convertToDataset(ld.getSlice(slice));
 						image.addMetadata(new SliceFromSeriesMetadata(sri, si));
-						processImage(bop, eop, image, si);
+						processImage(bop, eop, image, si, axes);
 					} catch (DatasetException e) {
 						break;
 					} catch (OutOfMemoryError e) {
@@ -556,7 +560,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			return Status.OK_STATUS;
 		}
 
-		private void processImage(SubtractFittedBackgroundOperation bop, ElasticLineReduction eop, Dataset image, SliceInformation si) {
+		private void processImage(SubtractFittedBackgroundOperation bop, ElasticLineReduction eop, Dataset image, SliceInformation si, ILazyDataset[] lAxes) {
 			Dataset i = DatasetUtils.convertToDataset(bop.process(image, null).getData()).squeeze();
 
 			double slope = slopeModel.getSlopeOverride();
@@ -589,27 +593,30 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					if (d.getRank() == 0) {
 						auxList.add(d.reshape(1));
 					} else {
-						auxList.add(d.reshape(1, d.getSize()));
+						auxList.add(d);
 					}
 				}
 			}
 			if (si.isLastSlice()) {
 				sumData = new SoftReference<Serializable[]> (od.getSummaryData());
 
-				Dataset[] axes = null; // extract axes to decorate aux data
-				for (Serializable s : od.getSummaryData()) {
-					if (s instanceof Dataset) {
-						axes = MetadataUtils.getAxes((Dataset) s);
-						if (axes != null) {
-							break;
+				int smax = si.getTotalSlices();
+				int n = auxList.size() / smax; // number of distinct auxiliary datasets
+				aux = new Serializable[n];
+				Dataset[] ds = new Dataset[smax]; // data
+				int[] dd = si.getDataDimensions();
+				int rank = image.getRank();
+				Dataset[] axes = new Dataset[rank - dd.length]; // assume axes are the same for all auxiliary data
+				for (int r = 0, d = 0; r < rank && d < axes.length; r++) {
+					if (Arrays.binarySearch(dd, r) < 0) {
+						try {
+							Dataset ad = DatasetUtils.sliceAndConvertLazyDataset(lAxes[r]).squeeze();
+							ad.setName(MetadataPlotUtils.removeSquareBrackets(ad.getName()));
+							axes[d++] = ad;
+						} catch (DatasetException e) {
 						}
 					}
 				}
-
-				int smax = si.getTotalSlices();
-				int n = auxList.size() / smax;
-				aux = new Serializable[n];
-				Dataset[] ds = new Dataset[smax];
 				for (int j = 0; j < n; j++) {
 					String dName = null;
 					Dataset d;
@@ -622,15 +629,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					}
 					d = DatasetUtils.concatenate(ds, 0);
 					d.setName(dName);
-
-					if (axes != null) { // ensure shapes match
-						int r = d.getRank();
-						for (int k = 0; k < axes.length; k++) {
-							Dataset a = axes[k];
-							if (a != null && a.getRank() != r) {
-								axes[k] = a.reshape(d.getShapeRef());
-							}
-						}
+					if (axes != null) {
 						MetadataUtils.setAxes(d, axes);
 					}
 					aux[j] = d;
