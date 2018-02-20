@@ -66,6 +66,7 @@ import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtractio
 import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundOperation;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReduction;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReductionModel;
+import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.RixsBaseOperation;
 import uk.ac.diamond.scisoft.rixs.rcp.QuickRIXSPerspective;
 
 /**
@@ -124,6 +125,22 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
+	class SlopeOverrideModel extends AbstractOperationModel {
+		@OperationModelField(label = "Slope override", hint = "Any non-zero value is used to manually set slope")
+		private double slopeOverride = 0;
+	
+		/**
+		 * @return slope of elastic line. Non-zero values are used to override values from elastic fit files
+		 */
+		public double getSlopeOverride() {
+			return slopeOverride;
+		}
+
+		public void setSlopeOverride(double slopeOverride) {
+			firePropertyChange("setSlopeOverride", this.slopeOverride, this.slopeOverride = slopeOverride);
+		}
+	}
+
 	class PlotModel extends AbstractOperationModel {
 		@OperationModelField(label = "Plot option", hint = "What to plot: Spectrum, Spectrum w/ fit, FWHM, ")
 		private PlotOption plotOption = PlotOption.Spectrum;
@@ -138,15 +155,22 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		public void setPlotOption(PlotOption plotOption) {
 			firePropertyChange("setPlotOption", this.plotOption, this.plotOption = plotOption);
 		}
+
+		void internalSetPlotOption(PlotOption plotOption) {
+			this.plotOption = plotOption;
+		}
 	}
 
+	private SlopeOverrideModel slopeModel;
 	private PlotModel plotModel;
 
 	private int maxThreads;
 
 	public QuickRIXSAnalyser() {
 		jobs = new ArrayList<>();
+		slopeModel = new SlopeOverrideModel();
 		plotModel = new PlotModel();
+
 		maxThreads = Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), MAX_THREADS);
 		System.err.println("Number of threads: " + maxThreads);
 		cachedJobs = new HashMap<>();
@@ -171,6 +195,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		plottingSystem = plottingService.getPlottingSystem(QuickRIXSPerspective.PLOT_NAME, true);
 
 		try {
+			slopeModel.addPropertyChangeListener(this);
 			bgOp = (SubtractFittedBackgroundOperation) opService.create("uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundOperation");
 			bgModel = bgOp.getModel();
 			bgModel.addPropertyChangeListener(this);
@@ -196,6 +221,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		ModelViewer modelViewer = new ModelViewer();
 		modelViewer.createPartControl(parent);
 		modelViewer.setModelFields(new ModelField(bgModel, "ratio"),
+				new ModelField(slopeModel, "slopeOverride"),
 				new ModelField(elModel, "minPhotons"),
 				new ModelField(elModel, "delta"),
 				new ModelField(elModel, "cutoff"),
@@ -205,7 +231,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
-		runProcessing(false);
+		if (slopeModel.getSlopeOverride() != 0) {
+			plotModel.internalSetPlotOption(PlotOption.Spectrum);
+		}
+		runProcessing(false, false);
 	}
 
 	private void runProcessing(boolean reset) {
@@ -526,7 +555,30 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 		private void processImage(SubtractFittedBackgroundOperation bop, ElasticLineReduction eop, Dataset image, SliceInformation si) {
 			Dataset i = DatasetUtils.convertToDataset(bop.process(image, null).getData()).squeeze();
-			OperationData od = eop.process(i, null);
+
+			double slope = slopeModel.getSlopeOverride();
+			if (slope != 0) {
+				Dataset sp = RixsBaseOperation.sumImageAlongSlope(i.transpose(), slope);
+				auxList.add(sp.reshape(1, sp.getSize()));
+
+				if (si.isLastSlice()) {
+					int smax = auxList.size();
+					Dataset[] ds = new Dataset[smax];
+					for (int j = 0; j < smax; j++) {
+						ds[j] = auxList.get(j);
+					}
+					Serializable[] sumArray = new Serializable[1];
+					Dataset d = DatasetUtils.concatenate(ds, 0);
+					d.setName(PlotOption.Spectrum.getDataName());
+					sumArray[0] = d;
+					sumData = new SoftReference<Serializable[]> (sumArray);
+
+					auxList.clear();
+				}
+				return;
+			}
+
+			OperationData od = eop.execute(i, null);
 			Serializable[] aux = od.getAuxData(); // need to accumulate these
 			for (Serializable s : aux) {
 				if (s instanceof Dataset) {
