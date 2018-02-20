@@ -186,7 +186,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					return; // ignore other sources of state changes
 				}
 				if (!event.isSelectedDataChanged() && !event.isSelectedFileChanged()) return;
-				runProcessing(event.isSelectedDataChanged());
+				runProcessing(event.isSelectedDataChanged(), true);
 			}
 
 		};
@@ -237,7 +237,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		runProcessing(false, false);
 	}
 
-	private void runProcessing(boolean reset) {
+	private void runProcessing(boolean resetPlot, boolean useCachedResults) {
 		List<LoadedFile> files = fileController.getSelectedFiles();
 		if (files.isEmpty()) {
 			plottingSystem.clear();
@@ -245,15 +245,18 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 
 		do {
-			dispatchJobs(files, reset);
+			dispatchJobs(files, resetPlot, useCachedResults);
 		} while (retry);
 
 	}
 
 	boolean retry = false;
-	private void dispatchJobs(List<LoadedFile> files, final boolean reset) {
+	private void dispatchJobs(List<LoadedFile> files, final boolean resetPlot, final boolean useCachedResults) {
 		final JobGroup jg = new JobGroup("QR jobs", maxThreads, files.size());
 		jobs.clear();
+		if (!useCachedResults) {
+			cachedJobs.clear();
+		}
 		for (LoadedFile f : files) {
 			String path = f.getFilePath();
 			ProcessFileJob j = cachedJobs.get(path);
@@ -277,7 +280,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 						return;
 					}
 				}
-				plotResults(reset);
+				plotResults(resetPlot);
 			} catch (OperationCanceledException | InterruptedException e) {
 			}
 		});
