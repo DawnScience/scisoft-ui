@@ -228,6 +228,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(elModel, "minPhotons"),
 				new ModelField(elModel, "delta"),
 				new ModelField(elModel, "cutoff"),
+				new ModelField(elModel, "peakFittingFactor"),
 				new ModelField(plotModel, "plotOption")
 		);
 	}
