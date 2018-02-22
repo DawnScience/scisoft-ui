@@ -16,15 +16,28 @@
 
 package uk.ac.diamond.scisoft.analysis.rcp.hdf5;
 
+import java.util.Arrays;
+
+import org.eclipse.dawnsci.analysis.api.tree.DataNode;
+import org.eclipse.dawnsci.analysis.api.tree.Node;
+import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.TreeSelection;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
 public class HDF5TreeDialog extends Dialog {
@@ -42,11 +55,45 @@ public class HDF5TreeDialog extends Dialog {
 	public Control createDialogArea(Composite parent)  {
 		Composite container = (Composite) super.createDialogArea(parent);
 		container.setLayout(new FillLayout());
-
-		HDF5TableTree tt = new HDF5TableTree(container, null, null, null);
+		SashForm sash = new SashForm(container, SWT.HORIZONTAL);
+ 		HDF5TableTree tt = new HDF5TableTree(sash, null, null, null);
 		tt.setFilename(filename);
 		tt.setInput(tree.getNodeLink());
 
+		Composite c = new Composite(sash, SWT.NONE);
+		c.setLayout(new GridLayout());
+		final Text l = new Text(c, SWT.WRAP | SWT.READ_ONLY | SWT.BORDER);
+		l.setLayoutData(new GridData(GridData.FILL_BOTH));
+		
+		tt.getViewer().addSelectionChangedListener(new ISelectionChangedListener() {
+			
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection selection = event.getSelection();
+				
+				StringBuilder b = new StringBuilder(event.getSelection().toString());
+				
+				if (selection instanceof TreeSelection && ((TreeSelection)selection).getFirstElement() instanceof NodeLink) {
+					NodeLink n = (NodeLink)((TreeSelection)selection).getFirstElement();
+					Node d = n.getDestination();
+					if (d instanceof DataNode) {
+						DataNode dn = (DataNode)d;
+						b.append(System.lineSeparator());
+						b.append("Chunk Size: ");
+						b.append(dn.getChunkShape() == null ? "Not chunked" : Arrays.toString(dn.getChunkShape()));
+						b.append(System.lineSeparator());
+						b.append("Max Size: ");
+						b.append(dn.getMaxShape() == null ? "Not set" : Arrays.toString(dn.getMaxShape()));
+					}
+				}
+				
+				l.setText(b.toString());
+				
+			}
+		});
+		
+		sash.setWeights(new int[] {70,30});
+		
 		return container;
 	}
 
