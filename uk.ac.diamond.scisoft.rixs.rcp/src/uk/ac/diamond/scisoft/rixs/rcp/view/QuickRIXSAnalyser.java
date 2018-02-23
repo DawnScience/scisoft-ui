@@ -590,7 +590,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 			double slope = slopeModel.getSlopeOverride();
 			if (slope != 0) {
-				Dataset sp = RixsBaseOperation.sumImageAlongSlope(i.transpose(), -slope);
+				Dataset sp = RixsBaseOperation.sumImageAlongSlope(i.transpose(), slope);
 				auxList.add(sp.reshape(1, sp.getSize()));
 
 				if (si.isLastSlice()) {
