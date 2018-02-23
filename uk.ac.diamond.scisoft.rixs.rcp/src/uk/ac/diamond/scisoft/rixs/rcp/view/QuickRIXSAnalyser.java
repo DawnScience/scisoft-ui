@@ -128,6 +128,22 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
+	class SubtractBGModel extends AbstractOperationModel {
+		@OperationModelField(label = "Subtract background", hint = "Uncheck to leave background in image")
+		private boolean subtractBackground = true;
+
+		/**
+		 * @return true if want to subtract background
+		 */
+		public boolean isSubtractBackground() {
+			return subtractBackground;
+		}
+
+		public void setSubtractBackground(boolean subtractBackground) {
+			firePropertyChange("setSubtractBackground", this.subtractBackground, this.subtractBackground = subtractBackground);
+		}
+	}
+
 	class SlopeOverrideModel extends AbstractOperationModel {
 		@OperationModelField(label = "Slope override", hint = "Any non-zero value is used to manually set slope")
 		private double slopeOverride = 0;
@@ -164,6 +180,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
+	private SubtractBGModel subtractModel;
 	private SlopeOverrideModel slopeModel;
 	private PlotModel plotModel;
 
@@ -171,6 +188,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	public QuickRIXSAnalyser() {
 		jobs = new ArrayList<>();
+		subtractModel = new SubtractBGModel();
 		slopeModel = new SlopeOverrideModel();
 		plotModel = new PlotModel();
 
@@ -198,6 +216,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		plottingSystem = plottingService.getPlottingSystem(QuickRIXSPerspective.PLOT_NAME, true);
 
 		try {
+			subtractModel.addPropertyChangeListener(this);
 			slopeModel.addPropertyChangeListener(this);
 			bgOp = (SubtractFittedBackgroundOperation) opService.create("uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundOperation");
 			bgModel = bgOp.getModel();
@@ -223,7 +242,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		parent.setLayout(new FillLayout());
 		ModelViewer modelViewer = new ModelViewer();
 		modelViewer.createPartControl(parent);
-		modelViewer.setModelFields(new ModelField(bgModel, "ratio"),
+		modelViewer.setModelFields(
+				new ModelField(subtractModel, "subtractBackground"),
+				new ModelField(bgModel, "ratio"),
 				new ModelField(slopeModel, "slopeOverride"),
 				new ModelField(elModel, "minPhotons"),
 				new ModelField(elModel, "delta"),
@@ -525,8 +546,11 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 			if (!opts.isEmpty()) {
 				// need per-file instances as operations are not thread-safe 
-				SubtractFittedBackgroundOperation bop = new SubtractFittedBackgroundOperation();
-				bop.setModel(bgModel);
+				SubtractFittedBackgroundOperation bop = null;
+				if (subtractModel.isSubtractBackground()) {
+					bop = new SubtractFittedBackgroundOperation();
+					bop.setModel(bgModel);
+				}
 				ElasticLineReduction eop = new ElasticLineReduction();
 				eop.setModel(elModel);
 				eop.propertyChange(null); // trigger update from model
@@ -562,7 +586,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 
 		private void processImage(SubtractFittedBackgroundOperation bop, ElasticLineReduction eop, Dataset image, SliceInformation si, ILazyDataset[] lAxes) {
-			Dataset i = DatasetUtils.convertToDataset(bop.process(image, null).getData()).squeeze();
+			Dataset i = bop == null ? image.getView(true).squeeze() : DatasetUtils.convertToDataset(bop.process(image, null).getData()).squeeze();
 
 			double slope = slopeModel.getSlopeOverride();
 			if (slope != 0) {
