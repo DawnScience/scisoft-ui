@@ -244,6 +244,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		modelViewer.createPartControl(parent);
 		modelViewer.setModelFields(
 				new ModelField(subtractModel, "subtractBackground"),
+				new ModelField(bgModel, "darkImageFile"),
+				new ModelField(bgModel, "gaussianSmoothingLength"),
 				new ModelField(bgModel, "ratio"),
 				new ModelField(slopeModel, "slopeOverride"),
 				new ModelField(elModel, "minPhotons"),
