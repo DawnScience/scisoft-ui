@@ -11,6 +11,7 @@ package uk.ac.diamond.scisoft;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -212,7 +213,7 @@ public class JythonCreator implements IStartup {
 			String outputString = "";
 			try {
 				Tuple<Process, String> outTuple = new SimpleRunner().run(cmdarray, workingDir, nature, monitor);
-				outputString = IOUtils.toString(outTuple.o1.getInputStream());
+				outputString = IOUtils.toString(outTuple.o1.getInputStream(), StandardCharsets.UTF_8);
 			} catch (IOException e1) {
 				logger.error("Could not parse output from running interpreterInfo.py in Jython", e1);
 			} catch (Exception e2) {
@@ -229,8 +230,7 @@ public class JythonCreator implements IStartup {
 				ModulesManagerWithBuild.IN_TESTS = true;
 				info = InterpreterInfo.fromString(outputString, false);
 			} catch (Exception e) {
-				logger.error("InterpreterInfo.fromString(outTup.o1) has failed in pydev setup with exception");
-				logger.error("{}", e);
+				logger.error("InterpreterInfo.fromString(outTup.o1) has failed in pydev setup with exception", e);
 
 			} finally {
 				ModulesManagerWithBuild.IN_TESTS = false;
@@ -423,7 +423,7 @@ public class JythonCreator implements IStartup {
 						infos[j++] = infoMap.get(i);
 					}
 					try {
-					    man.setInfos(infos, set, monitor);
+						man.setInfos(infos, set, monitor);
 					} catch (Throwable swallowed) {
 						// Occurs with a clean workspace.
 					}
@@ -443,7 +443,7 @@ public class JythonCreator implements IStartup {
 		if (ws == null) return;
 		final String os   = System.getProperty("osgi.os");
 		if (os == null) return;
-		final String arch = System.getProperty("osgi.arch");		
+		final String arch = System.getProperty("osgi.arch");
 		if (arch == null) return;
 		
 		extraPlugins.add("org.eclipse.swt_"); // Core SWT
