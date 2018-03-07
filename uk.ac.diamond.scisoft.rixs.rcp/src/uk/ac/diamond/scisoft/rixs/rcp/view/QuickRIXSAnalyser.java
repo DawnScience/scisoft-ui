@@ -17,10 +17,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.dawnsci.datavis.model.DataOptions;
@@ -62,8 +63,19 @@ import org.eclipse.january.dataset.ShapeUtils;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
 import org.eclipse.january.metadata.AxesMetadata;
-import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.jface.viewers.ArrayContentProvider;
+import org.eclipse.jface.viewers.ComboViewer;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.LabelProvider;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 
 import uk.ac.diamond.scisoft.analysis.processing.operations.MetadataUtils;
 import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundModel;
@@ -80,15 +92,11 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private static final int MAX_THREADS = 3; // limited to reduce memory usage
 
-	@Inject IPlottingService plottingService;
-
 	@Inject IFileController fileController;
 
 	private FileControllerStateEventListener fileStateListener;
 
 	private IPlottingSystem<?> plottingSystem;
-
-	@Inject IOperationService opService;
 
 	private SubtractFittedBackgroundOperation bgOp;
 	private SubtractFittedBackgroundModel bgModel;
@@ -101,11 +109,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private static final String ZERO = "0";
 	private enum PlotOption {
+		// these are summary data
 		Spectrum(ElasticLineReduction.ES_PREFIX + ZERO, "%s"),
 		SpectrumWithFit(ElasticLineReduction.ESF_PREFIX + ZERO, "%s-fit"),
 		FWHM(ElasticLineReduction.ESFWHM_PREFIX + ZERO, "FWHM"),
-		Slope("line_0_m", "slope"),
-		Intercept("line_0_c", "intercept");
+
+		ElasticLineSlope("line_0_m", "elastic line slope"),
+		ElasticLineIntercept("line_0_c", "elastic line intercept"),
+
 
 		private final String dName;
 		private String plotFormat;
@@ -155,29 +166,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
-	class PlotModel extends AbstractOperationModel {
-		@OperationModelField(label = "Plot option", hint = "What to plot: Spectrum, Spectrum w/ fit, FWHM, Slope, Intercept")
-		private PlotOption plotOption = PlotOption.Spectrum;
-
-		/**
-		 * @return what to plot
-		 */
-		public PlotOption getPlotOption() {
-			return plotOption;
-		}
-
-		public void setPlotOption(PlotOption plotOption) {
-			firePropertyChange("setPlotOption", this.plotOption, this.plotOption = plotOption);
-		}
-
-		void internalSetPlotOption(PlotOption plotOption) {
-			this.plotOption = plotOption;
-		}
-	}
-
 	private SubtractBGModel subtractModel;
 	private SlopeOverrideModel slopeModel;
-	private PlotModel plotModel;
+	private ComboViewer plotCombo;
 
 	private int maxThreads;
 
@@ -185,15 +176,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		jobs = new ArrayList<>();
 		subtractModel = new SubtractBGModel();
 		slopeModel = new SlopeOverrideModel();
-		plotModel = new PlotModel();
 
 		maxThreads = Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), MAX_THREADS);
 		System.err.println("Number of threads: " + maxThreads);
 		cachedJobs = new HashMap<>();
 	}
 
-	@PostConstruct
-	public void createComposite(Composite parent) {
+	@Inject
+	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
 		fileStateListener  = new FileControllerStateEventListener() {
 
 			@Override
@@ -211,7 +201,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		plottingSystem = plottingService.getPlottingSystem(QuickRIXSPerspective.PLOT_NAME, true);
 
 		try {
-			subtractModel.addPropertyChangeListener(this);
+			subtractModel.addPropertyChangeListener(new PropertyChangeListener() {
+				@Override
+				public void propertyChange(PropertyChangeEvent evt) {
+					runProcessing(true, false); // reset plot as y scale can be very different 
+				}
+			});
 			slopeModel.addPropertyChangeListener(this);
 			bgOp = (SubtractFittedBackgroundOperation) opService.create("uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundOperation");
 			bgModel = bgOp.getModel();
@@ -225,16 +220,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			e.printStackTrace();
 		}
 
-		plotModel.addPropertyChangeListener(new PropertyChangeListener() {
-			
-			@Override
-			public void propertyChange(PropertyChangeEvent evt) {
-				plotResults(true);
-			}
-		});
-
 		// Create custom set of ModelFields from models
-		parent.setLayout(new FillLayout());
+		parent.setLayout(new GridLayout());
 		ModelViewer modelViewer = new ModelViewer();
 		modelViewer.createPartControl(parent);
 		modelViewer.setModelFields(
@@ -246,16 +233,57 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(elModel, "minPhotons"),
 				new ModelField(elModel, "delta"),
 				new ModelField(elModel, "cutoff"),
-				new ModelField(elModel, "peakFittingFactor"),
-				new ModelField(plotModel, "plotOption")
+				new ModelField(elModel, "peakFittingFactor")
 		);
+		modelViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+
+		Composite plotComp = new Composite(parent, SWT.NONE);
+		plotComp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		plotComp.setLayout(new GridLayout(2, false));
+
+		Label label;
+		// spacer row
+		label = new Label(plotComp, SWT.NONE);
+		label = new Label(plotComp, SWT.NONE);
+
+		label = new Label(plotComp, SWT.NONE);
+		label.setText("Plot Options:");
+		label.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+		plotCombo = new ComboViewer(plotComp, SWT.READ_ONLY | SWT.DROP_DOWN);
+		plotCombo.addSelectionChangedListener(new ISelectionChangedListener() {
+			
+			@Override
+			public void selectionChanged(SelectionChangedEvent event) {
+				ISelection s = event.getSelection();
+				if (s instanceof IStructuredSelection) {
+					plotResults((PlotOption) ((IStructuredSelection) s).getFirstElement(), true);
+				}
+			}
+		});
+		plotCombo.setContentProvider(ArrayContentProvider.getInstance());
+//		plotCombo.setContentProvider(new IContentProvider() {
+//			@Override
+//			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
+//			}
+//
+//			@Override
+//			public void dispose() {
+//			}
+//		});
+		plotCombo.getControl().setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		plotCombo.setLabelProvider(new LabelProvider() {
+			@Override
+			public String getText(Object element) {
+				if (element instanceof PlotOption) {
+					return ((PlotOption) element).name();
+				}
+				return super.getText(element);
+			}
+		});
 	}
 
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
-		if (slopeModel.getSlopeOverride() != 0) {
-			plotModel.internalSetPlotOption(PlotOption.Spectrum);
-		}
 		runProcessing(false, false);
 	}
 
@@ -295,14 +323,16 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		Thread t = new Thread(() -> {
 			try {
 				jg.join(0, null);
-				
+
 				for (ProcessFileJob j : jobs) {
 					if (j.getResult().getCode() == IStatus.WARNING || j.getData() == null) {
 						retry = true;
 						return;
 					}
 				}
-				plotResults(resetPlot);
+
+				populateCombo();
+				plotResults(PlotOption.Spectrum, resetPlot);
 			} catch (OperationCanceledException | InterruptedException e) {
 			}
 		});
@@ -312,11 +342,37 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
-	private void plotResults(boolean reset) {
+	private void populateCombo() {
+		Set<String> options = new LinkedHashSet<>();
+		for (ProcessFileJob j : jobs) {
+			if (j.getResult().isOK()) {
+				options.addAll(j.getData().keySet());
+			}
+		}
+		Set<PlotOption> ps = new LinkedHashSet<>();
+		for (PlotOption p : PlotOption.values()) {
+			String dn = p.getDataName();
+			if (options.contains(dn)) {
+				ps.add(p);
+				options.remove(dn);
+			}
+		}
+
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				plotCombo.setInput(ps);
+				plotCombo.getCombo().select(0);
+			}
+		});
+	}
+
+	private void plotResults(PlotOption o, boolean reset) {
 		if (jobs.isEmpty()) {
 			return;
 		}
-		Map<String, Dataset> plots = createPlotData(plotModel.getPlotOption());
+
+		Map<String, Dataset> plots = createPlotData(o);
 		if (plots.isEmpty()) {
 			return;
 		}
@@ -352,12 +408,13 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
+		// TODO generalize to handle all plots
 		Map<String, Dataset> plots = new LinkedHashMap<>();
 		switch (plotOption) {
-		case Intercept:
+		case ElasticLineIntercept:
 			addPointData(plots, plotOption);
 			break;
-		case Slope:
+		case ElasticLineSlope:
 			addPointData(plots, plotOption);
 			break;
 		case FWHM:
@@ -607,20 +664,17 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					addToMap(od.getSummaryData());
 				}
 
-				combineList(list, si.getTotalSlices(), axes);
+				combineListToMap(list, si.getTotalSlices(), axes);
 			}
 		}
 
 		private Map<String, Dataset> getMap() {
 			Map<String, Dataset> map;
 			if (data == null) {
-				map = new HashMap<>();
+				map = new LinkedHashMap<>();
 				data = new SoftReference<>(map);
 			}
 			map = data.get();
-			if (map != null) {
-				data = new SoftReference<>(map);
-			}
 			return map;
 		}
 
@@ -654,7 +708,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 
 		// combine datasets with common names in list and add to map
-		private void combineList(List<Dataset> list, int slices, Dataset[] axes) {
+		private void combineListToMap(List<Dataset> list, int slices, Dataset[] axes) {
 			Map<String, Dataset> map = getMap();
 			Dataset[] ds = new Dataset[slices];
 
