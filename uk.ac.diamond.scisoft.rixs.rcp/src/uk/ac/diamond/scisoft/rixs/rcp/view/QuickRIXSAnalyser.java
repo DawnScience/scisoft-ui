@@ -115,8 +115,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		FWHM(ElasticLineReduction.ESFWHM_PREFIX + ZERO, "FWHM"),
 
 		ElasticLineSlope("line_0_m", "elastic line slope"),
-		ElasticLineIntercept("line_0_c", "elastic line intercept"),
-
+		ElasticLineIntercept("line_0_c", "elastic line intercept");
 
 		private final String dName;
 		private String plotFormat;

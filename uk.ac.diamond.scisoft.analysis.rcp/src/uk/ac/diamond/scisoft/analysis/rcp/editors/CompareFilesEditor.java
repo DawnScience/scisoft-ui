@@ -41,6 +41,7 @@ import org.eclipse.january.dataset.DTypeUtils;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
+import org.eclipse.january.dataset.DoubleDataset;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IMetadataProvider;
@@ -245,7 +246,7 @@ public class CompareFilesEditor extends EditorPart implements ISelectionChangedL
 				Class edClass = Class.forName(e);
 				Method m = edClass.getMethod("getExplorerClass");
 				editorName = e;
-				expClass  = (Class) m.invoke(null);
+				expClass = (Class) m.invoke(null);
 				break;
 			} catch (Exception e1) {
 			}
@@ -1127,7 +1128,7 @@ public class CompareFilesEditor extends EditorPart implements ISelectionChangedL
 
 		// TODO this should be in job/progress service
 		if (sel instanceof MetadataSelection) {
-			final String metaValue = ((MetadataSelection) sel).getPathname();  
+			final String metaValue = ((MetadataSelection) sel).getPathname();
 			loadMetaValues(metaValue);
 			useRowIndexAsValue = false;
 			valueColumn.setText(metaValue);
@@ -1928,7 +1929,7 @@ public class CompareFilesEditor extends EditorPart implements ISelectionChangedL
 				int[] sliceShape = null;
 				while (itr.hasNext()) {
 					String varName = itr.next();
-					ILazyDataset lzd = varMapping.get(varName);	// TODO: This only works for SelectedFile objects
+					ILazyDataset lzd = varMapping.get(varName); // TODO: This only works for SelectedFile objects
 					IDataset lzdSlice;
 					try {
 						lzdSlice = lzd.getSlice(slice);
@@ -1942,7 +1943,7 @@ public class CompareFilesEditor extends EditorPart implements ISelectionChangedL
 					}
 				}
 				
-				Dataset ds = DatasetFactory.zeros(sliceShape, Dataset.FLOAT64); 
+				Dataset ds = DatasetFactory.zeros(DoubleDataset.class, sliceShape);
 				IndexIterator iter = ds.getIterator(true);
 				int[] idx = iter.getPos();
 				while (iter.hasNext()) {
@@ -2000,14 +2001,14 @@ public class CompareFilesEditor extends EditorPart implements ISelectionChangedL
 								switch (mathOp) {
 								case ADD:
 								case AVR:
-									accDataset = DatasetFactory.zeros(tmpData.getShape(), tmpData.getDType());
+									accDataset = DatasetFactory.zeros(tmpData.getClass(), tmpData.getShapeRef());
 									break;
 								case MUL:
-									accDataset = DatasetFactory.ones(tmpData.getShape(), tmpData.getDType());
+									accDataset = DatasetFactory.ones(tmpData.getClass(), tmpData.getShapeRef());
 									break;
 								case MAX:
 								case MIN:
-									accDataset = DatasetFactory.zeros(tmpData.getShape(), tmpData.getDType());
+									accDataset = DatasetFactory.zeros(tmpData.getClass(), tmpData.getShapeRef());
 									IndexIterator iter = accDataset.getIterator();
 									tmpData.fillDataset(accDataset, iter);
 									break;

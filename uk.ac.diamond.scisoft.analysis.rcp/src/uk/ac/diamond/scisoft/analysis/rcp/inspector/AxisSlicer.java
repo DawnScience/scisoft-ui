@@ -239,8 +239,9 @@ public class AxisSlicer {
 	}
 
 	private void createAxisDataset() throws DatasetException {
-		for (int i = 0; i < axisSlices.length; i++)
+		for (int i = 0; i < axisSlices.length; i++) {
 			axisSlices[i].removePropertyChangeListener(listener);
+		}
 
 		if (axisData.getRank() > 1) {
 			int[] shape = axisData.getShape();
@@ -258,11 +259,13 @@ public class AxisSlicer {
 				}
 			}
 			adata = DatasetUtils.convertToDataset(axisData.getSlice(s).squeeze());
-		} else
+		} else {
 			adata = DatasetUtils.convertToDataset(axisData.getSlice());
+		}
 
-		if (adata.getRank() == 0)
+		if (adata.getRank() == 0) {
 			adata.setShape(1);
+		}
 
 		if (adata.getSize() != length) {
 			length = adata.getSize();
