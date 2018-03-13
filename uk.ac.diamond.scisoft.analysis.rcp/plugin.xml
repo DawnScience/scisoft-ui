@@ -104,7 +104,7 @@
       <plotmode
             class="uk.ac.diamond.scisoft.analysis.rcp.plotmodes.PlotModeDataTable1D"
             name="Text Table 1D"
-            priority="0">
+            priority="4">
       </plotmode>
    </extension>
    <extension
@@ -112,7 +112,7 @@
       <plotmode
             class="uk.ac.diamond.scisoft.analysis.rcp.plotmodes.PlotModeDataTable2D"
             name="Text Table 2D"
-            priority="0">
+            priority="3">
       </plotmode>
    </extension>
 </plugin>
