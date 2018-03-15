@@ -89,6 +89,15 @@
             </not>
          </filterExpression>
       </commonFilter>
+      <commonFilter id="org.eclipse.ui.navigator.resources.filters.hideH5Files" name="%filters.hideH5Files.name" description="%filters.hideH5Files.description" activeByDefault="false">
+   <filterExpression>
+      <and>
+         <adapt type="org.eclipse.core.resources.IResource">
+            <test property="org.eclipse.core.resources.name" value="*.h5"/>
+         </adapt>
+      </and>
+   </filterExpression>
+</commonFilter>
    </extension>
   <!-- Phase 2 -->
   <!-- Declare a content extension that renders the contents of a .properties file -->
