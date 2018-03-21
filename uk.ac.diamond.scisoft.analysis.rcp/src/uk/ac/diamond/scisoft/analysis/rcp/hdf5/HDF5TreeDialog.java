@@ -29,6 +29,7 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
@@ -62,7 +63,8 @@ public class HDF5TreeDialog extends Dialog {
 
 		Composite c = new Composite(sash, SWT.NONE);
 		c.setLayout(new GridLayout());
-		final Text l = new Text(c, SWT.WRAP | SWT.READ_ONLY | SWT.BORDER);
+		final StyledText l = new StyledText(c, SWT.WRAP | SWT.READ_ONLY | SWT.BORDER | SWT.V_SCROLL);
+		l.setAlwaysShowScrollBars(false);
 		l.setLayoutData(new GridData(GridData.FILL_BOTH));
 		
 		tt.getViewer().addSelectionChangedListener(new ISelectionChangedListener() {
