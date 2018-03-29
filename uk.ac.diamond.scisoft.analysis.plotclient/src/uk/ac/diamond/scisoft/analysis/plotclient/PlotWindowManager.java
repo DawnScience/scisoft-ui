@@ -9,11 +9,6 @@
 
 package uk.ac.diamond.scisoft.analysis.plotclient;
 
-import gda.observable.IIsBeingObserved;
-import gda.observable.IObservable;
-import gda.observable.IObserver;
-import gda.observable.ObservableComponent;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtension;
 import org.eclipse.core.runtime.IExtensionPoint;
@@ -38,17 +34,18 @@ import org.eclipse.ui.PlatformUI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gda.observable.IObservable;
+import gda.observable.IObserver;
+import gda.observable.ObservableComponent;
 import uk.ac.diamond.scisoft.analysis.AnalysisRpcServerProvider;
 import uk.ac.diamond.scisoft.analysis.PlotServer;
 import uk.ac.diamond.scisoft.analysis.PlotServerProvider;
 import uk.ac.diamond.scisoft.analysis.plotclient.rpc.AnalysisRpcSyncExecDispatcher;
 import uk.ac.diamond.scisoft.analysis.plotserver.DataBean;
 import uk.ac.diamond.scisoft.analysis.plotserver.GuiBean;
-import org.apache.commons.lang.StringUtils;
 
-public class PlotWindowManager implements IPlotWindowManager, IObservable, IIsBeingObserved {
-	
-	
+public class PlotWindowManager implements IPlotWindowManager, IObservable {
+
 	static private Logger logger = LoggerFactory.getLogger(PlotWindowManager.class);
 
 	private static PlotWindowManager manager;
@@ -359,11 +356,6 @@ public class PlotWindowManager implements IPlotWindowManager, IObservable, IIsBe
 				views.add(key);
 			}
 		}
-	}
-
-	@Override
-	public boolean isBeingObserved() {
-		return observable.isBeingObserved();
 	}
 
 	@Override
