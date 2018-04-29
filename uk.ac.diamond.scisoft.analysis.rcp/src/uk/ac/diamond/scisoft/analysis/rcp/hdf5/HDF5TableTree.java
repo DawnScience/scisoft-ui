@@ -526,7 +526,7 @@ class HDF5LabelProvider implements ITableLabelProvider {
 				if (data instanceof IDataset) {
 					// show a single value
 					msg = DatasetUtils.convertToDataset((IDataset) data).getString();
-					Attribute units = dataset.getAttribute("units");
+					Attribute units = dataset.getAttribute(NexusConstants.UNITS);
 					if (units != null && units.isString()) {
 						msg += " " + units.getFirstElement();
 					}
