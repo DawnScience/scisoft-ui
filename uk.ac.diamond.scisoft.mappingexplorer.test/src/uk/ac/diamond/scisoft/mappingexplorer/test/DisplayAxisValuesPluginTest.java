@@ -113,9 +113,9 @@ public class DisplayAxisValuesPluginTest {
 	}
 
 	private File getSourceDirectory() {
-		String gdaLargeTestFilesLocation = IOTestUtils.getGDALargeTestFilesLocation();
+		String GDALargeTestFilesLocation = IOTestUtils.getGDALargeTestFilesLocation();
 
-		return new File(gdaLargeTestFilesLocation + "Hdf5HelperTest/1.nxs");
+		return new File(GDALargeTestFilesLocation + "Hdf5HelperTest/1.nxs");
 	}
 
 }
