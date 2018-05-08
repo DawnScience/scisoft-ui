@@ -14,12 +14,12 @@ import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
 import org.eclipse.ui.IViewLayout;
 
-public class QuickRIXSPerspective implements IPerspectiveFactory {
+public class PostRIXSPerspective implements IPerspectiveFactory {
 
-	public final static String ID = "uk.ac.diamond.scisoft.rixs.QRPerspective";
-	public final static String LOADED_FILE_ID = "uk.ac.diamond.scisoft.rixs.QRLoadedFilePart";
-	public final static String PLOT_ID = "uk.ac.diamond.scisoft.rixs.QRPlot";
-	public final static String PLOT_NAME = "RIXS Plot";
+	public final static String ID = "uk.ac.diamond.scisoft.rixs.PRPerspective";
+	public final static String LOADED_FILE_ID = "uk.ac.diamond.scisoft.rixs.PRLoadedFilePart";
+	public final static String PLOT_ID = "uk.ac.diamond.scisoft.rixs.PRPlot";
+	public final static String PLOT_NAME = "RIXS Aggregator Plot";
 
 	@Override
 	public void createInitialLayout(IPageLayout layout) {
@@ -35,7 +35,7 @@ public class QuickRIXSPerspective implements IPerspectiveFactory {
 		vLayout.setCloseable(false);
 
 		folderLayout = layout.createFolder("folder_2", IPageLayout.RIGHT, 0.4f, IPageLayout.ID_EDITOR_AREA);
-		String analyser = "uk.ac.diamond.scisoft.rixs.QRAnalyser";
+		String analyser = "uk.ac.diamond.scisoft.rixs.PRAggregator";
 		folderLayout.addView(analyser);
 		vLayout = layout.getViewLayout(analyser);
 		vLayout.setCloseable(false);
