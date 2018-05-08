@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
 import org.dawnsci.datavis.model.DataOptions;
@@ -181,9 +183,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		cachedJobs = new HashMap<>();
 	}
 
-	@Inject
+	@PostConstruct
 	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
-		fileStateListener  = new FileControllerStateEventListener() {
+		fileStateListener = new FileControllerStateEventListener() {
 
 			@Override
 			public void stateChanged(FileControllerStateEvent event) {
@@ -203,7 +205,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			subtractModel.addPropertyChangeListener(new PropertyChangeListener() {
 				@Override
 				public void propertyChange(PropertyChangeEvent evt) {
-					runProcessing(true, false); // reset plot as y scale can be very different 
+					runProcessing(true, false); // reset plot as y scale can be very different
 				}
 			});
 			slopeModel.addPropertyChangeListener(this);
@@ -260,15 +262,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		});
 		plotCombo.setContentProvider(ArrayContentProvider.getInstance());
-//		plotCombo.setContentProvider(new IContentProvider() {
-//			@Override
-//			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-//			}
-//
-//			@Override
-//			public void dispose() {
-//			}
-//		});
 		plotCombo.getControl().setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		plotCombo.setLabelProvider(new LabelProvider() {
 			@Override
@@ -279,6 +272,11 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				return super.getText(element);
 			}
 		});
+	}
+
+	@PreDestroy
+	public void preDestroy() {
+		fileController.removeStateListener(fileStateListener);
 	}
 
 	@Override
@@ -738,8 +736,4 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		}
 	}
-
-	// post-process:
-	//  fitting to peaks in selected region and plot FWHM
-	//  align peaks or turning points in selected region
 }
