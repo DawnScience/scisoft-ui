@@ -242,14 +242,23 @@ public class PostRIXSAggregator {
 	private Map<String, Dataset> createPlotData(List<LoadedFile> files) {
 		Map<String, Dataset> plots = new LinkedHashMap<>();
 
-		if (currentProcess != null) {
-			List<String> selected = currentSelection.stream()
-					.filter(n -> n.isSelected())
-					.map(n -> currentProcess + Node.SEPARATOR + n.getName())
+		List<NameSelect> selection = currentSelection.stream()
+				.filter(n -> n.isSelected()).collect(Collectors.toList());
+
+		if (selection.size() > 0 && currentProcess != null) {
+			List<String> selected;
+			int b;
+			if (RESULT.equals(currentProcess)) {
+				b = -1;
+				selected = new ArrayList<>();
+				selected.add(RESULT_NAME);
+			} else {
+				b = currentProcess.length() + 1;
+				selected = selection.stream().map(n -> currentProcess + Node.SEPARATOR + n.getName())
 					.collect(Collectors.toList());
+			}
 
 			List<ILazyDataset> lp = new ArrayList<>();
-			int b = currentProcess.length() + 1;
 			for (LoadedFile f : files) {
 				LabelValueMetadata lv = f.getLabelValue() == null ? null : new LabelValueMetadata(f.getLabelValue());
 				String fn = files.size() > 1 ? f.getName() : null;
@@ -258,7 +267,8 @@ public class PostRIXSAggregator {
 					for (String s : selected) {
 						if (n.contains(s)) {
 							ILazyDataset l = dop.getLazyDataset().getSliceView();
-							l.setName(fn == null ? s.substring(b) : fn + ":" + s.substring(b));
+							String suffix = b >= 0 ? s.substring(b) : RESULT;
+							l.setName(fn == null ? suffix : fn + ":" + suffix);
 							if (lv != null) {
 								l.addMetadata(lv);
 							}
@@ -328,6 +338,8 @@ public class PostRIXSAggregator {
 	// capture /entry/(auxiliary|summary)/%d-PROCESS_NAME/DATA_NAME
 	static final Pattern PROCESS_REGEX = Pattern.compile("/[^/]+/[^/]+/\\d+-([^/]+)/(.+)");
 	static final String DATA = "/data";
+	static final String RESULT = "result";
+	static final String RESULT_NAME = "/entry/" + RESULT + DATA;
 
 	private void updateGUI() {
 		List<LoadedFile> files = fileController.getSelectedFiles();
@@ -351,6 +363,8 @@ public class PostRIXSAggregator {
 						processData.put(p, s);
 					}
 					s.add(d);
+				} else if (n.equals(RESULT_NAME)) {
+					processData.put(RESULT, null);
 				} else {
 					logger.debug("Ignoring {}", n);
 				}
@@ -389,7 +403,7 @@ public class PostRIXSAggregator {
 		}
 
 		currentSelection.clear();
-		Set<String> old = process == null || !oldSelections.containsKey(process )? Collections.emptySet() : oldSelections.get(process);
+		Set<String> old = process == null || !oldSelections.containsKey(process)? Collections.emptySet() : oldSelections.get(process);
 		currentProcess = process;
 
 		Set<String> names = process == null ? null : processData.get(process);
@@ -399,7 +413,12 @@ public class PostRIXSAggregator {
 				ns.setSelected(old.contains(n)); // preselect from old selection
 				currentSelection.add(ns);
 			}
+		} else if (RESULT.equals(process)) {
+			NameSelect ns = new NameSelect(RESULT);
+			ns.setSelected(old.contains(RESULT));
+			currentSelection.add(ns);
 		}
+
 		Display.getDefault().asyncExec(new Runnable() {
 			@Override
 			public void run() {
