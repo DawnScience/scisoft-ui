@@ -32,18 +32,32 @@ import org.dawnsci.datavis.model.FileControllerStateEventListener;
 import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LabelValueMetadata;
 import org.dawnsci.datavis.model.LoadedFile;
+import org.eclipse.dawnsci.analysis.api.fitting.functions.IParameter;
 import org.eclipse.dawnsci.analysis.api.processing.IOperationService;
+import org.eclipse.dawnsci.analysis.api.roi.IRectangularROI;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.plotting.api.IPlottingService;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
+import org.eclipse.dawnsci.plotting.api.axis.IAxis;
+import org.eclipse.dawnsci.plotting.api.region.IROIListener;
+import org.eclipse.dawnsci.plotting.api.region.IRegion;
+import org.eclipse.dawnsci.plotting.api.region.IRegion.RegionType;
+import org.eclipse.dawnsci.plotting.api.region.IRegionListener;
+import org.eclipse.dawnsci.plotting.api.region.ROIEvent;
+import org.eclipse.dawnsci.plotting.api.region.RegionEvent;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
 import org.eclipse.january.DatasetException;
+import org.eclipse.january.dataset.Comparisons;
+import org.eclipse.january.dataset.Comparisons.Monotonicity;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
+import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IntegerDataset;
+import org.eclipse.january.dataset.Maths;
+import org.eclipse.january.dataset.Slice;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -59,9 +73,12 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -69,6 +86,9 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.diamond.scisoft.analysis.fitting.functions.DiffGaussian;
+import uk.ac.diamond.scisoft.analysis.optimize.ApacheOptimizer;
+import uk.ac.diamond.scisoft.analysis.optimize.ApacheOptimizer.Optimizer;
 import uk.ac.diamond.scisoft.analysis.processing.operations.MetadataUtils;
 import uk.ac.diamond.scisoft.rixs.rcp.PostRIXSPerspective;
 
@@ -104,6 +124,11 @@ public class PostRIXSAggregator {
 	private List<NameSelect> currentSelection = new ArrayList<>();
 	private String currentProcess;
 
+	private Map<String, Dataset> originalX = new HashMap<>();
+
+	private Button resetButton;
+	private IRectangularROI currentROI = null;
+
 	@PostConstruct
 	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
 		fileStateListener = new FileControllerStateEventListener() {
@@ -116,13 +141,43 @@ public class PostRIXSAggregator {
 				if (!event.isSelectedDataChanged() && !event.isSelectedFileChanged()) return;
 
 				updateGUI();
-				plotSelected(true);
+				plotSelected(false);
 			}
-
 		};
 	
 		fileController.addStateListener(fileStateListener);
 		plottingSystem = plottingService.getPlottingSystem(PostRIXSPerspective.PLOT_NAME, true);
+		plottingSystem.addRegionListener(new IRegionListener() {
+			
+			@Override
+			public void regionsRemoved(RegionEvent evt) {
+				clearOriginalX();
+			}
+
+			@Override
+			public void regionRemoved(RegionEvent evt) {
+				IRegion r = evt.getRegion();
+				if (r != null && ALIGN_REGION.equals(r.getName())) {
+					clearOriginalX();
+				}
+			}
+
+			@Override
+			public void regionNameChanged(RegionEvent evt, String oldName) {
+			}
+			
+			@Override
+			public void regionCreated(RegionEvent evt) {
+			}
+			
+			@Override
+			public void regionCancelled(RegionEvent evt) {
+			}
+			
+			@Override
+			public void regionAdded(RegionEvent evt) {
+			}
+		});
 
 		// Create GUI
 		parent.setLayout(new GridLayout());
@@ -187,6 +242,304 @@ public class PostRIXSAggregator {
 		name.getColumn().setWidth(200);
 
 		dataTable.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+
+		// align
+		Button b = new Button(plotComp, SWT.PUSH);
+		b.setText("Align");
+		b.setToolTipText("Align spectra using leftmost leading slope in selected region");
+		b.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				selectRegion();
+			}
+		});
+		b.setLayoutData(new GridData());
+
+		resetButton = b = new Button(plotComp, SWT.PUSH);
+		b.setText("Reset");
+		b.setToolTipText("Use original spectra");
+		b.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				plotOriginal();
+			}
+		});
+		b.setLayoutData(new GridData());
+		b.setEnabled(false);
+	}
+
+	private void clearOriginalX() {
+		originalX.clear();
+		updateResetButton();
+	}
+
+	private void updateResetButton() {
+		if (resetButton.getEnabled() == originalX.isEmpty()) {
+			Display.getDefault().asyncExec(() -> resetButton.setEnabled(!originalX.isEmpty()));
+		}
+	}
+
+	private static final String ALIGN_REGION = "Align region";
+	
+	private void selectRegion() {
+		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
+		if (r != null && r.getRegionType() != RegionType.XAXIS) {
+			plottingSystem.renameRegion(r, "Not " + ALIGN_REGION);
+			r = null;
+		}
+		if (r == null) {
+			r = createRegion();
+		} else {
+			if (!r.isActive()) {
+				r.setActive(true);
+			}
+			if (!r.isVisible()) {
+				r.setVisible(true);
+			}
+
+			double[] xs = getLimits();
+			if (xs != null) {
+				if (!ensureRegionOK(r, xs)) {
+					return;
+				}
+
+				alignPlots(xs[0], xs[1]);
+			}
+		}
+	}
+
+	private IRegion createRegion() {
+		IRegion r = null;
+		try {
+			r = plottingSystem.createRegion(ALIGN_REGION, RegionType.XAXIS);
+			r.addROIListener(new IROIListener() {
+
+				@Override
+				public void roiSelected(ROIEvent evt) {
+				}
+
+				@Override
+				public void roiDragged(ROIEvent evt) {
+				}
+
+				@Override
+				public void roiChanged(ROIEvent evt) {
+					currentROI = (IRectangularROI) evt.getROI();
+					double[] xs = getLimits();
+					if (xs != null) {
+						alignPlots(xs[0], xs[1]);
+					}
+				}
+			});
+		} catch (Exception e) {
+			logger.error("Could not create alignment region", e);
+		}
+		return r;
+	}
+
+	private boolean ensureRegionOK(IRegion r, double[] xs) {
+		IAxis axis = plottingSystem.getSelectedXAxis();
+		double l = axis.getLower();
+		double u = axis.getUpper();
+		if (xs[0] > u || xs[1] < l) {
+			currentROI.setPoint(0.5 * (l + u), currentROI.getPointY());
+			r.setROI(currentROI);
+			return false;
+		}
+		return true;
+	}
+	
+	private double[] getLimits() {
+		if (currentROI == null) {
+			return null;
+		}
+		double lx = currentROI.getPointX();
+		double dx = currentROI.getLength(0);
+		double hx;
+		if (dx < 0) {
+			hx = lx;
+			lx -= dx;
+		} else if (dx > 0) {
+			hx = lx + dx;
+		} else {
+			return null;
+		}
+		return new double[] {lx, hx};
+	}
+
+	private void alignPlots(double lx, double hx) {
+		List<Double> shifts = new ArrayList<>();
+
+		logger.debug("Region bounds are {}, {}", lx, hx);
+		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
+
+		for (ILineTrace t : traces) {
+			String n = t.getName();
+			Dataset x = originalX.get(n);
+			if (x == null) {
+				x = DatasetUtils.convertToDataset(t.getXData());
+				originalX.put(n, x);
+				updateResetButton();
+			}
+			Dataset y = DatasetUtils.convertToDataset(t.getYData());
+
+			Monotonicity m = Comparisons.findMonotonicity(x);
+			Slice cs = findCroppingSlice(m, x, y, lx, hx);
+			if (cs == null) {
+				logger.warn("Trace {} ignored as it is not strictly monotonic", t.getName());
+				shifts.add(null);
+				continue;
+			}
+
+			logger.debug("Cropping to {}", cs);
+			Dataset cy = y.getSliceView(cs);
+
+			// look for 1st peak in derivative
+			Dataset dy = Maths.difference(cy, 1, 0);
+			int pos = dy.argMax(true);
+			
+			// fit to derivative of Gaussian???
+			double c = fitDiffGaussian(dy, cy.max(true).doubleValue()/5., pos);
+			shifts.add(cs.getStart() + c);
+		}
+
+		logger.debug("Shifts are {}", shifts);
+
+		int i = 0;
+		int imax = traces.size();
+		double firstShift = Double.NaN;
+		for (; i < imax; i++) {
+			Double s = shifts.get(i);
+			if (s != null && Double.isFinite(s)) {
+				firstShift = s;
+				break;
+			}
+		}
+		if (Double.isFinite(firstShift)) {
+			ILineTrace t = traces.get(i);
+			Dataset x = originalX.get(t.getName());
+			firstShift = Maths.interpolate(x, firstShift);
+			logger.debug("First shift is {}", firstShift);
+
+			for (i++; i < imax; i++) {
+				Double s = shifts.get(i);
+				if (s != null && Double.isFinite(s)) {
+					t = traces.get(i);
+					x = originalX.get(t.getName());
+					s = Maths.interpolate(x, s);
+					double delta = s - firstShift;
+					logger.debug("Shifting {} by {}", t.getName(), delta);
+					Dataset nx = Maths.subtract(x, delta);
+
+					t.setData(nx, t.getYData());
+				}
+			}
+			plottingSystem.repaint(false);
+		}
+	}
+
+	private static Slice findCroppingSlice(Monotonicity m, Dataset x, Dataset y, double lx, double hx) {
+		int l = Math.min(x.getSize(), y.getSize());
+		if (m == Monotonicity.STRICTLY_DECREASING) {
+			Slice s = new Slice(l - 1, null, -1);
+			x = x.getSliceView(s);
+		} else if (m != Monotonicity.STRICTLY_INCREASING) {
+			return null;
+		}
+
+		// slice plot according to x interval
+		// it may happen that trace starts (or ends in chosen range)
+		int li = 0;
+		if (lx > x.getDouble(li)) {
+			List<Double> c = DatasetUtils.crossings(x, lx);
+			if (c.size() > 0) {
+				li = (int) Math.ceil(c.get(0));
+			}
+		}
+
+		int hi = l - 1;
+		if (hx < x.getDouble(hi)) {
+			List<Double> c = DatasetUtils.crossings(x, hx);
+			if (c.size() > 0) {
+				hi = (int) Math.floor(c.get(0));
+			}
+		}
+		assert hi > li;
+
+		return m == Monotonicity.STRICTLY_INCREASING ? new Slice(li, hi) : new Slice(l - 1 - hi, l - 1 - li);
+	}
+
+	private static DiffGaussian dg = new DiffGaussian();
+
+	private static double fitDiffGaussian(Dataset dy, double peak, int pos) {
+		double hpy = 0.5 * dy.getDouble(pos);
+		boolean neg = hpy < 0;
+		int max = dy.getSize();
+
+		int hwhm;
+		int beg, end;
+		if (neg) {
+			int pw = pos + 1;
+			// find range to fit from peak to half-peak distance
+			while (dy.getDouble(pw) < hpy && ++pw < max) {
+			}
+			if (pw >= max) {
+				logger.warn("Could not find closest mid-height point");
+				return Double.NaN;
+			}
+			hwhm = Math.max(2, pw - pos);
+			// work out where zero crossing ends
+			beg = pos - 1;
+			while (dy.getDouble(beg) <= 0 && --beg >= 0) {
+			}
+			beg++;
+			end = Math.min(max, pos + 4*hwhm);
+		} else {
+			int pw = pos - 1;
+			while (dy.getDouble(pw) > hpy && --pw >= 0) {
+			}
+			if (pw < 0) {
+				logger.warn("Could not find closest mid-height point");
+				return Double.NaN;
+			}
+			hwhm = Math.max(2, pos - pw);
+			beg = Math.max(0, pos - 4*hwhm);
+			end = pos + 1;
+			while (dy.getDouble(end) >= 0 && ++end < max) {
+			}
+		}
+		Dataset cdy = dy.getSliceView(new Slice(beg, end));
+		logger.info("Using hw of {} in {}:{}", hwhm, beg, end);
+		logger.info(cdy.toString(true));
+		Dataset cdx = DatasetFactory.createRange(beg, end, 1.0);
+
+		IParameter p = dg.getParameter(0);
+		double cen = neg ? beg : end;
+		dg.setParameterValues(cen - 0.5, peak, 1e-1/hwhm);
+		p.setLimits(cen - 1, cen);
+		ApacheOptimizer opt = new ApacheOptimizer(Optimizer.SIMPLEX_NM);
+		double residual = Double.POSITIVE_INFINITY;
+		double[] errors = null;
+		try {
+			opt.optimize(new IDataset[] {cdx}, cdy, dg);
+			residual = opt.calculateResidual();
+			logger.info("Residual is {}", residual);
+			errors = opt.guessParametersErrors();
+		} catch (Exception e) {
+			return Double.NaN;
+		}
+
+		return dg.getParameterValue(0);
+	}
+
+	private void plotOriginal() {
+		for (ILineTrace t : plottingSystem.getTracesByClass(ILineTrace.class)) {
+			Dataset x = originalX.get(t.getName());
+			if (x != null) {
+				t.setData(x, t.getYData());
+			}
+		}
+		plottingSystem.repaint(false);
 	}
 
 	@PreDestroy
@@ -215,10 +568,15 @@ public class PostRIXSAggregator {
 		} else {
 			reset = true;
 		}
+		clearOriginalX();
 
 		String xName = null;
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
+			if (r.getSize() == 1) {
+				logger.debug("Not plotting single value: {}", n);
+				continue; // TODO SCI-7345 add single point plots...
+			}
 			Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(r);
 			Dataset x = axes.length > 0 ? axes[0] : null;
 
@@ -229,14 +587,26 @@ public class PostRIXSAggregator {
 				xName = x.getName();
 			}
 			ILineTrace l = plottingSystem.createLineTrace(n);
+			l.setData(x, r);
 			if (r.getSize() == 1) {
 				l.setPointStyle(PointStyle.XCROSS);
 			}
 			plottingSystem.addTrace(l);
-			l.setData(x, r);
 		}
 		plottingSystem.getSelectedXAxis().setTitle(xName);
 		plottingSystem.repaint(reset);
+		if (currentROI != null) {
+			IRegion r = plottingSystem.getRegion(ALIGN_REGION);
+			if (r == null) {
+				r = createRegion();
+				plottingSystem.addRegion(r);
+			}
+			if (r != null) {
+				if (ensureRegionOK(r, getLimits()) && r.getROI() != currentROI) {
+					r.setROI(currentROI);
+				}
+			}
+		}
 	}
 
 	private Map<String, Dataset> createPlotData(List<LoadedFile> files) {
@@ -284,7 +654,6 @@ public class PostRIXSAggregator {
 //					.map(o -> o.getLazyDataset())
 //					.collect(Collectors.toList());
 
-			System.err.println("Plotting:");
 			for (ILazyDataset l : lp) {
 				addPlotData(plots, l);
 			}
@@ -323,14 +692,12 @@ public class PostRIXSAggregator {
 				SliceND s = it.getCurrentSlice();
 				while (it.hasNext()) {
 					pd.add(DatasetUtils.convertToDataset(lz.getSlice(s)).squeeze());
-					lz = l.getSliceView().squeezeEnds(); // workaround January #302 bug TODO remove when 2.2 is released
 				}
 			} else {
 				pd.add(DatasetUtils.sliceAndConvertLazyDataset(lz));
 			}
 		} catch (DatasetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn("Could not create 1D plot data", e);
 		}
 		return pd;
 	}
@@ -348,41 +715,57 @@ public class PostRIXSAggregator {
 			logger.debug(f.getFilePath());
 			List<DataOptions> opts = f.getDataOptions(true);
 			for (DataOptions o : opts) {
-				String n = o.getName();
-				Matcher m = PROCESS_REGEX.matcher(n);
-				if (m.matches()) {
-					String p = m.group(1);
-					String d = m.group(2);
-					if (d.endsWith(DATA)) {
-						d = d.substring(0, d.length() - DATA.length());
-					}
-					logger.debug("\t{} : {}", p, d);
-					Set<String> s = processData.get(p);
-					if (s == null) {
-						s = new LinkedHashSet<>();
-						processData.put(p, s);
-					}
-					s.add(d);
-				} else if (n.equals(RESULT_NAME)) {
-					processData.put(RESULT, null);
-				} else {
-					logger.debug("Ignoring {}", n);
+				filterProcessDataByName(o.getName());
+			}
+			for (String n : f.getLabelOptions()) {
+				if (f.isSignal(n)) {
+					filterProcessDataByName(n);
 				}
 			}
 		}
 
 		// parse for processes
 		List<String> ps =  new ArrayList<>(processData.keySet());
-		final int last = ps.size() - 1;
+		int previous = ps.indexOf(currentProcess);
+		if (previous < 0 && !ps.isEmpty()) {
+			previous = ps.size() - 1;
+			if (RESULT.equals(ps.get(previous)) && previous > 0) { // do not choose RESULT
+				previous--;
+			}
+		}
+		final int choice = previous;
 		Display.getDefault().asyncExec(new Runnable() {
 			@Override
 			public void run() { // update combo and select last process
 				processCombo.setInput(ps);
-				processCombo.getCombo().select(last);
+				processCombo.getCombo().select(choice);
 			}
 		});
 
-		updateTable(last >= 0 ? ps.get(last) : null);
+		updateTable(choice >= 0 ? ps.get(choice) : null);
+	}
+
+	private void filterProcessDataByName(String n) {
+		Matcher m = PROCESS_REGEX.matcher(n);
+		if (m.matches()) {
+			String p = m.group(1);
+			String d = m.group(2);
+			if (d.endsWith(DATA)) {
+				d = d.substring(0, d.length() - DATA.length());
+			}
+			logger.debug("\t{} : {}", p, d);
+			Set<String> s = processData.get(p);
+			if (s == null) {
+				s = new LinkedHashSet<>();
+				processData.put(p, s);
+			}
+			s.add(d);
+		} else if (n.equals(RESULT_NAME)) {
+			logger.debug("\t{}", n);
+			processData.put(RESULT, null);
+		} else {
+			logger.debug("\tIgnoring {}", n);
+		}
 	}
 
 	private void updateTable(String process) {
@@ -446,7 +829,6 @@ public class PostRIXSAggregator {
 
 		public void setSelected(boolean selected) {
 			this.selected = selected;
-			plotSelected(false);
 		}
 	}
 
@@ -480,6 +862,7 @@ public class PostRIXSAggregator {
 		protected void setValue(Object element, Object value) {
 			if (element instanceof NameSelect && value instanceof Boolean) {
 				((NameSelect) element).setSelected((Boolean) value);
+				plotSelected(false);
 				getViewer().update(element, null);
 			}
 		}
