@@ -32,7 +32,6 @@ import org.dawnsci.datavis.model.FileControllerStateEventListener;
 import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LabelValueMetadata;
 import org.dawnsci.datavis.model.LoadedFile;
-import org.eclipse.dawnsci.analysis.api.fitting.functions.IParameter;
 import org.eclipse.dawnsci.analysis.api.processing.IOperationService;
 import org.eclipse.dawnsci.analysis.api.roi.IRectangularROI;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
@@ -48,16 +47,12 @@ import org.eclipse.dawnsci.plotting.api.region.RegionEvent;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
 import org.eclipse.january.DatasetException;
-import org.eclipse.january.dataset.Comparisons;
-import org.eclipse.january.dataset.Comparisons.Monotonicity;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IntegerDataset;
-import org.eclipse.january.dataset.Maths;
-import org.eclipse.january.dataset.Slice;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -76,8 +71,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -86,9 +83,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.diamond.scisoft.analysis.fitting.functions.DiffGaussian;
-import uk.ac.diamond.scisoft.analysis.optimize.ApacheOptimizer;
-import uk.ac.diamond.scisoft.analysis.optimize.ApacheOptimizer.Optimizer;
+import uk.ac.diamond.scisoft.analysis.dataset.function.AlignToHalfGaussianPeak;
 import uk.ac.diamond.scisoft.analysis.processing.operations.MetadataUtils;
 import uk.ac.diamond.scisoft.rixs.rcp.PostRIXSPerspective;
 
@@ -125,9 +120,11 @@ public class PostRIXSAggregator {
 	private String currentProcess;
 
 	private Map<String, Dataset> originalX = new HashMap<>();
-
+	private Map<String, Dataset> originalY = new HashMap<>();
 	private Button resetButton;
 	private IRectangularROI currentROI = null;
+	private boolean forceToZero;
+	private AlignToHalfGaussianPeak align = new AlignToHalfGaussianPeak(false);
 
 	@PostConstruct
 	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
@@ -165,36 +162,37 @@ public class PostRIXSAggregator {
 			@Override
 			public void regionNameChanged(RegionEvent evt, String oldName) {
 			}
-			
+
 			@Override
 			public void regionCreated(RegionEvent evt) {
 			}
-			
+
 			@Override
 			public void regionCancelled(RegionEvent evt) {
 			}
-			
+
 			@Override
 			public void regionAdded(RegionEvent evt) {
 			}
 		});
 
 		// Create GUI
-		parent.setLayout(new GridLayout());
+		parent.setLayout(new FillLayout());
 
 		Composite plotComp = new Composite(parent, SWT.NONE);
-		plotComp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		plotComp.setLayout(new GridLayout(2, false));
+		plotComp.setLayout(new GridLayout(1, false));
 
 		Label label;
 		// spacer row
 		label = new Label(plotComp, SWT.NONE);
-		label = new Label(plotComp, SWT.NONE);
 
-		label = new Label(plotComp, SWT.NONE);
+		Composite comboComp = new Composite(plotComp, SWT.NONE);
+		comboComp.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		comboComp.setLayout(new GridLayout(2, false));
+		label = new Label(comboComp, SWT.NONE);
 		label.setText("Process:");
 		label.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
-		processCombo = new ComboViewer(plotComp, SWT.READ_ONLY | SWT.DROP_DOWN);
+		processCombo = new ComboViewer(comboComp, SWT.READ_ONLY | SWT.DROP_DOWN);
 		processCombo.addSelectionChangedListener(new ISelectionChangedListener() {
 			
 			@Override
@@ -241,21 +239,25 @@ public class PostRIXSAggregator {
 		name.getColumn().setText("Dataset Name");
 		name.getColumn().setWidth(200);
 
-		dataTable.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
+		dataTable.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
 		// align
-		Button b = new Button(plotComp, SWT.PUSH);
+		Composite alignComp = new Composite(plotComp, SWT.NONE);
+//		alignComp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+		alignComp.setLayout(new RowLayout());
+
+		Button b = new Button(alignComp, SWT.PUSH);
 		b.setText("Align");
-		b.setToolTipText("Align spectra using leftmost leading slope in selected region");
+		b.setToolTipText("Align spectra using leftmost leading slope in selected region.\n"
+				+ "It aligns to first line or to zero if the selected region encloses zero.");
 		b.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				selectRegion();
 			}
 		});
-		b.setLayoutData(new GridData());
 
-		resetButton = b = new Button(plotComp, SWT.PUSH);
+		resetButton = b = new Button(alignComp, SWT.PUSH);
 		b.setText("Reset");
 		b.setToolTipText("Use original spectra");
 		b.addSelectionListener(new SelectionAdapter() {
@@ -264,13 +266,25 @@ public class PostRIXSAggregator {
 				plotOriginal();
 			}
 		});
-		b.setLayoutData(new GridData());
 		b.setEnabled(false);
+
+		b = new Button(alignComp, SWT.CHECK);
+		b.setText("Force to zero");
+		b.setToolTipText("Make align to zero unconditionally");
+		b.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Button button = (Button) e.getSource();
+				forceToZero = button.getSelection();
+				setRegionVisible(true);
+			}
+		});
 	}
 
 	private void clearOriginalX() {
 		originalX.clear();
 		updateResetButton();
+		setRegionVisible(false);
 	}
 
 	private void updateResetButton() {
@@ -337,6 +351,13 @@ public class PostRIXSAggregator {
 		return r;
 	}
 
+	private void setRegionVisible(boolean visible) {
+		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
+		if (r != null) {
+			r.setVisible(visible);
+		}
+	}
+
 	private boolean ensureRegionOK(IRegion r, double[] xs) {
 		IAxis axis = plottingSystem.getSelectedXAxis();
 		double l = axis.getLower();
@@ -368,11 +389,12 @@ public class PostRIXSAggregator {
 	}
 
 	private void alignPlots(double lx, double hx) {
-		List<Double> shifts = new ArrayList<>();
 
 		logger.debug("Region bounds are {}, {}", lx, hx);
 		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
 
+		IDataset[] input= new IDataset[2 * traces.size()];
+		int i = 0;
 		for (ILineTrace t : traces) {
 			String n = t.getName();
 			Dataset x = originalX.get(n);
@@ -381,155 +403,41 @@ public class PostRIXSAggregator {
 				originalX.put(n, x);
 				updateResetButton();
 			}
-			Dataset y = DatasetUtils.convertToDataset(t.getYData());
-
-			Monotonicity m = Comparisons.findMonotonicity(x);
-			Slice cs = findCroppingSlice(m, x, y, lx, hx);
-			if (cs == null) {
-				logger.warn("Trace {} ignored as it is not strictly monotonic", t.getName());
-				shifts.add(null);
-				continue;
+			input[i++] = x;
+			Dataset y = originalY.get(n);
+			if (y == null) {
+				y = DatasetUtils.convertToDataset(t.getYData());
+				originalY.put(n, y);
 			}
+			input[i++] = y;
+		}
 
-			logger.debug("Cropping to {}", cs);
-			Dataset cy = y.getSliceView(cs);
+		align.setPeakZone(lx, hx);
+		align.setForceToPosition(forceToZero || (lx <= 0 && hx >= 0));
+		List<? extends IDataset> data = align.value(input);
 
-			// look for 1st peak in derivative
-			Dataset dy = Maths.difference(cy, 1, 0);
-			int pos = dy.argMax(true);
+		i = 0;
+		for (ILineTrace t : traces) {
+			IDataset x = data.get(i);
+			if (x != originalX.get(t.getName())) {
+				t.setData(x, data.get(i + 1));
+			}
+			i += 2;
+		}
+
+		plottingSystem.repaint(false);
+
+		new Thread(new Runnable() {
 			
-			// fit to derivative of Gaussian???
-			double c = fitDiffGaussian(dy, cy.max(true).doubleValue()/5., pos);
-			shifts.add(cs.getStart() + c);
-		}
-
-		logger.debug("Shifts are {}", shifts);
-
-		int i = 0;
-		int imax = traces.size();
-		double firstShift = Double.NaN;
-		for (; i < imax; i++) {
-			Double s = shifts.get(i);
-			if (s != null && Double.isFinite(s)) {
-				firstShift = s;
-				break;
-			}
-		}
-		if (Double.isFinite(firstShift)) {
-			ILineTrace t = traces.get(i);
-			Dataset x = originalX.get(t.getName());
-			firstShift = Maths.interpolate(x, firstShift);
-			logger.debug("First shift is {}", firstShift);
-
-			for (i++; i < imax; i++) {
-				Double s = shifts.get(i);
-				if (s != null && Double.isFinite(s)) {
-					t = traces.get(i);
-					x = originalX.get(t.getName());
-					s = Maths.interpolate(x, s);
-					double delta = s - firstShift;
-					logger.debug("Shifting {} by {}", t.getName(), delta);
-					Dataset nx = Maths.subtract(x, delta);
-
-					t.setData(nx, t.getYData());
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
 				}
+				setRegionVisible(false);
 			}
-			plottingSystem.repaint(false);
-		}
-	}
-
-	private static Slice findCroppingSlice(Monotonicity m, Dataset x, Dataset y, double lx, double hx) {
-		int l = Math.min(x.getSize(), y.getSize());
-		if (m == Monotonicity.STRICTLY_DECREASING) {
-			Slice s = new Slice(l - 1, null, -1);
-			x = x.getSliceView(s);
-		} else if (m != Monotonicity.STRICTLY_INCREASING) {
-			return null;
-		}
-
-		// slice plot according to x interval
-		// it may happen that trace starts (or ends in chosen range)
-		int li = 0;
-		if (lx > x.getDouble(li)) {
-			List<Double> c = DatasetUtils.crossings(x, lx);
-			if (c.size() > 0) {
-				li = (int) Math.ceil(c.get(0));
-			}
-		}
-
-		int hi = l - 1;
-		if (hx < x.getDouble(hi)) {
-			List<Double> c = DatasetUtils.crossings(x, hx);
-			if (c.size() > 0) {
-				hi = (int) Math.floor(c.get(0));
-			}
-		}
-		assert hi > li;
-
-		return m == Monotonicity.STRICTLY_INCREASING ? new Slice(li, hi) : new Slice(l - 1 - hi, l - 1 - li);
-	}
-
-	private static DiffGaussian dg = new DiffGaussian();
-
-	private static double fitDiffGaussian(Dataset dy, double peak, int pos) {
-		double hpy = 0.5 * dy.getDouble(pos);
-		boolean neg = hpy < 0;
-		int max = dy.getSize();
-
-		int hwhm;
-		int beg, end;
-		if (neg) {
-			int pw = pos + 1;
-			// find range to fit from peak to half-peak distance
-			while (dy.getDouble(pw) < hpy && ++pw < max) {
-			}
-			if (pw >= max) {
-				logger.warn("Could not find closest mid-height point");
-				return Double.NaN;
-			}
-			hwhm = Math.max(2, pw - pos);
-			// work out where zero crossing ends
-			beg = pos - 1;
-			while (dy.getDouble(beg) <= 0 && --beg >= 0) {
-			}
-			beg++;
-			end = Math.min(max, pos + 4*hwhm);
-		} else {
-			int pw = pos - 1;
-			while (dy.getDouble(pw) > hpy && --pw >= 0) {
-			}
-			if (pw < 0) {
-				logger.warn("Could not find closest mid-height point");
-				return Double.NaN;
-			}
-			hwhm = Math.max(2, pos - pw);
-			beg = Math.max(0, pos - 4*hwhm);
-			end = pos + 1;
-			while (dy.getDouble(end) >= 0 && ++end < max) {
-			}
-		}
-		Dataset cdy = dy.getSliceView(new Slice(beg, end));
-		logger.info("Using hw of {} in {}:{}", hwhm, beg, end);
-		logger.info(cdy.toString(true));
-		Dataset cdx = DatasetFactory.createRange(beg, end, 1.0);
-
-		IParameter p = dg.getParameter(0);
-		double cen = neg ? beg : end;
-		dg.setParameterValues(cen - 0.5, peak, 1e-1/hwhm);
-		p.setLimits(cen - 1, cen);
-		ApacheOptimizer opt = new ApacheOptimizer(Optimizer.SIMPLEX_NM);
-		double residual = Double.POSITIVE_INFINITY;
-		double[] errors = null;
-		try {
-			opt.optimize(new IDataset[] {cdx}, cdy, dg);
-			residual = opt.calculateResidual();
-			logger.info("Residual is {}", residual);
-			errors = opt.guessParametersErrors();
-		} catch (Exception e) {
-			return Double.NaN;
-		}
-
-		return dg.getParameterValue(0);
+		}).run();
 	}
 
 	private void plotOriginal() {
@@ -539,6 +447,8 @@ public class PostRIXSAggregator {
 				t.setData(x, t.getYData());
 			}
 		}
+		setRegionVisible(true);
+
 		plottingSystem.repaint(false);
 	}
 
