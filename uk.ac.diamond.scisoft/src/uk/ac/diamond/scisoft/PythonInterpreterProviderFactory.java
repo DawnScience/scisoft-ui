@@ -10,11 +10,11 @@
 package uk.ac.diamond.scisoft;
 
 import org.eclipse.ui.PlatformUI;
+import org.python.pydev.ast.interpreter_managers.IInterpreterProvider;
+import org.python.pydev.ast.interpreter_managers.IInterpreterProviderFactory;
 import org.python.pydev.shared_core.utils.PlatformUtils;
 import org.python.pydev.ui.pythonpathconf.AbstractInterpreterProviderFactory;
 import org.python.pydev.ui.pythonpathconf.AlreadyInstalledInterpreterProvider;
-import org.python.pydev.ui.pythonpathconf.IInterpreterProvider;
-import org.python.pydev.ui.pythonpathconf.IInterpreterProviderFactory;
 
 /**
  * Provide a python from PATH if not running MS Windows

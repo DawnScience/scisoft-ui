@@ -31,20 +31,21 @@ import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.ui.IStartup;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
-import org.python.copiedfromeclipsesrc.JavaVmLocationFinder;
+import org.python.pydev.ast.codecompletion.revisited.ModulesManagerWithBuild;
+import org.python.pydev.ast.interpreter_managers.InterpreterInfo;
+import org.python.pydev.ast.interpreter_managers.InterpreterManagersAPI;
+import org.python.pydev.ast.interpreter_managers.JythonInterpreterManager;
+import org.python.pydev.ast.listing_utils.JavaVmLocationFinder;
+import org.python.pydev.ast.runners.SimpleRunner;
+import org.python.pydev.core.CorePlugin;
 import org.python.pydev.core.IInterpreterInfo;
 import org.python.pydev.core.IInterpreterManager;
 import org.python.pydev.core.IPythonNature;
 import org.python.pydev.core.MisconfigurationException;
 import org.python.pydev.debug.newconsole.PydevConsoleConstants;
-import org.python.pydev.editor.codecompletion.revisited.ModulesManagerWithBuild;
-import org.python.pydev.plugin.PydevPlugin;
-import org.python.pydev.plugin.preferences.PydevPrefs;
-import org.python.pydev.runners.SimpleRunner;
+import org.python.pydev.plugin.PyDevUiPrefs;
 import org.python.pydev.shared_core.io.FileUtils;
 import org.python.pydev.shared_core.structure.Tuple;
-import org.python.pydev.ui.interpreters.JythonInterpreterManager;
-import org.python.pydev.ui.pythonpathconf.InterpreterInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,7 +154,7 @@ public class JythonCreator implements IStartup {
 			logger.debug("Plugins directory is {}", pluginsDir);
 
 			// Set cache directory to something not in the installation directory
-			IPreferenceStore pyStore = PydevPrefs.getPreferenceStore();
+			IPreferenceStore pyStore = PyDevUiPrefs.getPreferenceStore();
 			String cachePath = pyStore.getString(IInterpreterManager.JYTHON_CACHE_DIR);
 			final File cacheDir;
 			if (cachePath == null || cachePath.length() == 0) {
@@ -170,7 +171,7 @@ public class JythonCreator implements IStartup {
 			System.setProperty("python.cachedir", cachePath);
 
 			// check for the existence of this standard pydev script
-			final File script = PydevPlugin.getScriptWithinPySrc("interpreterInfo.py");
+			final File script = CorePlugin.getScriptWithinPySrc("interpreterInfo.py");
 			if (!script.exists()) {
 				logger.error("The file specified does not exist: {} ", script);
 				throw new RuntimeException("The file specified does not exist: " + script);
@@ -379,7 +380,7 @@ public class JythonCreator implements IStartup {
 
 			logger.debug("Finalising the Jython interpreter manager");
 
-			final JythonInterpreterManager man = (JythonInterpreterManager) PydevPlugin.getJythonInterpreterManager();
+			final JythonInterpreterManager man = (JythonInterpreterManager) InterpreterManagersAPI.getJythonInterpreterManager();
 			HashSet<String> set = new HashSet<String>();
 			// Note, despite argument in PyDev being called interpreterNamesToRestore
 			// in this context that name is the exe. 
