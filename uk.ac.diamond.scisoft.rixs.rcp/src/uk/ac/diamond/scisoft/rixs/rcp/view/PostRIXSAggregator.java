@@ -124,6 +124,7 @@ public class PostRIXSAggregator {
 	private Button resetButton;
 	private IRectangularROI currentROI = null;
 	private boolean forceToZero;
+	private boolean resampleX;
 	private AlignToHalfGaussianPeak align = new AlignToHalfGaussianPeak(false);
 
 	@PostConstruct
@@ -279,6 +280,18 @@ public class PostRIXSAggregator {
 				setRegionVisible(true);
 			}
 		});
+
+		b = new Button(alignComp, SWT.CHECK);
+		b.setText("Resample");
+		b.setToolTipText("Interpolate to common x points");
+		b.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Button button = (Button) e.getSource();
+				resampleX = button.getSelection();
+				setRegionVisible(true);
+			}
+		});
 	}
 
 	private void clearOriginalX() {
@@ -389,7 +402,6 @@ public class PostRIXSAggregator {
 	}
 
 	private void alignPlots(double lx, double hx) {
-
 		logger.debug("Region bounds are {}, {}", lx, hx);
 		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
 
@@ -414,12 +426,13 @@ public class PostRIXSAggregator {
 
 		align.setPeakZone(lx, hx);
 		align.setForceToPosition(forceToZero || (lx <= 0 && hx >= 0));
+		align.setResample(resampleX);
 		List<? extends IDataset> data = align.value(input);
 
 		i = 0;
 		for (ILineTrace t : traces) {
 			IDataset x = data.get(i);
-			if (x != originalX.get(t.getName())) {
+			if (resampleX || x != originalX.get(t.getName())) {
 				t.setData(x, data.get(i + 1));
 			}
 			i += 2;
