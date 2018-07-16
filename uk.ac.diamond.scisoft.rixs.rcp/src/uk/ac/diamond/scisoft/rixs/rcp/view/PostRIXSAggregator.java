@@ -46,6 +46,7 @@ import org.eclipse.dawnsci.plotting.api.region.ROIEvent;
 import org.eclipse.dawnsci.plotting.api.region.RegionEvent;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
+import org.eclipse.dawnsci.plotting.api.trace.ITrace;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
@@ -53,6 +54,7 @@ import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IntegerDataset;
+import org.eclipse.january.dataset.Slice;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -125,7 +127,10 @@ public class PostRIXSAggregator {
 	private IRectangularROI currentROI = null;
 	private boolean forceToZero;
 	private boolean resampleX;
+	private boolean plotAverage;
 	private AlignToHalfGaussianPeak align = new AlignToHalfGaussianPeak(false);
+
+	private Button plotAverageButton;
 
 	@PostConstruct
 	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
@@ -289,9 +294,27 @@ public class PostRIXSAggregator {
 			public void widgetSelected(SelectionEvent e) {
 				Button button = (Button) e.getSource();
 				resampleX = button.getSelection();
+				plotAverageButton.setEnabled(resampleX);
+				if (!resampleX) {
+					plotAverage = false;
+					plotAverageButton.setSelection(plotAverage);
+				}
 				setRegionVisible(true);
 			}
 		});
+
+		plotAverageButton = new Button(alignComp, SWT.CHECK);
+		plotAverageButton.setText("Show average");
+		plotAverageButton.setToolTipText("Average data and plot it");
+		plotAverageButton.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Button button = (Button) e.getSource();
+				plotAverage = button.getSelection();
+				setRegionVisible(true);
+			}
+		});
+		plotAverageButton.setEnabled(resampleX);
 	}
 
 	private void clearOriginalX() {
@@ -401,8 +424,11 @@ public class PostRIXSAggregator {
 		return new double[] {lx, hx};
 	}
 
+	private static final String RESAMPLE_AVERAGE = "Average";
+
 	private void alignPlots(double lx, double hx) {
 		logger.debug("Region bounds are {}, {}", lx, hx);
+		removeAveragePlot();
 		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
 
 		IDataset[] input= new IDataset[2 * traces.size()];
@@ -430,12 +456,31 @@ public class PostRIXSAggregator {
 		List<? extends IDataset> data = align.value(input);
 
 		i = 0;
+		int minSize = Integer.MAX_VALUE;
 		for (ILineTrace t : traces) {
 			IDataset x = data.get(i);
 			if (resampleX || x != originalX.get(t.getName())) {
-				t.setData(x, data.get(i + 1));
+				IDataset d = data.get(i + 1);
+				minSize = Math.min(minSize, d.getSize());
+				t.setData(x, d);
 			}
 			i += 2;
+		}
+
+		if (plotAverage) {
+			Slice s = new Slice(minSize);
+			Dataset sum = DatasetFactory.zeros(DatasetUtils.convertToDataset(data.get(1)).getClass(), minSize);
+			int imax = i;
+			i = 0;
+			for (; i < imax; i += 2) {
+				Dataset d = DatasetUtils.convertToDataset(data.get(i + 1));
+				sum.iadd(d.getSliceView(s));
+			}
+			sum.idivide(imax/2);
+			ILineTrace t = plottingSystem.createLineTrace(RESAMPLE_AVERAGE);
+			Dataset x = DatasetUtils.convertToDataset(data.get(0));
+			t.setData(x.getSliceView(s), sum);
+			plottingSystem.addTrace(t);
 		}
 
 		plottingSystem.repaint(false);
@@ -454,6 +499,7 @@ public class PostRIXSAggregator {
 	}
 
 	private void plotOriginal() {
+		removeAveragePlot();
 		for (ILineTrace t : plottingSystem.getTracesByClass(ILineTrace.class)) {
 			Dataset x = originalX.get(t.getName());
 			if (x != null) {
@@ -463,6 +509,13 @@ public class PostRIXSAggregator {
 		setRegionVisible(true);
 
 		plottingSystem.repaint(false);
+	}
+
+	private void removeAveragePlot() {
+		ITrace at = plottingSystem.getTrace(RESAMPLE_AVERAGE);
+		if (at != null) {
+			plottingSystem.removeTrace(at);
+		}
 	}
 
 	@PreDestroy
