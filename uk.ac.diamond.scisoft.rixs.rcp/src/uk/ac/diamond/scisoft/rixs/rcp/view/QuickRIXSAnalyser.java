@@ -594,15 +594,18 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				int[] dataDims = new int[] {rank - 2, rank - 1};
 
 				Dataset[] axes = new Dataset[rank - dataDims.length]; // assume axes are the same for all auxiliary data
-				ILazyDataset[] lAxes = ld.getFirstMetadata(AxesMetadata.class).getAxes();
-				for (int r = 0; r < axes.length; r++) {
-					ILazyDataset la = lAxes[r];
-					if (la != null) {
-						try {
-							Dataset ad = DatasetUtils.sliceAndConvertLazyDataset(la).squeeze();
-							ad.setName(MetadataPlotUtils.removeSquareBrackets(ad.getName()));
-							axes[r] = ad;
-						} catch (DatasetException e) {
+				AxesMetadata amd = ld.getFirstMetadata(AxesMetadata.class);
+				ILazyDataset[] lAxes = amd == null ? null : amd.getAxes();
+				if (lAxes != null) {
+					for (int r = 0; r < axes.length; r++) {
+						ILazyDataset la = lAxes[r];
+						if (la != null) {
+							try {
+								Dataset ad = DatasetUtils.sliceAndConvertLazyDataset(la).squeeze();
+								ad.setName(MetadataPlotUtils.removeSquareBrackets(ad.getName()));
+								axes[r] = ad;
+							} catch (DatasetException e) {
+							}
 						}
 					}
 				}
