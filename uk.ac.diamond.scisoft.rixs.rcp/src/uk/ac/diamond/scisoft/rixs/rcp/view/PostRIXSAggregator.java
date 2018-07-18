@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import org.dawnsci.datavis.model.DataOptions;
 import org.dawnsci.datavis.model.FileControllerStateEvent;
 import org.dawnsci.datavis.model.FileControllerStateEventListener;
+import org.dawnsci.datavis.model.FileControllerUtils;
 import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LabelValueMetadata;
 import org.dawnsci.datavis.model.LoadedFile;
@@ -597,7 +598,7 @@ public class PostRIXSAggregator {
 			if (RESULT.equals(currentProcess)) {
 				b = -1;
 				selected = new ArrayList<>();
-				selected.add(RESULT_NAME);
+				selected.add(RESULT_SUFFIX);
 			} else {
 				b = currentProcess.length() + 1;
 				selected = selection.stream().map(n -> currentProcess + Node.SEPARATOR + n.getName())
@@ -682,10 +683,10 @@ public class PostRIXSAggregator {
 	static final Pattern PROCESS_REGEX = Pattern.compile("/[^/]+/[^/]+/\\d+-([^/]+)/(.+)");
 	static final String DATA = "/data";
 	static final String RESULT = "result";
-	static final String RESULT_NAME = "/entry/" + RESULT + DATA;
+	static final String RESULT_SUFFIX = RESULT + DATA;
 
 	private void updateGUI() {
-		List<LoadedFile> files = fileController.getSelectedFiles();
+		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
 		processData.clear();
 		for (LoadedFile f : files) {
 			logger.debug(f.getFilePath());
@@ -736,7 +737,7 @@ public class PostRIXSAggregator {
 				processData.put(p, s);
 			}
 			s.add(d);
-		} else if (n.equals(RESULT_NAME)) {
+		} else if (n.endsWith(RESULT_SUFFIX)) {
 			logger.debug("\t{}", n);
 			processData.put(RESULT, null);
 		} else {

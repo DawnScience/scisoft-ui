@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import org.dawnsci.datavis.model.DataOptions;
 import org.dawnsci.datavis.model.FileControllerStateEvent;
 import org.dawnsci.datavis.model.FileControllerStateEventListener;
+import org.dawnsci.datavis.model.FileControllerUtils;
 import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LoadedFile;
 import org.dawnsci.processing.ui.model.ModelViewer;
@@ -285,7 +286,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	private void runProcessing(boolean resetPlot, boolean useCachedResults) {
-		List<LoadedFile> files = fileController.getSelectedFiles();
+		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
 		if (files.isEmpty()) {
 			plottingSystem.clear();
 			return;
