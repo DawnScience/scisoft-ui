@@ -44,7 +44,7 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 	private Spinner spnAutoLoThreshold;
 	private Spinner spnAutoHiThreshold;
 
-	private IPaletteService pservice = (IPaletteService)PlatformUI.getWorkbench().getService(IPaletteService.class);
+	private IPaletteService pservice = PlatformUI.getWorkbench().getService(IPaletteService.class);
 	private String schemeName;
 	private Button chkAspectRatio;
 

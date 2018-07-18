@@ -45,7 +45,7 @@ public class ReUseEditorHandler extends AbstractHandler {
 		else
 			store.setValue(IPreferenceConstants.REUSE_EDITORS, 10);
 
-		ICommandService commandService = (ICommandService) PlatformUI.getWorkbench().getService(ICommandService.class);
+		ICommandService commandService = PlatformUI.getWorkbench().getService(ICommandService.class);
 		commandService.refreshElements(event.getCommand().getId(), null);
 
 		return null;

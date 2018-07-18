@@ -87,7 +87,7 @@ public class OpenSep2DAction implements IViewActionDelegate, IActionDelegate2 {
 	@Override
 	public void runWithEvent(IAction action, Event event) {
 		logger.info("runWithEvent(IAction action, Event event)");
-		IHandlerService hs = (IHandlerService) view.getSite().getService(
+		IHandlerService hs = view.getSite().getService(
 				IHandlerService.class);
 		if (hs != null) {
 			try {

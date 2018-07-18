@@ -80,7 +80,7 @@ public class OneDMappingView extends MappingPageBookView implements IDatasetPlot
 		OneDViewPage page = null;
 
 		if (part.getAdapter(IMappingView3dData.class) instanceof IMappingView3dData) {
-			IMappingView3dData iMappingView3dData = (IMappingView3dData) part.getAdapter(IMappingView3dData.class);
+			IMappingView3dData iMappingView3dData = part.getAdapter(IMappingView3dData.class);
 			page = new OneDViewPage(part, getViewSite().getSecondaryId());
 			initPage(page);
 			page.createControl(getPageBook());

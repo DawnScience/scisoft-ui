@@ -123,7 +123,7 @@ public class HDF5TreeView extends ViewPart implements IObserver {
 	 * @param path
 	 */
 	public void loadTree(final String path) {
-		IProgressService service = (IProgressService) getSite().getService(IProgressService.class);
+		IProgressService service = getSite().getService(IProgressService.class);
 
 		try {
 			// Changed to cancellable as sometimes loading the tree takes ages and you

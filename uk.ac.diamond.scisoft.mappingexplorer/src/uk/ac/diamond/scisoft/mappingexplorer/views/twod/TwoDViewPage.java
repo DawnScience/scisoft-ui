@@ -181,8 +181,7 @@ public class TwoDViewPage extends MappingPageBookViewPage implements IMappingVie
 					}
 				} else {
 					if (this.part.getAdapter(IMappingView2dData.class) != null) {
-						IMappingView2dData mappingViewData = (IMappingView2dData) this.part
-								.getAdapter(IMappingView2dData.class);
+						IMappingView2dData mappingViewData = this.part.getAdapter(IMappingView2dData.class);
 						setMappingViewData(mappingViewData);
 						fireNotifySelectionChanged(getSelection());
 					}

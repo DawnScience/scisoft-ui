@@ -88,7 +88,7 @@ public class TwoDMappingView extends MappingPageBookView implements IDatasetPlot
 		TwoDViewPage page = null;
 
 		if (part.getAdapter(IMappingView3dData.class) instanceof IMappingView3dData) {
-			IMappingView3dData iMappingView3dData = (IMappingView3dData) part.getAdapter(IMappingView3dData.class);
+			IMappingView3dData iMappingView3dData = part.getAdapter(IMappingView3dData.class);
 			page = new TwoDViewPage(part, getViewSite().getSecondaryId());
 			initPage(page);
 			page.createControl(getPageBook());
