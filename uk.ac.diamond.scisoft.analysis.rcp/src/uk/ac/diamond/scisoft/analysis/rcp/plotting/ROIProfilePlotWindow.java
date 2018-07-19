@@ -134,7 +134,7 @@ public class ROIProfilePlotWindow extends AbstractPlotWindow {
 			// Creates the PlottingSystem
 			super.createPlotControl(sashForm2);
 
-			IToolPageSystem tps = (IToolPageSystem)plottingSystem.getAdapter(IToolPageSystem.class);
+			IToolPageSystem tps = plottingSystem.getAdapter(IToolPageSystem.class);
 			sideProfile1 = (IProfileToolPage)ToolPageFactory.getToolPage("org.dawb.workbench.plotting.tools.boxLineProfileTool");
 			sideProfile1.setLineOrientation(false);
 			sideProfile1.setPlotEdgeProfile(true);

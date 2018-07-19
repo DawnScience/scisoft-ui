@@ -267,8 +267,7 @@ public class MetadataPageView extends ViewPart implements ISelectionListener, IP
 			@Override
 			protected IStatus run(IProgressMonitor monitor) {
 
-				final ILoaderService service = (ILoaderService) PlatformUI.getWorkbench().getService(
-						ILoaderService.class);
+				final ILoaderService service = PlatformUI.getWorkbench().getService(ILoaderService.class);
 
 				if (service == null)
 					return Status.CANCEL_STATUS;

@@ -157,7 +157,7 @@ public class ColourMappingViewPluginTest {
 							.getToolBarManager().find("uk.ac.diamond.scisoft.mappingexplorer.colourmappingview.open");
 
 					CommandContributionItemParameter data = item.getData();
-					IHandlerService service = (IHandlerService) data.serviceLocator.getService(IHandlerService.class);
+					IHandlerService service = data.serviceLocator.getService(IHandlerService.class);
 					service.executeCommand("uk.ac.diamond.scisoft.mappingexplorer.colourmappingview.open", null);
 					break;
 

@@ -24,8 +24,8 @@ import org.eclipse.ui.handlers.IHandlerService;
 public class CommandExecutor {
 
 	static public void executeCommand(IViewSite site, String command) {
-		ICommandService cmdService = (ICommandService)site.getService(ICommandService.class);
-		IHandlerService hdlService = (IHandlerService)site.getService(IHandlerService.class);
+		ICommandService cmdService = site.getService(ICommandService.class);
+		IHandlerService hdlService = site.getService(IHandlerService.class);
 		Command cmd = cmdService.getCommand(command);
 		try {
 			hdlService.executeCommand(cmd.getId(),null);

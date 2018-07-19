@@ -198,7 +198,7 @@ public class TwoDSecondaryOpenOneDPluginTest {
 
 				for (IContributionItem iContributionItem : items) {
 					if (iContributionItem.getId().equals(ONED_COMMAND_ID)) {
-						IHandlerService service = (IHandlerService) vf2.getSite().getService(IHandlerService.class);
+						IHandlerService service = vf2.getSite().getService(IHandlerService.class);
 						service.executeCommand(ONED_COMMAND_ID, null);
 					}
 				}

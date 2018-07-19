@@ -51,7 +51,7 @@ public class ImageExplorerPreferencePage extends PreferencePage implements IWork
 	private Spinner spnImageSize;
 	private Combo cmbDisplayViews;
 
-	private IPaletteService pservice = (IPaletteService)PlatformUI.getWorkbench().getService(IPaletteService.class);
+	private IPaletteService pservice = PlatformUI.getWorkbench().getService(IPaletteService.class);
 	private String schemeName;
 
 	public ImageExplorerPreferencePage() {
