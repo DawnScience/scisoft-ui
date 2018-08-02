@@ -9,6 +9,7 @@
 
 package uk.ac.diamond.scisoft.rixs.rcp.view;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -527,7 +528,7 @@ public class PostRIXSAggregator {
 	}
 
 	private void plotSelected(boolean reset) {
-		List<LoadedFile> files = fileController.getSelectedFiles();
+		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
 		if (files.isEmpty()) {
 			plottingSystem.clear();
 			return;
@@ -548,20 +549,19 @@ public class PostRIXSAggregator {
 		clearOriginalX();
 
 		String xName = null;
+		boolean forceReset = reset;
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
-			if (r.getSize() == 1) {
-				logger.debug("Not plotting single value: {}", n);
-				continue; // TODO SCI-7345 add single point plots...
-			}
 			Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(r);
 			Dataset x = axes.length > 0 ? axes[0] : null;
 
-			if (x == null || x.peakToPeak(true).doubleValue() <= Double.MIN_NORMAL) {
+			if (x == null) {
 				x = DatasetFactory.createRange(IntegerDataset.class, r.getSize());
-			}
-			if (xName == null) {
-				xName = x.getName();
+			} else {
+				if (xName == null) {
+					xName = x.getName();
+				}
+				forceReset = reset || (x.getSize() > 1 && x.peakToPeak(true).doubleValue() <= Double.MIN_NORMAL);
 			}
 			ILineTrace l = plottingSystem.createLineTrace(n);
 			l.setData(x, r);
@@ -570,8 +570,10 @@ public class PostRIXSAggregator {
 			}
 			plottingSystem.addTrace(l);
 		}
-		plottingSystem.getSelectedXAxis().setTitle(xName);
-		plottingSystem.repaint(reset);
+		if (xName != null) {
+			plottingSystem.getSelectedXAxis().setTitle(xName);
+		}
+		plottingSystem.repaint(forceReset);
 		if (currentROI != null) {
 			IRegion r = plottingSystem.getRegion(ALIGN_REGION);
 			if (r == null) {
@@ -615,7 +617,7 @@ public class PostRIXSAggregator {
 						if (n.contains(s)) {
 							ILazyDataset l = dop.getLazyDataset().getSliceView();
 							String suffix = b >= 0 ? s.substring(b) : RESULT;
-							l.setName(fn == null ? suffix : fn + ":" + suffix);
+							l.setName(fn == null ? suffix : fn + File.pathSeparator + suffix);
 							if (lv != null) {
 								l.addMetadata(lv);
 							}
@@ -631,31 +633,68 @@ public class PostRIXSAggregator {
 //					.map(o -> o.getLazyDataset())
 //					.collect(Collectors.toList());
 
+			Map<String, List<Object>> singles = new LinkedHashMap<>();
 			for (ILazyDataset l : lp) {
-				addPlotData(plots, l);
+				addPlotData(plots, singles, l);
+			}
+			for (String n : singles.keySet()) { // synthesize line plot data from lists
+				List<Object> objs = singles.get(n);
+				int imax = objs.size();
+				if (imax < 1) {
+					continue;
+				}
+				List<Object> a = new ArrayList<>();
+				List<Object> v = new ArrayList<>();
+				for (int i = 0; i < imax; i += 2) {
+					a.add(objs.get(i));
+					v.add(objs.get(i + 1));
+				}
+				String[] names = n.split(File.pathSeparator);
+				Dataset y = DatasetFactory.createFromList(v);
+				y.setName(names[0]);
+				Dataset x = DatasetFactory.createFromList(a);
+				if (names.length > 1) {
+					x.setName(names[1]);
+				}
+				MetadataUtils.setAxes(y, x);
+				plots.put(names[0], y);
 			}
 		}
 
 		return plots;
 	}
 
-	private void addPlotData(Map<String, Dataset> plots, ILazyDataset l) {
+	private void addPlotData(Map<String, Dataset> plots, Map<String, List<Object>> singles, ILazyDataset l) {
 		LabelValueMetadata lv = l.getFirstMetadata(LabelValueMetadata.class);
 		Dataset v = lv == null ? null : lv.getLabelValue();
+		String vn = v == null ? "" : v.getName();
+
 		String n = l.getName();
 		int i = -1;
 		for (Dataset d : create1DPlotData(l)) {
 			i++;
 			if (d == null) {
 				continue;
-			}
-			String name;
-			if (v == null) {
-				name = String.format("%s:%d", n, i);
+			} else if (d.getRank() == 0) { // accumulate single-point data
+				int j = n.lastIndexOf(File.pathSeparator) + 1; // remove file name
+				String name = (j > 0 ? n.substring(j) : n) + File.pathSeparator + vn;
+				System.err.println(name);
+				List<Object> single = singles.get(name);
+				if (single == null) {
+					single = new ArrayList<>();
+					singles.put(name, single);
+				}
+				single.add(v == null ? i : v.getRank() == 0 ? v.getObject() : v.getObject(i));
+				single.add(d.getObject());
 			} else {
-				name = String.format("%s:%d (%s)", n, i, v.getRank() == 0 ? v.getObject() : v.getObject(i));
+				String name;
+				if (v == null) {
+					name = String.format("%s%s%d", n, File.pathSeparator, i);
+				} else {
+					name = String.format("%s%s%d (%s)", n, File.pathSeparator, i, v.getRank() == 0 ? v.getObject() : v.getObject(i));
+				}
+				plots.put(name, d);
 			}
-			plots.put(name, d);
 		}
 	}
 
