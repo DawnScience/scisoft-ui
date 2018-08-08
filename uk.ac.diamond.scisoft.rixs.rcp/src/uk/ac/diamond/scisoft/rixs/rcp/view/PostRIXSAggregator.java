@@ -261,7 +261,7 @@ public class PostRIXSAggregator {
 		b.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				selectRegion();
+				selectRegion(true);
 			}
 		});
 
@@ -284,7 +284,7 @@ public class PostRIXSAggregator {
 			public void widgetSelected(SelectionEvent e) {
 				Button button = (Button) e.getSource();
 				forceToZero = button.getSelection();
-				setRegionVisible(true);
+				selectRegion(false);
 			}
 		});
 
@@ -301,7 +301,7 @@ public class PostRIXSAggregator {
 					plotAverage = false;
 					plotAverageButton.setSelection(plotAverage);
 				}
-				setRegionVisible(true);
+				selectRegion(false);
 			}
 		});
 
@@ -313,7 +313,7 @@ public class PostRIXSAggregator {
 			public void widgetSelected(SelectionEvent e) {
 				Button button = (Button) e.getSource();
 				plotAverage = button.getSelection();
-				setRegionVisible(true);
+				selectRegion(false);
 			}
 		});
 		plotAverageButton.setEnabled(resampleX);
@@ -333,13 +333,13 @@ public class PostRIXSAggregator {
 
 	private static final String ALIGN_REGION = "Align region";
 	
-	private void selectRegion() {
+	private void selectRegion(boolean create) {
 		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
 		if (r != null && r.getRegionType() != RegionType.XAXIS) {
 			plottingSystem.renameRegion(r, "Not " + ALIGN_REGION);
 			r = null;
 		}
-		if (r == null) {
+		if (r == null && create) {
 			r = createRegion();
 		} else {
 			if (!r.isActive()) {
@@ -534,6 +534,7 @@ public class PostRIXSAggregator {
 	private void plotSelected(boolean reset) {
 		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
 		if (files.isEmpty()) {
+			setRegionVisible(false);
 			plottingSystem.clear();
 			return;
 		}
