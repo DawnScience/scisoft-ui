@@ -433,7 +433,7 @@ public class PostRIXSAggregator {
 		removeAveragePlot();
 		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
 
-		IDataset[] input= new IDataset[2 * traces.size()];
+		IDataset[] input = new IDataset[2 * traces.size()];
 		int i = 0;
 		for (ILineTrace t : traces) {
 			String n = t.getName();
@@ -461,7 +461,9 @@ public class PostRIXSAggregator {
 		int minSize = Integer.MAX_VALUE;
 		for (ILineTrace t : traces) {
 			IDataset x = data.get(i);
-			if (resampleX || x != originalX.get(t.getName())) {
+			IDataset ox = originalX.get(t.getName());
+			if (resampleX || x != ox) {
+				x.setName(ox.getName());
 				IDataset d = data.get(i + 1);
 				minSize = Math.min(minSize, d.getSize());
 				t.setData(x, d);
@@ -480,8 +482,10 @@ public class PostRIXSAggregator {
 			}
 			sum.idivide(imax/2);
 			ILineTrace t = plottingSystem.createLineTrace(RESAMPLE_AVERAGE);
-			Dataset x = DatasetUtils.convertToDataset(data.get(0));
-			t.setData(x.getSliceView(s), sum);
+			IDataset ox = data.get(0);
+			Dataset x = DatasetUtils.convertToDataset(ox).getSliceView(s);
+			x.setName(ox.getName());
+			t.setData(x, sum);
 			plottingSystem.addTrace(t);
 		}
 
@@ -710,7 +714,9 @@ public class PostRIXSAggregator {
 					pd.add(DatasetUtils.convertToDataset(lz.getSlice(s)).squeeze());
 				}
 			} else {
-				pd.add(DatasetUtils.sliceAndConvertLazyDataset(lz));
+				Dataset d = DatasetUtils.sliceAndConvertLazyDataset(lz);
+				d.setName(lz.getName());
+				pd.add(d);
 			}
 		} catch (DatasetException e) {
 			logger.warn("Could not create 1D plot data", e);
