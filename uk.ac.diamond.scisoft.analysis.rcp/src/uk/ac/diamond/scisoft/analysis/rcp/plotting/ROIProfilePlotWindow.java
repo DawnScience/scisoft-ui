@@ -121,14 +121,11 @@ public class ROIProfilePlotWindow extends AbstractPlotWindow {
 	public void createPlotControl(Composite composite){
 		
 		sashForm = new SashForm(composite, SWT.HORIZONTAL);
-		sashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		sashForm.setBackground(new Color(parentComp.getDisplay(), 192, 192, 192));
 		
 		sashForm2 = new SashForm(sashForm, SWT.VERTICAL);
-		sashForm2.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		sashForm2.setBackground(new Color(parentComp.getDisplay(), 192, 192, 192));
 		sashForm3 = new SashForm(sashForm, SWT.VERTICAL);
-		sashForm3.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 		sashForm3.setBackground(new Color(parentComp.getDisplay(), 192, 192, 192));
 		try {
 			// Creates the PlottingSystem
