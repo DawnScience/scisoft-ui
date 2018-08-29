@@ -35,7 +35,7 @@ public class MetadataTool extends AbstractToolPage {
 	protected Composite composite;
 	
 	// Logger
-	private final static Logger logger = LoggerFactory.getLogger(MetadataTool.class);
+	private final static Logger metadataToollogger = LoggerFactory.getLogger(MetadataTool.class);
 	
 	//Region and region listener added for 1-click beam centring
 	private IRegion tmpRegion;
@@ -49,7 +49,7 @@ public class MetadataTool extends AbstractToolPage {
 				//test if our region
 				if (evt.getRegion() == tmpRegion) {
 					//update beam position and remove region
-					logger.debug("1-Click region added");
+					metadataToollogger.debug("1-Click region added");
 					double[] point = evt.getRegion().getROI().getPoint();
 					diffMetadataComp.updateBeamPositionPixels(point);
 					getPlottingSystem().removeRegion(tmpRegion);
@@ -96,7 +96,7 @@ public class MetadataTool extends AbstractToolPage {
 		final Action centre = new Action("One-click beam centre",IAction.AS_PUSH_BUTTON) {
 			@Override
 			public void run() {
-				logger.debug("1-click clicked");
+				metadataToollogger.debug("1-click clicked");
 				
 				try {
 					if (tmpRegion != null) {
@@ -105,7 +105,7 @@ public class MetadataTool extends AbstractToolPage {
 					tmpRegion = getPlottingSystem().createRegion(RegionUtils.getUniqueName("BeamCentrePicker", getPlottingSystem()), IRegion.RegionType.POINT);
 					tmpRegion.setUserRegion(false);
 					tmpRegion.setVisible(false);
-					logger.debug("1-click ROI created");
+					metadataToollogger.debug("1-click ROI created");
 					
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
