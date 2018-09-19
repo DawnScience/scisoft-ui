@@ -106,7 +106,7 @@ public class HDF5TreeView extends ViewPart implements IObserver {
 			@Override
 			public void selectionChanged(SelectionChangedEvent e) {
 				if (e.getSource() == hdfxp) {
-				ISelection s = e.getSelection();
+					ISelection s = e.getSelection();
 					if (s instanceof HDF5Selection) {
 						HDF5Selection h = (HDF5Selection) s;
 						// notify other clients that a node has been selected

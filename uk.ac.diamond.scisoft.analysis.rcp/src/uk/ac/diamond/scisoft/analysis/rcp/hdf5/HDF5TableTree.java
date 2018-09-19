@@ -515,7 +515,10 @@ class HDF5LabelProvider implements ITableLabelProvider {
 					}
 					break;
 				}
-				if (data.getSize() == 1) {
+				if (data == null || data.getSize() == 0) {
+					msg = "None available as dataset is zero-sized";
+					break;
+				} else if (data.getSize() == 1) {
 					try {
 						data = data.getSlice();
 					} catch (DatasetException e) {
@@ -530,10 +533,8 @@ class HDF5LabelProvider implements ITableLabelProvider {
 					if (units != null && units.isString()) {
 						msg += " " + units.getFirstElement();
 					}
-				} else if (data == null || data.getSize() == 0) {
-					msg = "none available as dataset is zero-sized";
 				} else {
-					msg = "double-click to view";
+					msg = "Double-click to view";
 				}
 				break;
 			}
