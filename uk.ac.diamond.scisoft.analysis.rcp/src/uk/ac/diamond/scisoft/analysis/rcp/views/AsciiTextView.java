@@ -14,27 +14,29 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.menus.CommandContributionItem;
 import org.eclipse.ui.part.ViewPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.swtdesigner.SWTResourceManager;
+
 import uk.ac.diamond.scisoft.analysis.rcp.AnalysisRCPActivator;
 import uk.ac.diamond.scisoft.analysis.rcp.handlers.AsciiMonitorAction;
-
-import com.swtdesigner.SWTResourceManager;
 
 /**
  *
@@ -48,12 +50,13 @@ public class AsciiTextView extends ViewPart {
 	 */
 	public static final String ID = "uk.ac.diamond.scisoft.analysis.rcp.views.AsciiTextView"; //$NON-NLS-1$
 	
-	private Text    text;
+	private StyledText text;
 	private boolean monitoringFile = false;
 	private File    file;
 	private Timer   timer;
 
 	private Action saveAction;
+	private Action wrapAction;
 
 	/**
 	 * 
@@ -70,7 +73,7 @@ public class AsciiTextView extends ViewPart {
 		Composite container = new Composite(parent, SWT.NONE);
 		container.setLayout(new FillLayout(SWT.HORIZONTAL));
 		{
-			text = new Text(container, SWT.BORDER | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL | SWT.CANCEL | SWT.MULTI | SWT.DOUBLE_BUFFERED);
+			text = new StyledText(container, SWT.BORDER | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL | SWT.CANCEL | SWT.MULTI | SWT.DOUBLE_BUFFERED);
 			text.setFont(SWTResourceManager.getFont("Courier New", 10, SWT.NORMAL));
 		}
 
@@ -92,6 +95,15 @@ public class AsciiTextView extends ViewPart {
 		};
 		saveAction.setToolTipText("Save text");
 		saveAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/script_save.png"));
+
+		wrapAction = new Action("Wrap text", IAction.AS_CHECK_BOX) {
+			@Override
+			public void run() {
+				wrapText();
+			}
+		};
+		wrapAction.setToolTipText("Toggle wrap text");
+		wrapAction.setImageDescriptor(AnalysisRCPActivator.getImageDescriptor("icons/wordwrap.png"));
 	}
 
 	/**
@@ -101,6 +113,7 @@ public class AsciiTextView extends ViewPart {
 		IToolBarManager toolbarManager = getViewSite().getActionBars()
 				.getToolBarManager();
 		toolbarManager.add(saveAction);
+		toolbarManager.add(wrapAction);
 	}
 
 	/**
@@ -133,6 +146,10 @@ public class AsciiTextView extends ViewPart {
 	 */
 	public void setData(String textData) {
 		text.setText(textData);
+	}
+
+	public void wrapText() {
+		text.setWordWrap(wrapAction.isChecked());
 	}
 
 	/**
@@ -168,7 +185,7 @@ public class AsciiTextView extends ViewPart {
 
 	private String refreshFile() {
 		try {
-			final String allText = FileUtils.readFileToString(file);
+			final String allText = FileUtils.readFileToString(file, Charset.defaultCharset());
 			text.setText(allText);
 			return allText;
 		} catch (IOException e) {
