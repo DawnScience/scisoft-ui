@@ -35,28 +35,17 @@ import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LabelValueMetadata;
 import org.dawnsci.datavis.model.LoadedFile;
 import org.eclipse.dawnsci.analysis.api.processing.IOperationService;
-import org.eclipse.dawnsci.analysis.api.roi.IRectangularROI;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.plotting.api.IPlottingService;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
-import org.eclipse.dawnsci.plotting.api.axis.IAxis;
-import org.eclipse.dawnsci.plotting.api.region.IROIListener;
-import org.eclipse.dawnsci.plotting.api.region.IRegion;
-import org.eclipse.dawnsci.plotting.api.region.IRegion.RegionType;
-import org.eclipse.dawnsci.plotting.api.region.IRegionListener;
-import org.eclipse.dawnsci.plotting.api.region.ROIEvent;
-import org.eclipse.dawnsci.plotting.api.region.RegionEvent;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
-import org.eclipse.dawnsci.plotting.api.trace.ITrace;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
-import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IntegerDataset;
-import org.eclipse.january.dataset.Slice;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
 import org.eclipse.jface.viewers.ArrayContentProvider;
@@ -87,9 +76,9 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import uk.ac.diamond.scisoft.analysis.dataset.function.AlignToHalfGaussianPeak;
 import uk.ac.diamond.scisoft.analysis.processing.operations.MetadataUtils;
 import uk.ac.diamond.scisoft.rixs.rcp.PostRIXSPerspective;
+import uk.ac.diamond.scisoft.rixs.rcp.dialog.AlignDialog;
 
 /*
  * TODO labels are 1D so won't be sufficient for aggregation of nD scans
@@ -123,19 +112,10 @@ public class PostRIXSAggregator {
 	private List<NameSelect> currentSelection = new ArrayList<>();
 	private String currentProcess;
 
-	private Map<String, Dataset> originalX = new HashMap<>();
-	private Map<String, Dataset> originalY = new HashMap<>();
-	private Button resetButton;
-	private IRectangularROI currentROI = null;
-	private boolean forceToZero;
-	private boolean resampleX;
-	private boolean plotAverage;
-	private AlignToHalfGaussianPeak align = new AlignToHalfGaussianPeak(false);
-
-	private Button plotAverageButton;
+	private AlignDialog dialog;
 
 	@PostConstruct
-	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
+	public void createComposite(final Composite parent, IPlottingService plottingService, IOperationService opService) {
 		fileStateListener = new FileControllerStateEventListener() {
 
 			@Override
@@ -152,37 +132,6 @@ public class PostRIXSAggregator {
 	
 		fileController.addStateListener(fileStateListener);
 		plottingSystem = plottingService.getPlottingSystem(PostRIXSPerspective.PLOT_NAME, true);
-		plottingSystem.addRegionListener(new IRegionListener() {
-			
-			@Override
-			public void regionsRemoved(RegionEvent evt) {
-				clearOriginalX();
-			}
-
-			@Override
-			public void regionRemoved(RegionEvent evt) {
-				IRegion r = evt.getRegion();
-				if (r != null && ALIGN_REGION.equals(r.getName())) {
-					clearOriginalX();
-				}
-			}
-
-			@Override
-			public void regionNameChanged(RegionEvent evt, String oldName) {
-			}
-
-			@Override
-			public void regionCreated(RegionEvent evt) {
-			}
-
-			@Override
-			public void regionCancelled(RegionEvent evt) {
-			}
-
-			@Override
-			public void regionAdded(RegionEvent evt) {
-			}
-		});
 
 		// Create GUI
 		parent.setLayout(new FillLayout());
@@ -234,8 +183,8 @@ public class PostRIXSAggregator {
 				return ((NameSelect) element).isSelected() ? ticked : unticked;
 			}
 		});
-
 		check.getColumn().setWidth(28);
+
 		TableViewerColumn name = new TableViewerColumn(dataTable, SWT.LEFT);
 		name.setLabelProvider(new ColumnLabelProvider() {
 			@Override
@@ -243,7 +192,6 @@ public class PostRIXSAggregator {
 				return ((NameSelect) element).getName();
 			}
 		});
-		
 		name.getColumn().setText("Dataset Name");
 		name.getColumn().setWidth(200);
 
@@ -251,277 +199,21 @@ public class PostRIXSAggregator {
 
 		// align
 		Composite alignComp = new Composite(plotComp, SWT.NONE);
-//		alignComp.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 		alignComp.setLayout(new RowLayout());
 
 		Button b = new Button(alignComp, SWT.PUSH);
-		b.setText("Align");
-		b.setToolTipText("Align spectra using leftmost leading slope in selected region.\n"
-				+ "It aligns to first line or to zero if the selected region encloses zero.");
+		b.setText("Align...");
+		b.setToolTipText("Open align dialog");
 		b.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				selectRegion(true);
+				if (dialog == null) {
+					dialog = new AlignDialog(parent.getShell(), plottingSystem);
+				}
+				dialog.open();
 			}
 		});
-
-		resetButton = b = new Button(alignComp, SWT.PUSH);
-		b.setText("Reset");
-		b.setToolTipText("Use original spectra");
-		b.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				plotOriginal();
-			}
-		});
-		b.setEnabled(false);
-
-		b = new Button(alignComp, SWT.CHECK);
-		b.setText("Force to zero");
-		b.setToolTipText("Make align to zero unconditionally");
-		b.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				Button button = (Button) e.getSource();
-				forceToZero = button.getSelection();
-				selectRegion(false);
-			}
-		});
-
-		b = new Button(alignComp, SWT.CHECK);
-		b.setText("Resample");
-		b.setToolTipText("Interpolate to common x points");
-		b.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				Button button = (Button) e.getSource();
-				resampleX = button.getSelection();
-				plotAverageButton.setEnabled(resampleX);
-				if (!resampleX) {
-					plotAverage = false;
-					plotAverageButton.setSelection(plotAverage);
-				}
-				selectRegion(false);
-			}
-		});
-
-		plotAverageButton = new Button(alignComp, SWT.CHECK);
-		plotAverageButton.setText("Show average");
-		plotAverageButton.setToolTipText("Average data and plot it");
-		plotAverageButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				Button button = (Button) e.getSource();
-				plotAverage = button.getSelection();
-				selectRegion(false);
-			}
-		});
-		plotAverageButton.setEnabled(resampleX);
-	}
-
-	private void clearOriginalX() {
-		originalX.clear();
-		updateResetButton();
-		setRegionVisible(false);
-	}
-
-	private void updateResetButton() {
-		if (resetButton.getEnabled() == originalX.isEmpty()) {
-			Display.getDefault().asyncExec(() -> resetButton.setEnabled(!originalX.isEmpty()));
-		}
-	}
-
-	private static final String ALIGN_REGION = "Align region";
-	
-	private void selectRegion(boolean create) {
-		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
-		if (r != null && r.getRegionType() != RegionType.XAXIS) {
-			plottingSystem.renameRegion(r, "Not " + ALIGN_REGION);
-			r = null;
-		}
-		if (r == null && create) {
-			r = createRegion();
-		} else {
-			if (!r.isActive()) {
-				r.setActive(true);
-			}
-			if (!r.isVisible()) {
-				r.setVisible(true);
-			}
-
-			double[] xs = getLimits();
-			if (xs != null) {
-				if (!ensureRegionOK(r, xs)) {
-					return;
-				}
-
-				alignPlots(xs[0], xs[1]);
-			}
-		}
-	}
-
-	private IRegion createRegion() {
-		IRegion r = null;
-		try {
-			r = plottingSystem.createRegion(ALIGN_REGION, RegionType.XAXIS);
-			r.addROIListener(new IROIListener() {
-
-				@Override
-				public void roiSelected(ROIEvent evt) {
-				}
-
-				@Override
-				public void roiDragged(ROIEvent evt) {
-				}
-
-				@Override
-				public void roiChanged(ROIEvent evt) {
-					currentROI = (IRectangularROI) evt.getROI();
-					double[] xs = getLimits();
-					if (xs != null) {
-						alignPlots(xs[0], xs[1]);
-					}
-				}
-			});
-		} catch (Exception e) {
-			logger.error("Could not create alignment region", e);
-		}
-		return r;
-	}
-
-	private void setRegionVisible(boolean visible) {
-		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
-		if (r != null) {
-			r.setVisible(visible);
-		}
-	}
-
-	private boolean ensureRegionOK(IRegion r, double[] xs) {
-		IAxis axis = plottingSystem.getSelectedXAxis();
-		double l = axis.getLower();
-		double u = axis.getUpper();
-		if (xs[0] > u || xs[1] < l) {
-			currentROI.setPoint(0.5 * (l + u), currentROI.getPointY());
-			r.setROI(currentROI);
-			return false;
-		}
-		return true;
-	}
-	
-	private double[] getLimits() {
-		if (currentROI == null) {
-			return null;
-		}
-		double lx = currentROI.getPointX();
-		double dx = currentROI.getLength(0);
-		double hx;
-		if (dx < 0) {
-			hx = lx;
-			lx -= dx;
-		} else if (dx > 0) {
-			hx = lx + dx;
-		} else {
-			return null;
-		}
-		return new double[] {lx, hx};
-	}
-
-	private static final String RESAMPLE_AVERAGE = "Average";
-
-	private void alignPlots(double lx, double hx) {
-		logger.debug("Region bounds are {}, {}", lx, hx);
-		removeAveragePlot();
-		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
-
-		IDataset[] input = new IDataset[2 * traces.size()];
-		int i = 0;
-		for (ILineTrace t : traces) {
-			String n = t.getName();
-			Dataset x = originalX.get(n);
-			if (x == null) {
-				x = DatasetUtils.convertToDataset(t.getXData());
-				originalX.put(n, x);
-				updateResetButton();
-			}
-			input[i++] = x;
-			Dataset y = originalY.get(n);
-			if (y == null) {
-				y = DatasetUtils.convertToDataset(t.getYData());
-				originalY.put(n, y);
-			}
-			input[i++] = y;
-		}
-
-		align.setPeakZone(lx, hx);
-		align.setForceToPosition(forceToZero || (lx <= 0 && hx >= 0));
-		align.setResample(resampleX);
-		List<? extends IDataset> data = align.value(input);
-
-		i = 0;
-		int minSize = Integer.MAX_VALUE;
-		for (ILineTrace t : traces) {
-			IDataset x = data.get(i);
-			IDataset ox = originalX.get(t.getName());
-			if (resampleX || x != ox) {
-				x.setName(ox.getName());
-				IDataset d = data.get(i + 1);
-				minSize = Math.min(minSize, d.getSize());
-				t.setData(x, d);
-			}
-			i += 2;
-		}
-
-		if (plotAverage) {
-			Slice s = new Slice(minSize);
-			Dataset sum = DatasetFactory.zeros(DatasetUtils.convertToDataset(data.get(1)).getClass(), minSize);
-			int imax = i;
-			i = 0;
-			for (; i < imax; i += 2) {
-				Dataset d = DatasetUtils.convertToDataset(data.get(i + 1));
-				sum.iadd(d.getSliceView(s));
-			}
-			sum.idivide(imax/2);
-			ILineTrace t = plottingSystem.createLineTrace(RESAMPLE_AVERAGE);
-			IDataset ox = data.get(0);
-			Dataset x = DatasetUtils.convertToDataset(ox).getSliceView(s);
-			x.setName(ox.getName());
-			t.setData(x, sum);
-			plottingSystem.addTrace(t);
-		}
-
-		plottingSystem.repaint(false);
-
-		new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-				}
-				setRegionVisible(false);
-			}
-		}).run();
-	}
-
-	private void plotOriginal() {
-		removeAveragePlot();
-		for (ILineTrace t : plottingSystem.getTracesByClass(ILineTrace.class)) {
-			Dataset x = originalX.get(t.getName());
-			if (x != null) {
-				t.setData(x, t.getYData());
-			}
-		}
-		setRegionVisible(true);
-
-		plottingSystem.repaint(false);
-	}
-
-	private void removeAveragePlot() {
-		ITrace at = plottingSystem.getTrace(RESAMPLE_AVERAGE);
-		if (at != null) {
-			plottingSystem.removeTrace(at);
-		}
+		
 	}
 
 	@PreDestroy
@@ -532,16 +224,9 @@ public class PostRIXSAggregator {
 	}
 
 	private void plotSelected(boolean reset) {
-		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
-		if (files.isEmpty()) {
-			setRegionVisible(false);
-			plottingSystem.clear();
-			return;
-		}
-
-		Map<String, Dataset> plots = createPlotData(files);
-		if (plots.isEmpty()) {
-			return;
+		if (dialog != null) {
+			dialog.setRegionVisible(false);
+			dialog.resetPlotItems();
 		}
 
 		if (reset) {
@@ -551,7 +236,13 @@ public class PostRIXSAggregator {
 		} else {
 			reset = true;
 		}
-		clearOriginalX();
+
+		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
+
+		Map<String, Dataset> plots = createPlotData(files);
+		if (plots.isEmpty()) {
+			return;
+		}
 
 		String xName = null;
 		boolean forceReset = reset;
@@ -579,21 +270,16 @@ public class PostRIXSAggregator {
 			plottingSystem.getSelectedXAxis().setTitle(xName);
 		}
 		plottingSystem.repaint(forceReset);
-		if (currentROI != null) {
-			IRegion r = plottingSystem.getRegion(ALIGN_REGION);
-			if (r == null) {
-				r = createRegion();
-				plottingSystem.addRegion(r);
-			}
-			if (r != null) {
-				if (ensureRegionOK(r, getLimits()) && r.getROI() != currentROI) {
-					r.setROI(currentROI);
-				}
-			}
+		if (dialog != null) {
+			dialog.refreshRegion();
 		}
 	}
 
 	private Map<String, Dataset> createPlotData(List<LoadedFile> files) {
+		if (files.isEmpty()) {
+			return Collections.emptyMap();
+		}
+
 		Map<String, Dataset> plots = new LinkedHashMap<>();
 
 		List<NameSelect> selection = currentSelection.stream()
@@ -834,7 +520,7 @@ public class PostRIXSAggregator {
 		});
 	}
 
-	private class NameSelect {
+	private static class NameSelect {
 		private String name;
 		private boolean selected;
 		public NameSelect(String name) {
