@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 
-import org.dawb.common.services.ServiceManager;
 import org.dawb.common.util.io.FileUtils;
 import org.eclipse.dawnsci.analysis.api.io.IDataHolder;
 import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
@@ -53,13 +52,13 @@ class FileLabelProvider extends ColumnLabelProvider {
 	private boolean          showCollapsedFiles;
 	private IPropertyChangeListener propertyListenner;
 
-	public FileLabelProvider(StructuredViewer viewer, final int column) throws Exception {
+	public FileLabelProvider(StructuredViewer viewer, final int column) {
 		
 		this.viewer      = viewer;
 		this.columnIndex = column;
 		
 		this.dateFormat  = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-		this.service     = (IFileIconService)ServiceManager.getService(IFileIconService.class);
+		service = NavigatorRCPActivator.getService(IFileIconService.class);
 		this.store       =  NavigatorRCPActivator.getDefault().getPreferenceStore();
 		
         this.showCollapsedFiles = store.getBoolean(FileNavigatorPreferenceConstants.SHOW_COLLAPSED_FILES);
