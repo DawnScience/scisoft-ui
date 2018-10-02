@@ -62,6 +62,7 @@ import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IndexIterator;
 import org.eclipse.january.dataset.IntegerDataset;
+import org.eclipse.january.dataset.Maths;
 import org.eclipse.january.dataset.ShapeUtils;
 import org.eclipse.january.dataset.SliceND;
 import org.eclipse.january.dataset.SliceNDIterator;
@@ -74,11 +75,14 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Text;
 
 import uk.ac.diamond.scisoft.analysis.processing.operations.MetadataUtils;
 import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundModel;
@@ -110,21 +114,29 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private List<ProcessFileJob> jobs;
 	private Map<String, ProcessFileJob> cachedJobs;
 
+	private PlotOption poSpectrum;
+	private PlotOption poSpectrumWithFit;
+	private PlotOption poFWHM;
+	private PlotOption poElasticLineSlope;
+	private PlotOption poElasticLineIntercept;
+	private Map<String, PlotOption> poAll;
+
 	private static final String ZERO = "0";
-	private enum PlotOption {
-		// these are summary data
-		Spectrum(ElasticLineReduction.ES_PREFIX + ZERO, "%s"),
-		SpectrumWithFit(ElasticLineReduction.ESF_PREFIX + ZERO, "%s-fit"),
-		FWHM(ElasticLineReduction.ESFWHM_PREFIX + ZERO, "FWHM"),
 
-		ElasticLineSlope("line_0_m", "elastic line slope"),
-		ElasticLineIntercept("line_0_c", "elastic line intercept");
-
+	static class PlotOption {
+		private final String oName;
 		private final String dName;
 		private String plotFormat;
-		PlotOption(String dataName, String plotFormat) {
+		private double m = 1;
+		private double c = 0;
+		PlotOption(String optionName, String dataName, String plotFormat) {
+			oName = optionName;
 			dName = dataName;
 			this.plotFormat = plotFormat;
+		}
+
+		public String getOptionName() {
+			return oName;
 		}
 
 		public String getDataName() {
@@ -134,6 +146,38 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		public String getPlotFormat() {
 			return plotFormat;
 		}
+
+		public double getXScale() {
+			return m;
+		}
+
+		public void setXScale(double scale) {
+			m = scale;
+		}
+
+		public double getXOffset() {
+			return c;
+		}
+
+		public void setXOffset(double offset) {
+			c = offset;
+		}
+	}
+
+	private void createPlotOptions() {
+		// these are summary data
+		poAll = new LinkedHashMap<>();
+		poSpectrum = new PlotOption("Spectrum", ElasticLineReduction.ES_PREFIX + ZERO, "%s");
+		poAll.put(poSpectrum.getOptionName(), poSpectrum);
+		poSpectrumWithFit = new PlotOption("SpectrumWithFit", ElasticLineReduction.ESF_PREFIX + ZERO, "%s-fit");
+		poAll.put(poSpectrumWithFit.getOptionName(), poSpectrumWithFit);
+		poFWHM = new PlotOption("FWHM", ElasticLineReduction.ESFWHM_PREFIX + ZERO, "FWHM");
+		poAll.put(poFWHM.getOptionName(), poFWHM);
+
+		poElasticLineSlope = new PlotOption("ElasticLineSlope", "line_0_m", "elastic line slope");
+		poAll.put(poElasticLineSlope.getOptionName(), poElasticLineSlope);
+		poElasticLineIntercept = new PlotOption("ElasticLineIntercept", "line_0_c", "elastic line intercept");
+		poAll.put(poElasticLineIntercept.getOptionName(), poElasticLineIntercept);
 	}
 
 	class SubtractBGModel extends AbstractOperationModel {
@@ -174,6 +218,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private int maxThreads;
 
+	private Text scaleText;
+
+	private Text offsetText;
+
 	public QuickRIXSAnalyser() {
 		jobs = new ArrayList<>();
 		subtractModel = new SubtractBGModel();
@@ -182,6 +230,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		maxThreads = Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), MAX_THREADS);
 		System.err.println("Number of threads: " + maxThreads);
 		cachedJobs = new HashMap<>();
+
+		createPlotOptions();
 	}
 
 	@PostConstruct
@@ -258,7 +308,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			public void selectionChanged(SelectionChangedEvent event) {
 				ISelection s = event.getSelection();
 				if (s instanceof IStructuredSelection) {
-					plotResults((PlotOption) ((IStructuredSelection) s).getFirstElement(), true);
+					PlotOption po = (PlotOption) ((IStructuredSelection) s).getFirstElement();
+					scaleText.setText(Double.toString(po.getXScale()));
+					offsetText.setText(Double.toString(po.getXOffset()));
+					plotResults(po, true);
 				}
 			}
 		});
@@ -268,9 +321,61 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			@Override
 			public String getText(Object element) {
 				if (element instanceof PlotOption) {
-					return ((PlotOption) element).name();
+					return ((PlotOption) element).getOptionName();
 				}
 				return super.getText(element);
+			}
+		});
+
+		// spacer row
+		label = new Label(plotComp, SWT.NONE);
+		label = new Label(plotComp, SWT.NONE);
+
+		// x transformation
+		label = new Label(plotComp, SWT.NONE);
+		label.setText("X-axis");
+		label.setLayoutData(new GridData(SWT.BEGINNING, SWT.CENTER, false, false));
+		label = new Label(plotComp, SWT.NONE);
+
+		label = new Label(plotComp, SWT.NONE);
+		label.setText("Offset:");
+		label.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+		offsetText = new Text(plotComp, SWT.LEAD);
+		offsetText.setToolTipText("Value to add to x coordinates");
+		offsetText.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				ISelection s = plotCombo.getSelection();
+				if (s instanceof IStructuredSelection) {
+					PlotOption po = (PlotOption) ((IStructuredSelection) s).getFirstElement();
+					try {
+						po.setXOffset(Double.parseDouble(offsetText.getText()));
+						plotResults(po, true);
+					} catch (NumberFormatException ex) {
+						offsetText.setText(Double.toString(po.getXOffset()));
+					}
+				}
+			}
+		});
+
+		label = new Label(plotComp, SWT.NONE);
+		label.setText("Scale:");
+		label.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
+		scaleText = new Text(plotComp, SWT.LEAD);
+		scaleText.setToolTipText("Multiplier of x coordinates (after adding offset)");
+		scaleText.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				ISelection s = plotCombo.getSelection();
+				if (s instanceof IStructuredSelection) {
+					PlotOption po = (PlotOption) ((IStructuredSelection) s).getFirstElement();
+					try {
+						po.setXScale(Double.parseDouble(scaleText.getText()));
+						plotResults(po, true);
+					} catch (NumberFormatException ex) {
+						scaleText.setText(Double.toString(po.getXScale()));
+					}
+				}
 			}
 		});
 	}
@@ -320,19 +425,22 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		retry = false;
 		Thread t = new Thread(() -> {
 			try {
-				jg.join(0, null);
-
-				for (ProcessFileJob j : jobs) {
-					if (j.getResult().getCode() == IStatus.WARNING || j.getData() == null) {
-						retry = true;
-						return;
-					}
+				while (!jg.getActiveJobs().isEmpty()) {
+					// waiting for a time out and repeating avoids a race condition
+					// where jobs finish before this join is executed
+					jg.join(250, null);
 				}
-
-				populateCombo();
-				plotResults(PlotOption.Spectrum, resetPlot);
 			} catch (OperationCanceledException | InterruptedException e) {
 			}
+			for (ProcessFileJob j : jobs) {
+				if (j.getResult().getCode() == IStatus.WARNING || j.getData() == null) {
+					retry = true;
+					return;
+				}
+			}
+
+			populateCombo();
+			plotResults(poSpectrum, resetPlot);
 		});
 		t.start();
 		if (retry) {
@@ -348,17 +456,25 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		}
 		Set<PlotOption> ps = new LinkedHashSet<>();
-		for (PlotOption p : PlotOption.values()) {
+		PlotOption po = null;
+		for (PlotOption p : poAll.values()) {
 			String dn = p.getDataName();
 			if (options.contains(dn)) {
 				ps.add(p);
+				if (po == null) {
+					po = p;
+				}
 				options.remove(dn);
 			}
 		}
 
+		PlotOption fpo = po;
 		Display.getDefault().asyncExec(new Runnable() {
 			@Override
 			public void run() {
+				scaleText.setText(Double.toString(fpo.getXScale()));
+				offsetText.setText(Double.toString(fpo.getXOffset()));
+
 				plotCombo.setInput(ps);
 				plotCombo.getCombo().select(0);
 			}
@@ -383,6 +499,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			reset = true;
 		}
 		String xName = null;
+		double xo = o.getXOffset();
+		double xs = o.getXScale();
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
 			Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(r);
@@ -394,11 +512,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			if (xName == null) {
 				xName = x.getName();
 			}
+			if (xo != 0 && xs != 1) {
+				x = Maths.add(x, xo).imultiply(xs);
+			}
 			ILineTrace l = plottingSystem.createLineTrace(n);
+			plottingSystem.addTrace(l);
 			if (r.getSize() == 1) {
 				l.setPointStyle(PointStyle.XCROSS);
 			}
-			plottingSystem.addTrace(l);
 			l.setData(x, r);
 		}
 		plottingSystem.getSelectedXAxis().setTitle(xName);
@@ -408,24 +529,17 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
 		// TODO generalize to handle all plots
 		Map<String, Dataset> plots = new LinkedHashMap<>();
-		switch (plotOption) {
-		case ElasticLineIntercept:
+		if (plotOption == poElasticLineIntercept) {
 			addPointData(plots, plotOption);
-			break;
-		case ElasticLineSlope:
+		} else if (plotOption == poElasticLineSlope) {
 			addPointData(plots, plotOption);
-			break;
-		case FWHM:
+		} else if (plotOption == poFWHM) {
 			addPointData(plots, plotOption);
-			break;
-		case SpectrumWithFit:
+		} else if (plotOption == poSpectrumWithFit) {
 			addSpectrumData(plots, plotOption);
-			addSpectrumData(plots, PlotOption.Spectrum);
-			break;
-		case Spectrum:
-		default:
+			addSpectrumData(plots, poSpectrum);
+		} else if (plotOption == poSpectrum) {
 			addSpectrumData(plots, plotOption);
-			break;
 		}
 		return plots;
 	}
@@ -653,7 +767,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			double slope = slopeModel.getSlopeOverride();
 			if (slope != 0) {
 				Dataset sp = RixsBaseOperation.sumImageAlongSlope(i.transpose(), slope, false);
-				sp.setName(PlotOption.Spectrum.getDataName());
+				sp.setName(poSpectrum.getDataName());
 				addToList(list, sp.reshape(1, sp.getSize()));
 			} else {
 				od = eop.execute(i, null);
