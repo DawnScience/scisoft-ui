@@ -9,7 +9,6 @@
 
 package uk.ac.diamond.sda.navigator.actions;
 
-import org.dawb.common.services.ServiceManager;
 import org.eclipse.dawnsci.analysis.api.io.IDataHolder;
 import org.eclipse.dawnsci.slicing.api.data.ITransferableDataObject;
 import org.eclipse.dawnsci.slicing.api.data.ITransferableDataService;
@@ -19,10 +18,13 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IWorkbenchPage;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.io.LoaderFactory;
+import uk.ac.diamond.sda.intro.navigator.NavigatorRCPActivator;
 import uk.ac.diamond.sda.navigator.srs.SRSTreeData;
 
 public class CopyTransferableDataAction extends Action {
@@ -75,7 +77,8 @@ public class CopyTransferableDataAction extends Action {
 			if (isEnabled()) {
 				final String    path = data.getFile().getRawLocation().toOSString();
 				final IDataHolder hd = LoaderFactory.getData(path, true, false, new IMonitor.Stub());
-				final ITransferableDataService service = (ITransferableDataService)ServiceManager.getService(ITransferableDataService.class);
+
+				ITransferableDataService service = NavigatorRCPActivator.getService(ITransferableDataService.class);
 				final ITransferableDataObject  object  = service.createData(hd, hd.getMetadata(), data.getName());
 				service.setBuffer(object);
 			}

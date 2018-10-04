@@ -299,12 +299,9 @@ public final class FileView extends ViewPart implements IFileView {
 			TreeColumn tCol = tVCol.getColumn();
 			tCol.setText(titles[i]);
 			tCol.setWidth(widths[i]);
-			try {
-				tVCol.setLabelProvider(new FileLabelProvider(tree, i));
-			} catch (Exception e1) {
-				logger.error("Cannot create label provider "+i, e1);
-			}
+			tVCol.setLabelProvider(new FileLabelProvider(tree, i));
 		}
+		
 		getSite().setSelectionProvider(tree);
 		
 		createContent(true);
