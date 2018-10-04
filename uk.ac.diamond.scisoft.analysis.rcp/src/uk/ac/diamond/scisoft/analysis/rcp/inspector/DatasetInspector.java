@@ -387,8 +387,6 @@ public class DatasetInspector extends Composite {
 					"2D surface", new String[] { "x-axis", "y-axis" }));
 			inspectionTabs.put(InspectorType.IMAGEXP, new PlotTab(site, InspectorType.IMAGEXP,
 					"2D image explorer", new String[] { "x-axis", "y-axis", "x-grid", "y-grid" }));
-			inspectionTabs.put(InspectorType.MULTIIMAGES, new PlotTab(site, InspectorType.MULTIIMAGES,
-					"2D multiple images", new String[] { "x-axis", "y-axis", "images" }));
 			inspectionTabs.put(InspectorType.VOLUME, new PlotTab(site, InspectorType.VOLUME,
 					"3D volume",  new String[] { "x-axis", "y-axis", "z-axis" }));
 			inspectionTabs.put(InspectorType.POINTS1D, new ScatterTab(site, InspectorType.POINTS1D,

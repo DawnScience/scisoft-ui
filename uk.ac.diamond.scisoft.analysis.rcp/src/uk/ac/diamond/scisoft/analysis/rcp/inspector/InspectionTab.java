@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.dawnsci.plotting.jreality.impl.DataSet3DPlot2DMulti;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.PlottingFactory;
 import org.eclipse.dawnsci.plotting.api.tool.IToolPage.ToolPageRole;
@@ -232,7 +231,6 @@ class PlotTab extends ATab {
 	private String explorerName;
 	// this is the current limit on the number of lines that stack can handle well
 	private static final int STACKPLOTLIMIT = 100;
-	private static final int MULTIIMAGESLIMIT = DataSet3DPlot2DMulti.MAX_IMAGES;
 
 	private PropertyChangeListener axesListener = null;
 	private ImageExplorerView explorer = null;
@@ -965,7 +963,7 @@ class PlotTab extends ATab {
 		// FIXME: Image, surface and volume plots can't work with multidimensional axis data
 		List<? extends IDataset> slicedAxes = sliceAxes(getChosenAxes(), slices, average, order);
 
-		if (itype == InspectorType.IMAGE || itype == InspectorType.SURFACE || itype == InspectorType.IMAGEXP  || itype == InspectorType.MULTIIMAGES) {
+		if (itype == InspectorType.IMAGE || itype == InspectorType.SURFACE || itype == InspectorType.IMAGEXP) {
 			// note that the DataSet plotter's 2D image/surface mode is row-major
 			swapFirstTwoInOrder(order);
 		}
@@ -1090,9 +1088,6 @@ class PlotTab extends ATab {
 				return;
 
 			pushImages(monitor, slices, order);
-			break;
-		case MULTIIMAGES:
-			pushMultipleImages(monitor, sliceProperties, slices, slicedAxes, order);
 			break;
 		case VOLUME:
 			reorderedData = slicedAndReorderData(monitor, slices, average, order, meta);
@@ -1251,71 +1246,6 @@ class PlotTab extends ATab {
 		}
 	}
 
-	private void pushMultipleImages(final IMonitor monitor, List<SliceProperty> sliceProperties, final Slice[] slices, List<? extends IDataset> slicedAxes, final int[] order) {
-		// work out slicing result
-		int[] shape = dataset.getShape();
-		int smax = slices.length;
-		if (smax < 2)
-			smax = 2;
-		final int sliceAxis = order[2];
-		final Slice[] subSlices = new Slice[smax];
-		for (int i = 0; i < smax; i++) {
-			if (i < slices.length) {
-				subSlices[i] = i == sliceAxis ? slices[i].clone() : slices[i];
-			} else {
-				subSlices[i] = new Slice(shape[i]);
-			}
-			shape[i] = slices[i].getNumSteps();
-		}
-
-		final int nimages = shape[sliceAxis];
-
-		if (nimages > MULTIIMAGESLIMIT) {
-			logger.warn("Try plot too many images in multiple images plot: reduced from {} images to {}", nimages, MULTIIMAGESLIMIT);
-			SliceProperty p = sliceProperties.get(sliceAxis);
-			Slice s = p.getValue();
-			Integer st = s.getStart();
-			p.setStop((st == null ? 0 : st) + MULTIIMAGESLIMIT*s.getStep(), true);
-			return;
-		}
-
-		IDataset yaxis = make1DAxisSlice(slicedAxes, 1);
-		IDataset xaxis = make1DAxisSlice(slicedAxes, 0);
-
-		try {
-			Slice subSlice = subSlices[sliceAxis];
-			int start = subSlice.getStart() == null ? 0 : subSlice.getStart();
-			subSlices[sliceAxis].setStop(start+1);
-			setInspectionRunning();
-
-			IDataset[] images = new IDataset[nimages];
-			for (int i = 0; i < nimages; i++) {
-				subSlices[sliceAxis].setPosition(start + i);
-				Dataset slicedData = sliceData(monitor, subSlices);
-				if (slicedData == null)
-					return;
-
-				Dataset reorderedData = slicedData.getTransposedView(order);
-
-				reorderedData.setName(slicedData.getName());
-				reorderedData.squeeze();
-				if (reorderedData.getSize() < 1)
-					return;
-
-				reorderedData.setName(dataset.getName() + "." + i);
-				if (!canContinueInspection()) {
-					return;
-				}
-
-				images[i] = reorderedData;
-			}
-			SDAPlotter.imagesPlot(PLOTNAME, xaxis, yaxis, images);
-		} catch (Exception e) {
-			logger.warn("Problem with sending data to image explorer", e);
-		} finally {
-			stopInspection();
-		}
-	}
 }
 
 /**
@@ -1394,7 +1324,6 @@ class DataTab extends PlotTab {
 		case LINE:
 		case LINESTACK:
 		case IMAGEXP:
-		case MULTIIMAGES:
 		case POINTS1D:
 		case POINTS2D:
 		case POINTS3D:
@@ -1765,7 +1694,6 @@ class ScatterTab extends PlotTab {
 		case LINE:
 		case LINESTACK:
 		case IMAGEXP:
-		case MULTIIMAGES:
 		case SURFACE:
 		case VOLUME:
 		case HYPER:
