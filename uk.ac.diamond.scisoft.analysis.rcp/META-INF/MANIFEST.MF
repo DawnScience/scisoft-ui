@@ -35,7 +35,7 @@ Require-Bundle: org.eclipse.ui,
  org.dawnsci.datavis.api,
  org.eclipse.dawnsci.nexus,
  org.dawnsci.datavis.model
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: com.swtdesigner,
  uk.ac.diamond.scisoft.analysis.rcp,
  uk.ac.diamond.scisoft.analysis.rcp.actions,
@@ -65,3 +65,4 @@ Import-Package: org.apache.commons.collections,
  org.nfunk.jep;version="2.4.1",
  org.slf4j;version="[1.7.2,2.0.0)"
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: uk.ac.diamond.scisoft.analysis.rcp
