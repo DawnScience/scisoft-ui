@@ -171,7 +171,6 @@ public class HyperTab extends PlotTab {
 		case LINE:
 		case LINESTACK:
 		case IMAGEXP:
-		case MULTIIMAGES:
 		case POINTS1D:
 		case POINTS2D:
 		case POINTS3D:

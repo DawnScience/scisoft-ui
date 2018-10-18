@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
+import org.eclipse.dawnsci.plotting.api.axis.IAxis;
 import org.eclipse.dawnsci.plotting.api.trace.IMulti2DTrace;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.IDataset;
@@ -49,10 +50,15 @@ class Plotting2DMultiUI extends AbstractPlotConnection {
 //					final List<Dataset> datasets = Collections.synchronizedList(new LinkedList<Dataset>());
 					Dataset xAxisValues = dbPlot.getAxis(AxisMapBean.XAXIS);
 					Dataset yAxisValues = dbPlot.getAxis(AxisMapBean.YAXIS);
-					
-					plottingSystem.getSelectedYAxis().setTitle(yAxisValues.getName());
-					plottingSystem.getSelectedXAxis().setTitle(xAxisValues.getName());
-					
+					IAxis axis = plottingSystem.getSelectedXAxis();
+					if (axis != null) {
+						axis.setTitle(xAxisValues.getName());
+					}
+					axis = plottingSystem.getSelectedYAxis();
+					if (axis != null) {
+						axis.setTitle(yAxisValues.getName());
+					}
+
 					IDataset[] datasets = new IDataset[plotData.size()];
 					int i = 0;
 					while (iter.hasNext()) {
