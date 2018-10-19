@@ -33,8 +33,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -147,6 +146,7 @@ public class FeedbackView extends ViewPart implements IPartListener {
 
 		messageText = new Text(content, SWT.BORDER | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL);
 		GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gd.heightHint = 200;
 		gd.minimumHeight = 200;
 		messageText.setLayoutData(gd);
 
@@ -188,14 +188,12 @@ public class FeedbackView extends ViewPart implements IPartListener {
 		scrollComposite.setContent(content);
 		scrollComposite.setExpandVertical(true);
 		scrollComposite.setExpandHorizontal(true);
-		scrollComposite.addControlListener(new ControlAdapter() {
-			@Override
-			public void controlResized(ControlEvent e) {
-				Rectangle r = scrollComposite.getClientArea();
-				int height = content.computeSize(r.width, SWT.DEFAULT).y;
-				scrollComposite.setMinHeight(height);
-				scrollComposite.setMinWidth(content.computeSize(SWT.DEFAULT, r.height).x);
-			}
+		scrollComposite.addListener(SWT.Resize, event -> {
+			Rectangle clientArea = scrollComposite.getClientArea();
+			int width = clientArea.width;
+			Point computeSize = parent.computeSize(width, SWT.DEFAULT);
+			scrollComposite.setMinWidth(computeSize.x);
+			scrollComposite.setMinHeight(clientArea.height);
 		});
 
 		hookContextMenu();
