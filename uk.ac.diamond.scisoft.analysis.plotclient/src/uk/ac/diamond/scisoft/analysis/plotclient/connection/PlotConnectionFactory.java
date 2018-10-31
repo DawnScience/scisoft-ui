@@ -43,6 +43,8 @@ public class PlotConnectionFactory {
 		} else if (plotMode.equals(GuiPlotMode.MULTI2D)) {
 			plottingSystem.setPlotType(PlotType.MULTI_IMAGE);
 			plotUI = new Plotting2DMultiUI(plottingSystem);
+		} else if (plotMode.equals(GuiPlotMode.VOLUME)) {
+			plotUI = new PlottingVolumeUI(plottingSystem);
 		}
 		return plotUI;
 	}

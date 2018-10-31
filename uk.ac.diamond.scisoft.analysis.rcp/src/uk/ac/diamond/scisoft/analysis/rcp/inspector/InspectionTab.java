@@ -26,6 +26,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.PlottingFactory;
 import org.eclipse.dawnsci.plotting.api.tool.IToolPage.ToolPageRole;
+import org.eclipse.dawnsci.plotting.api.tool.IToolPageSystem;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.IMonitor;
 import org.eclipse.january.dataset.Dataset;
@@ -37,7 +38,6 @@ import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.dataset.PositionIterator;
 import org.eclipse.january.dataset.Slice;
 import org.eclipse.january.metadata.IMetadata;
-import org.eclipse.dawnsci.plotting.api.tool.IToolPageSystem;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -1094,9 +1094,13 @@ class PlotTab extends ATab {
 			if (isRankBad(reorderedData, 3)) {
 				return;
 			}
+			
+			IDataset xAxisSlice = make1DAxisSlice(slicedAxes, 0);
+			IDataset yAxisSlice = make1DAxisSlice(slicedAxes, 1);
+			IDataset zAxisSlice = make1DAxisSlice(slicedAxes, 2);
 
 			try {
-				SDAPlotter.volumePlot(VOLVIEWNAME, reorderedData);
+				SDAPlotter.volumePlot(PLOTNAME, xAxisSlice, yAxisSlice, zAxisSlice, reorderedData);
 			} catch (Exception e) {
 				logger.error("Could not plot volume", e);
 			}
