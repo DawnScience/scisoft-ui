@@ -19,7 +19,9 @@ import java.util.Set;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.trace.ILineStackTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
+import org.eclipse.dawnsci.plotting.api.trace.IWaterfallTrace;
 import org.eclipse.january.dataset.Dataset;
+import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.swt.widgets.Display;
 import org.slf4j.Logger;
@@ -79,7 +81,7 @@ class Plotting1DStackUI extends AbstractPlotConnection {
 				String plotOperation = gb == null ? null : (String) gb.get(GuiParameters.PLOTOPERATION);
 
 				// check for number of stack traces
-				ILineStackTrace oldTrace = null;
+				ITrace oldTrace = null;
 				Collection<ITrace> oldTraces = plottingSystem.getTraces();
 				for (ITrace t : oldTraces) {
 					if (t instanceof ILineStackTrace) {
@@ -94,15 +96,15 @@ class Plotting1DStackUI extends AbstractPlotConnection {
 					}
 				}
 
-				ILineStackTrace trace;
+				ITrace trace;
 				if (oldTrace != null) {
 					trace = oldTrace;
 				} else {
 					plottingSystem.reset();
-					trace = plottingSystem.createLineStackTrace("Plots");
+					trace = plottingSystem.createTrace("Plots");
 				}
 
-				IDataset[] ys = new IDataset[n];
+				Dataset[] ys = new Dataset[n];
 				List<IDataset> axes = new ArrayList<IDataset>();
 				Map<String, Dataset> axisData = dbPlot.getAxisData();
 				for (int i = 0; i < n; i++) {
@@ -116,7 +118,15 @@ class Plotting1DStackUI extends AbstractPlotConnection {
 				}
 				axes.add(null);
 				axes.add(axisData.get(AxisMapBean.ZAXIS));
-				trace.setData(axes, ys);
+				if (trace instanceof ILineStackTrace) {
+					((ILineStackTrace) trace).setData(axes, ys);
+				} else if (trace instanceof IWaterfallTrace) {
+					for (int i = 0; i < n; i++) {
+						ys[i] =   ys[i].reshape(1, -1);
+					}
+					IDataset data = DatasetUtils.concatenate(ys, 0);
+					((IWaterfallTrace) trace).setData(data , axes.toArray(new IDataset[axes.size()]));
+				}
 
 				if (trace == oldTrace) {
 					logger.debug("Plot 1D 3D updated");
