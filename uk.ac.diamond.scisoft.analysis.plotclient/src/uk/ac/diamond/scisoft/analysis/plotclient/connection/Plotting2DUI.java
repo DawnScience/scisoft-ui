@@ -16,8 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
-import org.eclipse.dawnsci.plotting.api.trace.IImageTrace;
-import org.eclipse.dawnsci.plotting.api.trace.ISurfaceTrace;
+import org.eclipse.dawnsci.plotting.api.trace.IAxesTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.IDataset;
@@ -85,15 +84,9 @@ class Plotting2DUI extends PlottingGUIUpdate {
 						if (traces != null && traces.size() > 0) {
 							ITrace trace = traces.iterator().next();
 							List<IDataset> currentAxes = null;
-							int[] shape = null;
-							if (trace instanceof IImageTrace) {
-								final IImageTrace image = (IImageTrace) trace;
-								shape = image.getData() != null ? image.getData().getShape() : null;
-								currentAxes = image.getAxes();
-							} else if (trace instanceof ISurfaceTrace) {
-								final ISurfaceTrace surface = (ISurfaceTrace) trace;
-								shape = surface.getData() != null ? surface.getData().getShape() : null;
-								currentAxes = surface.getAxes();
+							int[] shape = trace.getData() != null ? trace.getData().getShape() : null;
+							if (trace instanceof IAxesTrace) {
+								currentAxes = ((IAxesTrace) trace).getAxes();
 							}
 							boolean newAxes = true;
 							String lastXAxisName = "", lastYAxisName = "";
