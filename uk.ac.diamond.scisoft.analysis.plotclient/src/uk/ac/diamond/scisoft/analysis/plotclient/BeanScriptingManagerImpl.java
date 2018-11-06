@@ -110,20 +110,15 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 						// if there is a stashedGUIBean to update then do that update first
 						if (bean != null) {
 							event.setStashedGuiBean(null);
-							if (window != null)
+							if (window != null) {
 								window.processGUIUpdate(bean);
+							}
 						}
 
 						// once the guiBean has been sorted out, see if there is any need to update the dataBean
 						if (dataBean != null) {
 							event.setDataBean(null);
 							if (window != null) {
-								GuiBean guiBean = event.getGuiBean();
-								if (guiBean != null) {
-									// update the GUI if needed
-									window.processGUIUpdate(guiBean);
-								}
-
 								window.processPlotUpdate(dataBean);
 							}
 							notifyDataObservers(dataBean, null);

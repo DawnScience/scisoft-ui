@@ -17,6 +17,8 @@ import java.util.List;
 
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.trace.IAxesTrace;
+import org.eclipse.dawnsci.plotting.api.trace.IImageTrace;
+import org.eclipse.dawnsci.plotting.api.trace.ISurfaceMeshTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.IDataset;
@@ -91,16 +93,27 @@ class Plotting2DUI extends PlottingGUIUpdate {
 							boolean newAxes = true;
 							String lastXAxisName = "", lastYAxisName = "";
 							if (currentAxes != null && currentAxes.size() > 0) {
-								lastXAxisName = currentAxes.get(0).getName();
-								lastYAxisName = currentAxes.get(1).getName();
+								IDataset axis = currentAxes.get(0);
+								if (axis != null) {
+									lastXAxisName = axis.getName();
+								}
+								axis = currentAxes.get(1);
+								if (axis != null) {
+									lastYAxisName = axis.getName();
+								}
 								newAxes = !currentAxes.equals(axes);
 							}
 
-							if (shape != null && Arrays.equals(shape, data.getShape())
+							Class<? extends ITrace> clazz = trace.getClass();
+							if (!ISurfaceMeshTrace.class.isAssignableFrom(clazz) && shape != null && Arrays.equals(shape, data.getShape())
 									&& lastXAxisName.equals(xAxisName) && lastYAxisName.equals(yAxisName)) {
 								plottingSystem.updatePlot2D(data, axes, null);
 								logger.debug("Plot 2D updated");
 							} else {
+								if (!IImageTrace.class.isAssignableFrom(clazz)) {
+									plottingSystem.removeTrace(trace);
+								}
+
 								plottingSystem.createPlot2D(data, axes, null);
 								logger.debug("Plot 2D created");
 							}
