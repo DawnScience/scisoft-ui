@@ -39,27 +39,6 @@
       </double_click_provider>
    </extension>
    <extension
-         point="org.dawnsci.webintro.item">
-      <introAction
-            class="uk.ac.diamond.scisoft.analysis.rcp.DataExplorationPerspectiveLaunch"
-            description="More advanced data exploring, with many options for how the data is shown. The Data Exploring perspective is suitable for viewing line traces, images and multidimensional data. Also contains features for comparing data from multiple files and connecting the plot to a Python/Jython interpreter"
-            icon="intro/graphics/dexplore_intro52.png"
-            id="uk.ac.diamond.scisoft.analysis.rcp.DataExplorationPerspectiveLaunch"
-            name="DEXPLORE"
-            ordering="2"
-            parent_id="dawn_general">
-      </introAction>
-      <introAction
-            class="uk.ac.diamond.scisoft.analysis.rcp.DataExplorationPerspectiveLaunch"
-            description="More advanced data exploring, with many options for how the data is shown. The Data Exploring perspective is suitable for viewing line traces, images and multidimensional data. Also contains features for comparing data from multiple files and connecting the plot to a Python/Jython interpreter"
-            icon="intro/graphics/dexplore_intro52.png"
-            id="uk.ac.diamond.scisoft.analysis.rcp.DataExplorationPerspectiveLaunch2"
-            name="DEXPLORE"
-            ordering="1"
-            parent_id="science_tomography">
-      </introAction>
-   </extension>
-   <extension
          point="org.eclipse.ui.commands">
       <command
             defaultHandler="uk.ac.diamond.scisoft.analysis.rcp.hdf5.HDF5TreeDialogHandler"

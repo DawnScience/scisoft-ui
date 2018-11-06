@@ -1,16 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <fragment>
-   <extension
-         point="org.dawnsci.webintro.item">
-      <introAction
-            class="uk.ac.diamond.scisoft.pydev.rcp.JythonPerspectiveLaunch"
-            description="Opens the Pydev environment for programmatically opening, editing, analysing, saving and displaying data files"
-            icon="intro/graphics/python_intro52.png"
-            id="uk.ac.diamond.scisoft.pydev.rcp.JythonPerspectiveLaunch"
-            name="Python/Jython Scripting"
-            ordering="1"
-            parent_id="dawn_dev">
-      </introAction>
-   </extension>
 </fragment>
