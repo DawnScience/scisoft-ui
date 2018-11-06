@@ -68,14 +68,14 @@ class Plotting1DStackUI extends AbstractPlotConnection {
 				// single stack trace with multiple plots
 
 				// work out if more than one x axis supplied
-				String xName = null;
 				Set<String> xNames = new HashSet<String>();
+				Dataset[] ys = new Dataset[n];
 				for (int i = 0; i < n; i++) {
 					DatasetWithAxisInformation d = plotData.get(i);
+					ys[i] = d.getData();
 					xNames.add(d.getAxisMap().getAxisID()[0]);
 				}
-				if (xNames.size() == 1)
-					xName = xNames.iterator().next();
+				final String xName = xNames.size() == 1 ? xNames.iterator().next() : null;
 
 				GuiBean gb = dbPlot.getGuiParameters();
 				String plotOperation = gb == null ? null : (String) gb.get(GuiParameters.PLOTOPERATION);
@@ -104,16 +104,14 @@ class Plotting1DStackUI extends AbstractPlotConnection {
 					trace = plottingSystem.createTrace("Plots");
 				}
 
-				Dataset[] ys = new Dataset[n];
 				List<IDataset> axes = new ArrayList<IDataset>();
 				Map<String, Dataset> axisData = dbPlot.getAxisData();
-				for (int i = 0; i < n; i++) {
-					DatasetWithAxisInformation d = plotData.get(i);
-					ys[i] = d.getData();
-					if (xName == null)
+				if (xName == null) {
+					for (int i = 0; i < n; i++) {
+						DatasetWithAxisInformation d = plotData.get(i);
 						axes.add(axisData.get(d.getAxisMap().getAxisID()[0]));
-				}
-				if (xName != null) {
+					}
+				} else {
 					axes.add(axisData.get(xName));
 				}
 				axes.add(null);
@@ -122,7 +120,7 @@ class Plotting1DStackUI extends AbstractPlotConnection {
 					((ILineStackTrace) trace).setData(axes, ys);
 				} else if (trace instanceof IWaterfallTrace) {
 					for (int i = 0; i < n; i++) {
-						ys[i] =   ys[i].reshape(1, -1);
+						ys[i] =  ys[i].reshape(1, -1);
 					}
 					IDataset data = DatasetUtils.concatenate(ys, 0);
 					((IWaterfallTrace) trace).setData(data , axes.toArray(new IDataset[axes.size()]));

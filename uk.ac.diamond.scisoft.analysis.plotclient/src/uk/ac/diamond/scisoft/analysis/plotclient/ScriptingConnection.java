@@ -226,17 +226,13 @@ public class ScriptingConnection implements IObservable {
 	 * @param dbPlot
 	 */
 	public void processPlotUpdate(DataBean dbPlot) {
-		// check to see what type of plot this is and set the plotMode to the correct one
-		if (dbPlot.getGuiPlotMode() != null) {
+		// there may be some gui information in the databean, if so this also needs to be updated
+		if (dbPlot.getGuiParameters() != null) {
 			if (plottingSystem!=null && plottingSystem.isDisposed()) {
 				// this can be caused by the same plot view shown on 2 difference perspectives.
 				throw new IllegalStateException("parentComp is already disposed");
 			}
 
-			updatePlotMode(dbPlot.getGuiPlotMode());
-		}
-		// there may be some gui information in the databean, if so this also needs to be updated
-		if (dbPlot.getGuiParameters() != null) {
 			processGUIUpdate(dbPlot.getGuiParameters());
 		}
 		
