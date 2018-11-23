@@ -24,17 +24,15 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.ui.IWorkbenchSite;
+import org.eclipse.ui.ISources;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 public class HDF5TreeDialogHandler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		ISelection selection = HandlerUtil.getActiveSite(event).getWorkbenchWindow().getSelectionService().getSelection("org.dawnsci.datavis.view.parts.LoadedFilePart");
-		List<IDataFilePackage> list = getSelectedFiles(selection);
+		List<IDataFilePackage> list = getSelectedFiles(event);
 		if (!list.isEmpty()) {
 			Tree tree = list.get(0).getTree();
 			
@@ -47,32 +45,27 @@ public class HDF5TreeDialogHandler extends AbstractHandler {
 		
 		return null;
 	}
-	
+
 	@Override
 	public void setEnabled(Object evaluationContext) {
-		Object variable = HandlerUtil.getVariable(evaluationContext, "activeSite");
-		if (variable != null && variable instanceof IWorkbenchSite) {
-			ISelection selection = ((IWorkbenchSite)variable).getWorkbenchWindow().getSelectionService().getSelection("org.dawnsci.datavis.view.parts.LoadedFilePart");
-			List<IDataFilePackage> list = getSelectedFiles(selection);
-			setBaseEnabled(!list.isEmpty() && list.get(0).getTree() != null);
-		}
+		List<IDataFilePackage> list = getSelectedFiles(evaluationContext);
+		setBaseEnabled(!list.isEmpty() && list.get(0).getTree() != null);
 	}
-	
-	private List<IDataFilePackage> getSelectedFiles(ISelection selection){
+
+	private List<IDataFilePackage> getSelectedFiles(Object evaluationContext) {
+		Object variable = evaluationContext instanceof ExecutionEvent ? HandlerUtil.getVariable((ExecutionEvent) evaluationContext, ISources.ACTIVE_CURRENT_SELECTION_NAME):
+				HandlerUtil.getVariable(evaluationContext, ISources.ACTIVE_CURRENT_SELECTION_NAME);
 
 		List<IDataFilePackage> list = new ArrayList<>();
-		
-		if (selection instanceof StructuredSelection) {
-			Object[] array = ((StructuredSelection)selection).toArray();
+		if (variable instanceof StructuredSelection) {
+			Object[] array = ((StructuredSelection) variable).toArray();
 			for (Object o : array) {
 				if (o instanceof IDataFilePackage) {
-					list.add((IDataFilePackage)o);
+					list.add((IDataFilePackage) o);
 				}
 			}
-			
 		}
-		
+
 		return list;
 	}
-
 }
