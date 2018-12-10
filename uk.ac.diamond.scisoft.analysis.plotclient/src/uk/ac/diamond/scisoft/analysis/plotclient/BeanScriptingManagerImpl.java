@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingDeque;
 
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	private BlockingDeque<PlotEvent> queue;
 	private UUID                plotID;
 
-	private Set<IObserver>   dataObservers;
+	private final Set<IObserver> dataObservers = new CopyOnWriteArraySet<>();
 
 	public BeanScriptingManagerImpl(PlotServer server) {
 	    this(server, "Plot View");	
@@ -67,8 +68,6 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 
 		// Blocking queue to which we add plot update events.
 		this.queue = new LinkedBlockingDeque<PlotEvent>(25);
-		
-		this.dataObservers = Collections.synchronizedSet(new LinkedHashSet<IObserver>());
 	}
 
 	private Thread plotThread;
@@ -140,9 +139,7 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	 * @param observer
 	 */
 	public void addDataObserver(IObserver observer) {
-		synchronized (dataObservers) {
-			dataObservers.add(observer);
-		}
+		dataObservers.add(observer);
 	}
 
 	/**
@@ -151,30 +148,22 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	 * @param observer
 	 */
 	public void deleteDataObserver(IObserver observer) {
-		synchronized (dataObservers) {
-			dataObservers.remove(observer);
-		}
+		dataObservers.remove(observer);
 	}
 
 	/**
 	 * Remove all data observers
 	 */
 	public void deleteDataObservers() {
-		synchronized (dataObservers) {
-			dataObservers.clear();
-		}
+		dataObservers.clear();
 	}
 
 	public void notifyDataObservers(DataBean bean, IObserver source) {
-		synchronized (dataObservers) {
-			Iterator<IObserver> iter = dataObservers.iterator();
-			while (iter.hasNext()) {
-				IObserver ob = iter.next();
-				if (ob == source) { // skip updating source
-					continue;
-				}
-				ob.update(this, bean);
+		for (IObserver ob : dataObservers) {
+			if (ob == source) { // skip updating source
+				continue;
 			}
+			ob.update(this, bean);
 		}
 	}
 
@@ -304,9 +293,7 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	}
 
 	public void dispose() {
-		synchronized (dataObservers) {
-			dataObservers.clear();
-		}
+		dataObservers.clear();
 		queue.clear();
 		queue.add(new PlotEvent());
 		getPlotServer().deleteIObserver(this);
