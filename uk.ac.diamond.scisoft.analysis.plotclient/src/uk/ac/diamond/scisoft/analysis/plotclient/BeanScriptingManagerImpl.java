@@ -16,21 +16,21 @@
 
 package uk.ac.diamond.scisoft.analysis.plotclient;
 
-import gda.observable.IObserver;
-
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import gda.observable.IObserver;
 import uk.ac.diamond.scisoft.analysis.PlotServer;
 import uk.ac.diamond.scisoft.analysis.plotserver.DataBean;
 import uk.ac.diamond.scisoft.analysis.plotserver.GuiBean;
@@ -71,6 +71,8 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	}
 
 	private Thread plotThread;
+
+	private Executor updateHandlingExecutor;
 	
 	private void start() {
 
@@ -78,6 +80,11 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 		this.plotThread = createPlotEventThread();
 		plotThread.setDaemon(true);
 		plotThread.start();
+
+		// This is a single threaded executor with a single element queue and will discard jobs if the queue is
+		// full. This is used to ensure only the newest plot update request is handled.
+		updateHandlingExecutor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(1),
+				new ThreadPoolExecutor.DiscardOldestPolicy());
 
 		server.addIObserver(this);
 	}
@@ -173,25 +180,8 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 
 		if (changeCode instanceof String && changeCode.equals(viewName)) {
 			logger.debug("Getting a plot data update for {}; thd {} {}",  viewName, thd.getId(), thd.getName());
-			GuiBean guiBean = getGUIBean();
-			final PlotEvent evt = new PlotEvent();
-			try {
-				DataBean dataBean = getPlotServer().getData(viewName);
-				if (dataBean != null) {
-					dataBean = dataBean.copy(); // need to make a (shallow) copy otherwise changes get out of sync
-					if (logger.isTraceEnabled()) {
-						// don't pass databean itself to logger to prevent slow loggers holding references to it
-						// for longer than necessary
-						String beanString = dataBean.toString();
-						logger.trace("BSM copied data bean ({}) {}", dataBean.getData().size(), beanString);
-					}
-				}
-				evt.setDataBean(dataBean);
-			} catch (Exception e) {
-				logger.error("There has been an issue retrieving the databean from the plotserver", e);
-			}
-			evt.setGuiBean(guiBean);
-			offer(evt);
+			// Execute an update job. If one is already queued this request will be discarded
+			updateHandlingExecutor.execute(this::queuePlotUpdate);
 		} else if (changeCode instanceof GuiUpdate) {
 			GuiUpdate gu = (GuiUpdate) changeCode;
 			if (gu.getGuiName().contains(viewName)) {
@@ -215,6 +205,29 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 				}
 			}
 		}
+	}
+
+	private void queuePlotUpdate() {
+		GuiBean guiBean = getGUIBean();
+		final PlotEvent evt = new PlotEvent();
+		try {
+			DataBean dataBean = getPlotServer().getData(viewName);
+			if (dataBean != null) {
+				dataBean = dataBean.copy(); // need to make a (shallow) copy otherwise changes get out of sync
+				if (logger.isTraceEnabled()) {
+					// don't pass databean itself to logger to prevent slow loggers holding
+					// references to it for longer than necessary
+					String beanString = dataBean.toString();
+					logger.trace("BSM copied data bean ({}) {}", dataBean.getData().size(), beanString);
+				}
+			}
+			evt.setDataBean(dataBean);
+		} catch (Exception e) {
+			logger.error("There has been an issue retrieving the databean from the plotserver", e);
+		}
+		evt.setGuiBean(guiBean);
+		// Put the update onto the queue
+		offer(evt);
 	}
 
 
