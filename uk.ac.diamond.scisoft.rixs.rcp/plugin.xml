@@ -38,14 +38,14 @@
             class="org.eclipse.dawnsci.plotting.api.VanillaPlottingSystemView"
             icon="icons/chart_curve.png"
             id="uk.ac.diamond.scisoft.rixs.QRPlot"
-            name="RIXS Plot"
+            name="QuickRIXS Plot"
             restorable="true">
       </view>
       <view
             class="org.eclipse.dawnsci.plotting.api.VanillaPlottingSystemView"
             icon="icons/chart_curve.png"
             id="uk.ac.diamond.scisoft.rixs.PRPlot"
-            name="RIXS Aggregator Plot"
+            name="RIXS Plot"
             restorable="true">
       </view>
       <e4view
@@ -59,7 +59,7 @@
             class="uk.ac.diamond.scisoft.rixs.rcp.view.PostRIXSAggregator"
             icon="icons/chequered-stairs.png"
             id="uk.ac.diamond.scisoft.rixs.PRAggregator"
-            name="RIXS Aggregator"
+            name="RIXS Plot Options"
             restorable="true">
       </e4view>
    </extension>

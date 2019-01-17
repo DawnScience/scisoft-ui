@@ -19,7 +19,7 @@ public class PostRIXSPerspective implements IPerspectiveFactory {
 	public final static String ID = "uk.ac.diamond.scisoft.rixs.PRPerspective";
 	public final static String LOADED_FILE_ID = "uk.ac.diamond.scisoft.rixs.PRLoadedFilePart";
 	public final static String PLOT_ID = "uk.ac.diamond.scisoft.rixs.PRPlot";
-	public final static String PLOT_NAME = "RIXS Aggregator Plot";
+	public final static String PLOT_NAME = "RIXS Plot";
 
 	@Override
 	public void createInitialLayout(IPageLayout layout) {

@@ -19,7 +19,7 @@ public class QuickRIXSPerspective implements IPerspectiveFactory {
 	public final static String ID = "uk.ac.diamond.scisoft.rixs.QRPerspective";
 	public final static String LOADED_FILE_ID = "uk.ac.diamond.scisoft.rixs.QRLoadedFilePart";
 	public final static String PLOT_ID = "uk.ac.diamond.scisoft.rixs.QRPlot";
-	public final static String PLOT_NAME = "RIXS Plot";
+	public final static String PLOT_NAME = "QuickRIXS Plot";
 
 	@Override
 	public void createInitialLayout(IPageLayout layout) {
