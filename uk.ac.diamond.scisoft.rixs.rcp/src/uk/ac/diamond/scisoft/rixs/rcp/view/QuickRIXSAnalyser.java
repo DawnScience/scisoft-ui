@@ -182,7 +182,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	class SubtractBGModel extends AbstractOperationModel {
 		@OperationModelField(label = "Subtract background", hint = "Uncheck to leave background in image")
-		private boolean subtractBackground = true;
+		private boolean subtractBackground = false;
 
 		/**
 		 * @return true if want to subtract background
@@ -260,10 +260,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				}
 			});
 			slopeModel.addPropertyChangeListener(this);
-			bgOp = (SubtractFittedBackgroundOperation) opService.create("uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundOperation");
+			bgOp = (SubtractFittedBackgroundOperation) opService.create(SubtractFittedBackgroundOperation.class.getName());
 			bgModel = bgOp.getModel();
 			bgModel.addPropertyChangeListener(this);
-			elOp = (ElasticLineReduction) opService.create("uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReduction");
+			elOp = (ElasticLineReduction) opService.create(ElasticLineReduction.class.getName());
 			elModel = elOp.getModel();
 			elModel.setRoiA(null);
 			elModel.setRoiB(null);
@@ -468,6 +468,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		}
 
+		if (po == null) {
+			return;
+		}
 		PlotOption fpo = po;
 		Display.getDefault().asyncExec(new Runnable() {
 			@Override
@@ -828,6 +831,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			Dataset[] ds = new Dataset[slices];
 
 			for (int j = 0, jmax = list.size(); j < jmax; j++) {
+				Arrays.fill(ds, null);
 				Dataset d = list.get(j);
 				if (d == null) {
 					continue;
@@ -844,6 +848,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				}
 				if (s != slices) {
 					System.err.println("Error: missing data");
+					continue; // skip when there are not specified number of datasets
 				}
 				d = DatasetUtils.concatenate(ds, 0);
 				d.setName(dName);
