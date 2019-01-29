@@ -45,11 +45,18 @@ import org.eclipse.dawnsci.analysis.api.processing.OperationData;
 import org.eclipse.dawnsci.analysis.api.processing.model.AbstractOperationModel;
 import org.eclipse.dawnsci.analysis.api.processing.model.ModelField;
 import org.eclipse.dawnsci.analysis.api.processing.model.OperationModelField;
+import org.eclipse.dawnsci.analysis.api.roi.IROI;
+import org.eclipse.dawnsci.analysis.dataset.roi.RectangularROI;
+import org.eclipse.dawnsci.analysis.dataset.roi.XAxisBoxROI;
 import org.eclipse.dawnsci.analysis.dataset.slicer.SliceFromSeriesMetadata;
 import org.eclipse.dawnsci.analysis.dataset.slicer.SliceInformation;
 import org.eclipse.dawnsci.analysis.dataset.slicer.SourceInformation;
 import org.eclipse.dawnsci.plotting.api.IPlottingService;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
+import org.eclipse.dawnsci.plotting.api.region.IROIListener;
+import org.eclipse.dawnsci.plotting.api.region.IRegion;
+import org.eclipse.dawnsci.plotting.api.region.IRegion.RegionType;
+import org.eclipse.dawnsci.plotting.api.region.ROIEvent;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.PointStyle;
 import org.eclipse.dawnsci.plotting.api.trace.MetadataPlotUtils;
@@ -79,6 +86,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -89,6 +97,7 @@ import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtractio
 import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundOperation;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReduction;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReductionModel;
+import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.RixsBaseModel.ENERGY_DIRECTION;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.RixsBaseOperation;
 import uk.ac.diamond.scisoft.rixs.rcp.QuickRIXSPerspective;
 
@@ -378,6 +387,97 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				}
 			}
 		});
+
+		// space filler row
+		label = new Label(plotComp, SWT.NONE);
+		label = new Label(plotComp, SWT.NONE);
+		label.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, true));
+
+		Button b = new Button(plotComp, SWT.PUSH);
+		b.setText("Select range");
+		b.setToolTipText("Click and drag to select region on plot\n");
+		b.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				selectRegion(false);
+			}
+		});
+
+		Button rb = new Button(plotComp, SWT.PUSH);
+		rb.setText("Reset range");
+		rb.setToolTipText("Reset to original range");
+		rb.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				selectRegion(true);
+			}
+		});
+	}
+
+	private static final String IMAGE_REGION = "Image region";
+	private int[] rect = new int[2]; // start and length
+
+	private void selectRegion(boolean remove) {
+		IRegion r = plottingSystem.getRegion(IMAGE_REGION);
+		if (remove) {
+			if (r != null && r.getRegionType() == RegionType.XAXIS) {
+				plottingSystem.removeRegion(r);
+			}
+			rect[0] = 0;
+			rect[1] = 0;
+			runProcessing(false, false);
+			return;
+		}
+		if (r != null) {
+			if (r.getRegionType() != RegionType.XAXIS) {
+				plottingSystem.renameRegion(r, "Not " + IMAGE_REGION);
+				r = null;
+			}
+		}
+		if (r == null) {
+			r = createRegion();
+		} else {
+			// reprocess???
+			System.out.println();
+		}
+	}
+
+	private void removeRegion() {
+		IRegion r = plottingSystem.getRegion(IMAGE_REGION);
+		if (r != null && r.getRegionType() == RegionType.XAXIS) {
+			plottingSystem.removeRegion(r);
+		}
+	}
+
+	private IRegion createRegion() {
+		IRegion r = null;
+		try {
+			r = plottingSystem.createRegion(IMAGE_REGION, RegionType.XAXIS);
+			r.addROIListener(new IROIListener() {
+
+				@Override
+				public void roiSelected(ROIEvent evt) {
+				}
+
+				@Override
+				public void roiDragged(ROIEvent evt) {
+				}
+
+				@Override
+				public void roiChanged(ROIEvent evt) {
+					IROI roi = evt.getROI();
+					if (roi instanceof XAxisBoxROI) {
+						XAxisBoxROI ab = (XAxisBoxROI) roi;
+						rect[0] = (int) Math.floor(ab.getPointX());
+						rect[1] = (int) Math.ceil(ab.getLength(0));
+						runProcessing(false, false);
+					}
+				}
+			});
+		} catch (Exception e) {
+			System.err.println("Could not create alignment region" + e);
+		}
+		return r;
 	}
 
 	@PreDestroy
@@ -420,6 +520,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				j.schedule();
 				cachedJobs.put(path, j);
 			}
+			j.setRegion(rect);
 			jobs.add(j);
 		}
 		retry = false;
@@ -485,6 +586,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	private void plotResults(PlotOption o, boolean reset) {
+		removeRegion();
 		if (jobs.isEmpty()) {
 			return;
 		}
@@ -669,11 +771,18 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		private LoadedFile file;
 		private List<Dataset> list;
 		private SoftReference<Map<String, Dataset>> data;
+		private int start;
+		private int length;
 
 		public ProcessFileJob(String name, LoadedFile file) {
 			super(name);
 			this.file = file;
 			list = new ArrayList<>();
+		}
+
+		public void setRegion(int[] rect) {
+			start = rect[0];
+			length = rect[1];
 		}
 
 		public LoadedFile getFile() {
@@ -708,6 +817,25 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				int rank = shape.length;
 				if (rank < 2) {
 					return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "Image data must be in dataset of rank > 2");
+				}
+
+				RectangularROI roi = (RectangularROI) elModel.getRoiA();
+				if (length == 0) {
+					if (roi != null) {
+						elModel.setRoiA(null);
+					}
+				} else {
+					if (roi == null) {
+						roi = new RectangularROI(shape[rank - 2], shape[rank - 1], 0);
+						elModel.setRoiA(roi);
+					}
+					if (elModel.getEnergyDirection() == ENERGY_DIRECTION.FAST) {
+						roi.setPoint(start, 0);
+						roi.setLengths(length, roi.getLength(1));
+					} else {
+						roi.setPoint(0, start);
+						roi.setLengths(roi.getLength(0), length);
+					}
 				}
 				int[] dataDims = new int[] {rank - 2, rank - 1};
 

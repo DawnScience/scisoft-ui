@@ -123,7 +123,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 
 		Button b = new Button(alignComp, SWT.PUSH);
 		b.setText("Align");
-		b.setToolTipText("Click and drag to selection region on plot.\n"
+		b.setToolTipText("Click and drag to select region on plot.\n"
 				+ "Align spectra using leftmost leading slope in selected region.\n"
 				+ "It aligns to first line or to zero if the selected region encloses zero.");
 		b.addSelectionListener(new SelectionAdapter() {
