@@ -1,5 +1,6 @@
 package uk.ac.diamond.scisoft.analysis.rcp.plotmodes;
 
+import org.eclipse.dawnsci.plotting.api.axis.IAxis;
 import org.eclipse.dawnsci.plotting.api.trace.ITableDataTrace;
 import org.eclipse.january.dataset.IDataset;
 
@@ -9,6 +10,10 @@ public class TableDataTrace2D implements ITableDataTrace {
 
 	public TableDataTrace2D(IDataset d) {
 		this.d = d;
+	}
+
+	@Override
+	public void initialize(IAxis... axes) {
 	}
 
 	@Override
