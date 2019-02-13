@@ -419,9 +419,9 @@ public class DiffractionMetadataComposite implements IMetadataPage {
 			meanPxVal.setBackground(grpPixelValueControls.getBackground());
 			meanPxVal.setEditable(false /*editable*/);
 			
-			Label lblThreashold = new Label(grpPixelValueControls, SWT.NONE);
-			lblThreashold.setText("Overload");
-			lblThreashold.setToolTipText("Displays the maximum possible pixel value");
+			Label lblThreshold = new Label(grpPixelValueControls, SWT.NONE);
+			lblThreshold.setText("Overload");
+			lblThreshold.setToolTipText("Displays the maximum possible pixel value");
 	
 			overload = new Spinner(grpPixelValueControls, SWT.SINGLE | SWT.BORDER | SWT.RIGHT);
 			//overload.createMenu(incs, this, resetDistanceToDetectorToOriginalMethod);
