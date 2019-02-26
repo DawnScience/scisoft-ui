@@ -33,6 +33,26 @@
             name="Metadata Association Preferences">
       </page>
    </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="uk.ac.diamond.sda.meta.views.MetadataDialogHandler"
+            id="uk.ac.diamond.sda.meta.metadialogcommand"
+            name="Show Metadata">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="menu:org.dawnsci.datavis.file?after=org.dawnsci.datavis.actionsseparator">
+         <command
+               commandId="uk.ac.diamond.sda.meta.metadialogcommand"
+               label="Show Metadata..."
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
    <!--
    <extension
          point="org.eclipse.dawnsci.plotting.api.toolPage">
