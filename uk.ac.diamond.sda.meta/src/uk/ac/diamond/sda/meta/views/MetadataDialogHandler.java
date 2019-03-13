@@ -11,8 +11,10 @@ import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
 import org.eclipse.january.metadata.IMetadata;
 import org.eclipse.january.metadata.Metadata;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.ui.ISources;
+import org.eclipse.ui.ISelectionService;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import uk.ac.diamond.sda.meta.Activator;
@@ -21,7 +23,7 @@ public class MetadataDialogHandler extends AbstractHandler {
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		List<IDataFilePackage> list = getSelectedFiles(event);
+		List<IDataFilePackage> list = getSelectedFiles();
 		if (!list.isEmpty()) {
 			String path = list.get(0).getFilePath();
 			
@@ -46,17 +48,17 @@ public class MetadataDialogHandler extends AbstractHandler {
 
 	@Override
 	public void setEnabled(Object evaluationContext) {
-		List<IDataFilePackage> list = getSelectedFiles(evaluationContext);
+		List<IDataFilePackage> list = getSelectedFiles();
 		setBaseEnabled(!list.isEmpty());
 	}
 
-	private List<IDataFilePackage> getSelectedFiles(Object evaluationContext) {
-		Object variable = evaluationContext instanceof ExecutionEvent ? HandlerUtil.getVariable((ExecutionEvent) evaluationContext, ISources.ACTIVE_CURRENT_SELECTION_NAME):
-				HandlerUtil.getVariable(evaluationContext, ISources.ACTIVE_CURRENT_SELECTION_NAME);
+	private List<IDataFilePackage> getSelectedFiles() {
+		ISelectionService  selectionService= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+	    ISelection selection = selectionService.getSelection("org.dawnsci.datavis.view.parts.LoadedFilePart");    
 
 		List<IDataFilePackage> list = new ArrayList<>();
-		if (variable instanceof StructuredSelection) {
-			Object[] array = ((StructuredSelection) variable).toArray();
+		if (selection instanceof StructuredSelection) {
+			Object[] array = ((StructuredSelection) selection).toArray();
 			for (Object o : array) {
 				if (o instanceof IDataFilePackage) {
 					list.add((IDataFilePackage) o);
