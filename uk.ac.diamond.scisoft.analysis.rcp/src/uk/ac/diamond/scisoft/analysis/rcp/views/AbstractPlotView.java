@@ -25,6 +25,7 @@ import org.eclipse.dawnsci.plotting.api.views.ISettablePlotView;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.part.ViewPart;
 import org.slf4j.Logger;
@@ -302,5 +303,10 @@ public abstract class AbstractPlotView extends ViewPart implements ISettablePlot
 		IExtensionPoint point = registry.getExtensionPoint(extensionPointId);
 		IExtension[] extensions = point.getExtensions();
 		return extensions;
+	}
+
+	@Override
+	public void saveState(IMemento memento) {
+		plotWindow.getPlottingSystem().savePreferences(memento);
 	}
 }

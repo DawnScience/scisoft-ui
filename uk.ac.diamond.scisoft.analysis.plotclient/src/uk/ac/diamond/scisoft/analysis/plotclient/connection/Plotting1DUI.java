@@ -19,7 +19,6 @@ import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.dawnsci.plotting.api.axis.AxisUtils;
 import org.eclipse.dawnsci.plotting.api.axis.IAxis;
 import org.eclipse.dawnsci.plotting.api.trace.ILineTrace;
-import org.eclipse.dawnsci.plotting.api.trace.ILineTrace.TraceType;
 import org.eclipse.dawnsci.plotting.api.trace.ITrace;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetUtils;
@@ -275,7 +274,6 @@ class Plotting1DUI extends PlottingGUIUpdate {
 							plottingSystem.addTrace(newTrace);
 						}
 						newTrace.setData(nx, ny);
-						newTrace.setTraceType(TraceType.SOLID_LINE);
 						i++;
 					}
 
