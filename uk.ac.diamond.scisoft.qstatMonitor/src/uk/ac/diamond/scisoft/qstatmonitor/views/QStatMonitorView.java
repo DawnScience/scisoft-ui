@@ -44,8 +44,6 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.progress.UIJob;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.qstatmonitor.Activator;
 import uk.ac.diamond.scisoft.qstatmonitor.api.QStatMonitorAPI;
@@ -57,7 +55,6 @@ public class QStatMonitorView extends ViewPart {
 	}
 
 	public static final String ID = "uk.ac.diamond.scisoft.qstatmonitor.views.QStatMonitorView";
-	private static final Logger logger = LoggerFactory.getLogger(QStatMonitorView.class);
 
 	// Table and plot views fill sashform with ratio 2:1
 	private static final int[] SASH_FORM_RATIO = {2, 1};
