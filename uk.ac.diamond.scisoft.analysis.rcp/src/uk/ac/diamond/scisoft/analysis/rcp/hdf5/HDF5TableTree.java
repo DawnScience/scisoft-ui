@@ -480,7 +480,7 @@ class HDF5LabelProvider implements ITableLabelProvider {
 			DataNode dataset = (DataNode) node;
 
 			if (columnIndex == 1) { // class
-				return "SDS";
+				return "";
 			}
 
 			if (!dataset.isSupported()) {
