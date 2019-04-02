@@ -19,7 +19,8 @@ Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.e4.core.di.annotations,
  org.eclipse.e4.ui.services,
  org.eclipse.e4.core.commands,
- org.dawnsci.datavis.api
+ org.dawnsci.datavis.api,
+ org.dawnsci.plotting
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Import-Package: org.slf4j

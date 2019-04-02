@@ -10,8 +10,7 @@ package uk.ac.diamond.scisoft.arpes.calibration.wizards;
 
 import java.util.Map;
 import java.util.Set;
-
-import org.dawb.common.ui.widgets.ActionBarWrapper;
+import org.dawnsci.plotting.actions.ActionBarWrapper;
 import org.dawnsci.plotting.tools.fitting.FunctionFittingTool;
 import org.eclipse.dawnsci.analysis.api.fitting.functions.IFunction;
 import org.eclipse.dawnsci.analysis.api.message.DataMessageComponent;

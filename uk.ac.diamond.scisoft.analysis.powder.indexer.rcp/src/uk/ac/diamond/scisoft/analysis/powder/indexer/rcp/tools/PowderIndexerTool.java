@@ -1,8 +1,7 @@
 package uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.tools;
 
-import org.dawb.common.ui.widgets.ActionBarWrapper;
+import org.dawnsci.plotting.actions.ActionBarWrapper;
 import org.eclipse.dawnsci.plotting.api.tool.AbstractToolPage;
-import org.eclipse.dawnsci.plotting.api.tool.IToolPage.ToolPageRole;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -14,7 +13,6 @@ import org.eclipse.ui.part.IPageSite;
 import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.PowderIndexerManager;
 import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.views.CellParameterDelegate;
 import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.views.PowderIndexerActions;
-import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.views.PowderIndexerRoutineView;
 import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.widget.PowderIndexerSetupWidget;
 
 public class PowderIndexerTool extends AbstractToolPage  {

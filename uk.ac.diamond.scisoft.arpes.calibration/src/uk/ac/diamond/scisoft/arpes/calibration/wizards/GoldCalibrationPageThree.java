@@ -10,7 +10,7 @@ package uk.ac.diamond.scisoft.arpes.calibration.wizards;
 
 import java.lang.reflect.InvocationTargetException;
 
-import org.dawb.common.ui.widgets.ActionBarWrapper;
+import org.dawnsci.plotting.actions.ActionBarWrapper;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
