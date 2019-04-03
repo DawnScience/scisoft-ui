@@ -27,8 +27,6 @@ import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.qstatmonitor.Activator;
 
@@ -37,8 +35,7 @@ public class QStatMonitorPreferencePage extends PreferencePage
 			IWorkbenchPreferencePage {
 
 	public static final String ID = "uk.ac.diamond.scisoft.qstatmonitor.preferences.QStatMonitorPreferencePage";
-	private static final Logger logger = LoggerFactory.getLogger(QStatMonitorPreferencePage.class);
-	
+
 	private static final int SPN_DEC_PLACES = 1;
 	// Must not exceed SPN_DEC_PLACES number of decimal places
 	private static final float REF_INC_VAL = 0.5f;
@@ -57,7 +54,7 @@ public class QStatMonitorPreferencePage extends PreferencePage
 	 * 		spinner value
 	 */
 	private static int convertSpinnerValue(float value) {
-		int multFactor = (int) Math.pow(10, SPN_DEC_PLACES);		
+		int multFactor = (int) Math.pow(10, SPN_DEC_PLACES);
 		return (int) (value * multFactor);
 	}
 	
