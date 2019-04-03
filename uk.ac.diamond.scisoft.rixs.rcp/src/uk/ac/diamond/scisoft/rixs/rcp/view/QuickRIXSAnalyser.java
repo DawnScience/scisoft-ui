@@ -662,6 +662,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			Map<String, Dataset> map = j.getData();
 			Dataset pd = map == null ? null : map.get(option.getDataName());
 
+			if (pd == null) {
+				continue;
+			}
 			if (v == null) {
 				Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(pd);
 				if (axes.length > 0) {
@@ -867,7 +870,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					sub.newChild(1);
 					SliceInformation si = new SliceInformation(slice, slice, slice, dataDims, total, i++);
 					try {
-						Dataset image = DatasetUtils.convertToDataset(ld.getSlice(slice));
+						Dataset image = DatasetUtils.convertToDataset(ld.getSlice(slice)).squeezeEnds();
 						image.addMetadata(new SliceFromSeriesMetadata(sri, si));
 						processImage(bop, eop, image, si, axes);
 					} catch (DatasetException e) {
