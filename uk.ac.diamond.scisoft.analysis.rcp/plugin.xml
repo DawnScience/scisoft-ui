@@ -9,21 +9,6 @@
    <extension-point id="diffractionpage" name="DiffractionPage" schema="schema/diffractionpage.exsd"/>
    <extension-point id="uk.ac.diamond.scisoft.analysis.rcp.views.PlotViewWithTool" name="Plot View With Tool" schema="schema/uk.ac.diamond.scisoft.analysis.rcp.views.PlotViewWithTool.exsd"/>
    <extension
-         point="org.eclipse.ui.intro.configExtension">
-      <configExtension
-            configId="org.dawnsci.intro.universalConfig"
-            content="intro/introContribution.xml">
-      </configExtension>
-      <configExtension
-            configId="org.dawnsci.intro.universalConfig"
-            content="intro/data.xml">
-      </configExtension>
-      <configExtension
-            configId="org.dawnsci.intro.universalConfig"
-            content="intro/tutorials.xml">
-      </configExtension>
-   </extension>
-   <extension
          point="org.eclipse.ui.startup">
       <startup
             class="uk.ac.diamond.scisoft.analysis.rcp.InitRMIServer">
