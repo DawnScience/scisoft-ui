@@ -152,7 +152,7 @@
                   <equals value="org.dawb.workbench.editors.ImageEditor"/>
                  </with>
                  <with variable="activePartId">
-                  <equals value="org.dawb.workbench.editor.H5Editor"/>
+                  <equals value="org.dawb.workbench.editors.H5MultiEditor"/>
                  </with>
                  <with variable="activePartId">
                   <equals value="org.dawb.workbench.editors.AsciiEditor"/>
