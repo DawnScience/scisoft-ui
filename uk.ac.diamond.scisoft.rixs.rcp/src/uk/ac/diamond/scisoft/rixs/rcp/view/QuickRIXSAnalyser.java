@@ -98,7 +98,6 @@ import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtractio
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReduction;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReductionModel;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.RixsBaseModel.ENERGY_DIRECTION;
-import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.RixsBaseOperation;
 import uk.ac.diamond.scisoft.rixs.rcp.QuickRIXSPerspective;
 
 /**
@@ -205,24 +204,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
-	class SlopeOverrideModel extends AbstractOperationModel {
-		@OperationModelField(label = "Slope override", hint = "Any non-zero value is used to manually set slope")
-		private double slopeOverride = 0;
-	
-		/**
-		 * @return slope of elastic line. Non-zero values are used to override values from elastic fit files
-		 */
-		public double getSlopeOverride() {
-			return slopeOverride;
-		}
-
-		public void setSlopeOverride(double slopeOverride) {
-			firePropertyChange("setSlopeOverride", this.slopeOverride, this.slopeOverride = slopeOverride);
-		}
-	}
-
 	private SubtractBGModel subtractModel;
-	private SlopeOverrideModel slopeModel;
 	private ComboViewer plotCombo;
 
 	private int maxThreads;
@@ -234,7 +216,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	public QuickRIXSAnalyser() {
 		jobs = new ArrayList<>();
 		subtractModel = new SubtractBGModel();
-		slopeModel = new SlopeOverrideModel();
 
 		maxThreads = Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), MAX_THREADS);
 		System.err.println("Number of threads: " + maxThreads);
@@ -268,7 +249,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					runProcessing(true, false); // reset plot as y scale can be very different
 				}
 			});
-			slopeModel.addPropertyChangeListener(this);
 			bgOp = (SubtractFittedBackgroundOperation) opService.create(SubtractFittedBackgroundOperation.class.getName());
 			bgModel = bgOp.getModel();
 			bgModel.addPropertyChangeListener(this);
@@ -290,7 +270,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(bgModel, "darkImageFile"),
 				new ModelField(bgModel, "gaussianSmoothingLength"),
 				new ModelField(bgModel, "ratio"),
-				new ModelField(slopeModel, "slopeOverride"),
+				new ModelField(elModel, "slopeOverride"),
 				new ModelField(elModel, "minPhotons"),
 				new ModelField(elModel, "delta"),
 				new ModelField(elModel, "cutoff"),
@@ -898,15 +878,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				}
 			}
 
-			double slope = slopeModel.getSlopeOverride();
-			if (slope != 0) {
-				Dataset sp = RixsBaseOperation.sumImageAlongSlope(i.transpose(), slope, false);
-				sp.setName(poSpectrum.getDataName());
-				addToList(list, sp.reshape(1, sp.getSize()));
-			} else {
-				od = eop.execute(i, null);
-				addToList(list, od.getAuxData());
-			}
+			od = eop.execute(i, null);
+			addToList(list, od.getAuxData());
 
 			if (si.isLastSlice()) {
 				if (od != null) {
