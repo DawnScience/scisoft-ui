@@ -125,6 +125,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private PlotOption poSpectrum;
 	private PlotOption poSpectrumWithFit;
 	private PlotOption poFWHM;
+	private PlotOption poHeight;
+	private PlotOption poArea;
 	private PlotOption poElasticLineSlope;
 	private PlotOption poElasticLineIntercept;
 	private Map<String, PlotOption> poAll;
@@ -181,6 +183,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		poAll.put(poSpectrumWithFit.getOptionName(), poSpectrumWithFit);
 		poFWHM = new PlotOption("FWHM", ElasticLineReduction.ESFWHM_PREFIX + ZERO, "FWHM");
 		poAll.put(poFWHM.getOptionName(), poFWHM);
+		poArea = new PlotOption("Area", ElasticLineReduction.ESAREA_PREFIX + ZERO, "Area");
+		poAll.put(poArea.getOptionName(), poArea);
+		poHeight = new PlotOption("Height", ElasticLineReduction.ESHEIGHT_PREFIX + ZERO, "Height");
+		poAll.put(poHeight.getOptionName(), poHeight);
 
 		poElasticLineSlope = new PlotOption("ElasticLineSlope", "line_0_m", "elastic line slope");
 		poAll.put(poElasticLineSlope.getOptionName(), poElasticLineSlope);
@@ -619,6 +625,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		} else if (plotOption == poElasticLineSlope) {
 			addPointData(plots, plotOption);
 		} else if (plotOption == poFWHM) {
+			addPointData(plots, plotOption);
+		} else if (plotOption == poArea) {
+			addPointData(plots, plotOption);
+		} else if (plotOption == poHeight) {
 			addPointData(plots, plotOption);
 		} else if (plotOption == poSpectrumWithFit) {
 			addSpectrumData(plots, plotOption);
