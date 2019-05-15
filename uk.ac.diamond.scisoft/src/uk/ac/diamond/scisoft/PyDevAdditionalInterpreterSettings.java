@@ -44,23 +44,17 @@ public class PyDevAdditionalInterpreterSettings extends InterpreterNewCustomEntr
 		
 		List<String> entriesToAdd = new ArrayList<String>();
 
-		// Try to add the scisoftpy location when in dev
-		URL scisoftpyInitURL= null;
-		try {
-			scisoftpyInitURL = FileLocator.find(new URL("platform:/plugin/uk.ac.diamond.scisoft.python/src/scisoftpy/__init__.py"));
+		boolean isRunningInEclipse = Boolean.getBoolean(JythonCreator.RUN_IN_ECLIPSE);
+		URL scisoftpyInitURL = null;
+		try { // Try to add the scisoftpy location when in dev or deployed
+			scisoftpyInitURL = FileLocator.find(new URL(isRunningInEclipse ?
+					"platform:/plugin/uk.ac.diamond.scisoft.python/src/scisoftpy/__init__.py"
+					: "platform:/plugin/uk.ac.diamond.scisoft.python/scisoftpy/__init__.py"));
 		} catch (MalformedURLException e) {
 			// unreachable as it is a constant string
 		}
 
-		// Try to add the scisoftpy location when deployed
-		if (scisoftpyInitURL == null) {
-			try {
-				scisoftpyInitURL = FileLocator.find(new URL("platform:/plugin/uk.ac.diamond.scisoft.python/scisoftpy/__init__.py"));
-			} catch (MalformedURLException e) {
-				// unreachable as it is a constant string
-			}
-		}
-		if (scisoftpyInitURL != null){
+		if (scisoftpyInitURL != null) {
 			try {
 				scisoftpyInitURL = FileLocator.toFileURL(scisoftpyInitURL);
 				IPath scisoftpyInitPath = new Path(scisoftpyInitURL.getPath());
@@ -70,7 +64,7 @@ public class PyDevAdditionalInterpreterSettings extends InterpreterNewCustomEntr
 			} catch (IOException e) {
 				logger.debug("Failed to convert scisoft URL into a file URL", e);
 			}
-		} else {		
+		} else {
 			logger.debug("Failed to find location of scisfotpy to add the python path");
 		}
 		
