@@ -429,7 +429,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 			Double s = shifts.get(i);
 			if (s == null) {
 				s = shifts.get(i + 1);
-				if (delta != 0) { // translate to index-space
+				if (s != null && delta != 0) { // translate to index-space
 					double xd = x.getDouble(1) - x.getDouble(0);
 					delta /= xd; // TODO remove when shifts are all in x-space
 					shifts.set(i + 1, s - delta);
@@ -440,7 +440,9 @@ public class AlignDialog extends Dialog implements IRegionListener {
 					shifts.set(i, s + delta);
 				}
 			}
-			pi.setAuto(s);
+			if (s != null) {
+				pi.setAuto(s);
+			}
 			i += 2;
 		}
 		List<Dataset> data = AlignToHalfGaussianPeak.shiftData(shifts, input);
