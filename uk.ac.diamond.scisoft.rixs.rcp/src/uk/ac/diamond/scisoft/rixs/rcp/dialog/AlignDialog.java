@@ -29,6 +29,7 @@ import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.TableViewer;
@@ -192,6 +193,8 @@ public class AlignDialog extends Dialog implements IRegionListener {
 		resultComp.setLayout(new FillLayout());
 
 		resultTable = new TableViewer(resultComp, SWT.NONE);
+		ColumnViewerToolTipSupport.enableFor(resultTable);
+
 		resultTable.setContentProvider(new IStructuredContentProvider() {
 			
 			@Override
@@ -209,6 +212,11 @@ public class AlignDialog extends Dialog implements IRegionListener {
 			@Override
 			public String getText(Object element) {
 				return ((PlotItem) element).getName();
+			}
+
+			@Override
+			public String getToolTipText(Object element) {
+				return getText(element);
 			}
 		});
 		TableColumn column = name.getColumn();
