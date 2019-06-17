@@ -22,6 +22,8 @@ import org.eclipse.dawnsci.analysis.api.tree.DataNode;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
+import org.eclipse.january.DatasetException;
+import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -94,11 +96,21 @@ public class HDF5TreeDialog extends Dialog {
 						b.append(System.lineSeparator());
 						b.append("Max Size: ");
 						b.append(dn.getMaxShape() == null ? "Not set" : Arrays.toString(dn.getMaxShape()));
+
+						if (!dn.isString() && dn.getDataset().getSize() <= 128) {
+							b.append(System.lineSeparator());
+							b.append("Value: ");
+							try {
+								b.append(DatasetUtils.sliceAndConvertLazyDataset(dn.getDataset()).toString(true));
+							} catch (DatasetException e) {
+								b.append(e);
+							}
+						}
 					}
 				}
 
 				l.setText(b.toString());
-
+				l.getParent().layout();
 			}
 		});
 
