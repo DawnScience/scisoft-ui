@@ -31,6 +31,7 @@ import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.layout.GridData;
@@ -168,9 +169,9 @@ public class GoldCalibrationPageOne extends CalibrationWizardPage {
 			if (yl!=null) yLabels = getLabelsFromLabels(yl, bounds, 1);
 		}
 
-		if (yLabels==null) yLabels = DatasetFactory.createRange(bounds.getPoint()[1], bounds.getEndPoint()[1], yInc, Dataset.INT32);
+		if (yLabels==null) yLabels = DatasetFactory.createRange(IntegerDataset.class, bounds.getPoint()[1], bounds.getEndPoint()[1], yInc);
 		yLabels.setName("angle");
-		if (xLabels==null) xLabels = DatasetFactory.createRange(bounds.getPoint()[0], bounds.getEndPoint()[0], xInc, Dataset.INT32);
+		if (xLabels==null) xLabels = DatasetFactory.createRange(IntegerDataset.class, bounds.getPoint()[0], bounds.getEndPoint()[0], xInc);
 		xLabels.setName("energy");
 		List<IDataset> axes = new ArrayList<IDataset>();
 		axes.add(xLabels);

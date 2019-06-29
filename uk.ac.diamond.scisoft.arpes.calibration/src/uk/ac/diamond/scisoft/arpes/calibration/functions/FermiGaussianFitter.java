@@ -59,11 +59,11 @@ public class FermiGaussianFitter {
 		IFunction fitFunction = calibrationData.getFunction(ARPESCalibrationConstants.FUNCTION_NAME);
 		Dataset xAxisDS = DatasetFactory.createFromObject(calibrationData.getList(ARPESCalibrationConstants.ENERGY_AXIS));
 		if (xAxisDS == null)
-			xAxisDS = DatasetFactory.createRange(shape[fitDim], 0, -1, Dataset.FLOAT64);
+			xAxisDS = DatasetFactory.createRange(shape[fitDim], 0, -1.);
 
 		Dataset anglesAxisDS = DatasetFactory.createFromObject(calibrationData.getList(ARPESCalibrationConstants.ANGLE_AXIS));
 		if (anglesAxisDS == null)
-			anglesAxisDS = DatasetFactory.createRange(shape[Math.abs(fitDim - 1)], 0, -1, Dataset.FLOAT64);
+			anglesAxisDS = DatasetFactory.createRange(shape[Math.abs(fitDim - 1)], 0, -1.);
 
 		anglesAxisDS.setName("Angles");
 //		calibrationData.addList(GoldCalibrationWizard.XAXIS_NAME, anglesAxisDS);
@@ -83,15 +83,15 @@ public class FermiGaussianFitter {
 		lshape[fitDim] = 1;
 
 		for (int i = 0; i < fitFunction.getNoOfParameters(); i++) {
-			DoubleDataset parameterDS = (DoubleDataset) DatasetFactory.zeros(lshape, Dataset.FLOAT64);
+			DoubleDataset parameterDS = (DoubleDataset) DatasetFactory.zeros(lshape);
 			parameterDS.fill(Double.NaN);
 			parameterDS.squeeze();
 			parameterDS.setName(fitFunction.getParameter(i).getName());
 			parametersDS.add(parameterDS);
 		}
 
-		Dataset functionsDS = DatasetFactory.zeros(shape, Dataset.FLOAT64);
-		Dataset residualDS = DatasetFactory.zeros(lshape, Dataset.FLOAT64);
+		Dataset functionsDS = DatasetFactory.zeros(shape);
+		Dataset residualDS = DatasetFactory.zeros(lshape);
 		residualDS.squeeze();
 
 		int[] starts = shape.clone();

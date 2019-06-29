@@ -10,9 +10,9 @@
 package uk.ac.diamond.scisoft.analysis.rcp.plotting.rpc.sdaplotter;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.IDataset;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -69,11 +69,11 @@ public class AllPyPlotMethodsPluginTest extends RcpPlottingTestBase {
 		// create some data sets and other objects to use, this test does not use
 		// the contents of the data set, except they are flattened
 		// and unflattened. The type of the object is more important
-		xCoords = yCoords = zCoords = xAxis = yAxis = zAxis = DatasetFactory.createRange(100, Dataset.INT);
-		data = image = DatasetFactory.createRange(100, Dataset.INT).reshape(10, 10);
-		xAxes = yAxes = new IDataset[] { xAxis, DatasetFactory.createRange(100, Dataset.FLOAT) };
-		images = new IDataset[] { image, DatasetFactory.createRange(100, Dataset.FLOAT) };
-		sizes = DatasetFactory.createRange(100, Dataset.INT);
+		xCoords = yCoords = zCoords = xAxis = yAxis = zAxis = DatasetFactory.createRange(IntegerDataset.class, 100);
+		data = image = DatasetFactory.createRange(IntegerDataset.class, 100).reshape(10, 10);
+		xAxes = yAxes = new IDataset[] { xAxis, DatasetFactory.createRange(100) };
+		images = new IDataset[] { image, DatasetFactory.createRange(100) };
+		sizes = DatasetFactory.createRange(IntegerDataset.class, 100);
 		pathname = "/tmp/dir";
 		regex = "a.*b";
 		order = SDAPlotter.IMAGEORDERNONE;

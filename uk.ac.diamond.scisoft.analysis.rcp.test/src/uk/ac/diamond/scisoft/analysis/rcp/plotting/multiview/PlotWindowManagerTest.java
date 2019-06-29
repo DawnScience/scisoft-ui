@@ -18,8 +18,8 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.dawnsci.analysis.dataset.roi.LinearROI;
 import org.eclipse.dawnsci.analysis.dataset.roi.LinearROIList;
-import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
+import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.IWorkbenchPage;
@@ -261,7 +261,7 @@ public class PlotWindowManagerTest {
 		guiBean.put(GuiParameters.ROIDATALIST, list);
 		plotServer.updateGui(plot1, guiBean);
 		DataBean dataBean = new DataBean();
-		dataBean.addAxis("X-Axis", DatasetFactory.createRange(100, Dataset.INT));
+		dataBean.addAxis("X-Axis", DatasetFactory.createRange(IntegerDataset.class, 100));
 		plotServer.setData(plot1, dataBean);
 
 		// duplicate plot 1
