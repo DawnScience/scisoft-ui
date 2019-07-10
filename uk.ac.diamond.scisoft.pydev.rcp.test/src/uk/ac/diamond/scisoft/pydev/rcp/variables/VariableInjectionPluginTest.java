@@ -18,15 +18,15 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.python.pydev.ast.interpreter_managers.InterpreterManagersAPI;
 import org.python.pydev.core.IInterpreterInfo;
 import org.python.pydev.core.IInterpreterManager;
-import org.python.pydev.plugin.PydevPlugin;
 
 public class VariableInjectionPluginTest {
 
 	public List<IInterpreterInfo> collectAllInterpreterInfos() {
 		List<IInterpreterInfo> infos = new ArrayList<IInterpreterInfo>();
-		IInterpreterManager[] allInterpreterManagers = PydevPlugin.getAllInterpreterManagers();
+		IInterpreterManager[] allInterpreterManagers = InterpreterManagersAPI.getAllInterpreterManagers();
 		for (IInterpreterManager iInterpreterManager : allInterpreterManagers) {
 			IInterpreterInfo[] interpreterInfos = iInterpreterManager.getInterpreterInfos();
 			infos.addAll(Arrays.asList(interpreterInfos));
@@ -60,5 +60,4 @@ public class VariableInjectionPluginTest {
 		}
 		Assert.assertTrue("At least one info found", infos.size() >= 1);
 	}
-
 }
