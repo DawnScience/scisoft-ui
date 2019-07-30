@@ -30,7 +30,6 @@ import org.dawnsci.datavis.model.DataOptions;
 import org.dawnsci.datavis.model.FileControllerStateEvent;
 import org.dawnsci.datavis.model.FileControllerStateEventListener;
 import org.dawnsci.datavis.model.FileControllerUtils;
-import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LoadedFile;
 import org.dawnsci.processing.ui.model.ModelViewer;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -107,7 +106,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private static final int MAX_THREADS = 3; // limited to reduce memory usage
 
-	@Inject IFileController fileController;
+	@Inject IQRFileController fileController;
 
 	private FileControllerStateEventListener fileStateListener;
 
@@ -236,9 +235,6 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 			@Override
 			public void stateChanged(FileControllerStateEvent event) {
-				if (!QuickRIXSPerspective.LOADED_FILE_ID.equals(fileController.getID())) {
-					return; // ignore other sources of state changes
-				}
 				if (!event.isSelectedDataChanged() && !event.isSelectedFileChanged()) return;
 				runProcessing(event.isSelectedDataChanged(), true);
 			}

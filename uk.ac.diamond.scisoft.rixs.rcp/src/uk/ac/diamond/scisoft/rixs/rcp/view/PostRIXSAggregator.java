@@ -31,7 +31,6 @@ import org.dawnsci.datavis.model.DataOptions;
 import org.dawnsci.datavis.model.FileControllerStateEvent;
 import org.dawnsci.datavis.model.FileControllerStateEventListener;
 import org.dawnsci.datavis.model.FileControllerUtils;
-import org.dawnsci.datavis.model.IFileController;
 import org.dawnsci.datavis.model.LabelValueMetadata;
 import org.dawnsci.datavis.model.LoadedFile;
 import org.eclipse.dawnsci.analysis.api.processing.IOperationService;
@@ -96,7 +95,7 @@ public class PostRIXSAggregator {
 
 	protected static final Logger logger = LoggerFactory.getLogger(PostRIXSAggregator.class);
 
-	@Inject IFileController fileController;
+	@Inject IPRFileController fileController;
 	private FileControllerStateEventListener fileStateListener;
 	private IPlottingSystem<?> plottingSystem;
 	private Map<String, Set<String>> processData = new LinkedHashMap<>();
@@ -120,9 +119,6 @@ public class PostRIXSAggregator {
 
 			@Override
 			public void stateChanged(FileControllerStateEvent event) {
-				if (!PostRIXSPerspective.LOADED_FILE_ID.equals(fileController.getID())) {
-					return; // ignore other sources of state changes
-				}
 				if (!event.isSelectedDataChanged() && !event.isSelectedFileChanged()) return;
 
 				updateGUI();

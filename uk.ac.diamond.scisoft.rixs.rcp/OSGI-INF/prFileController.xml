@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="PR File Controller">
+   <implementation class="uk.ac.diamond.scisoft.rixs.rcp.view.PRFileController"/>
+   <service>
+      <provide interface="uk.ac.diamond.scisoft.rixs.rcp.view.IPRFileController"/>
+      <provide interface="org.dawnsci.datavis.api.IFileOpeningController"/>
+   </service>
+   <reference bind="setLoaderService" cardinality="1..1" interface="org.eclipse.dawnsci.analysis.api.io.ILoaderService" name="ILoaderService" policy="static"/>
+   <reference bind="setRecentPlaces" cardinality="1..1" interface="org.dawnsci.datavis.api.IRecentPlaces" name="IRecentPlaces" policy="static"/>
+</scr:component>
