@@ -19,16 +19,14 @@
    <extension
          point="org.eclipse.ui.views">
       <e4view
-            allowMultiple="true"
-            class="org.dawnsci.datavis.view.parts.LoadedFilePart"
+            class="uk.ac.diamond.scisoft.rixs.rcp.view.QRLoadedFilePart"
             icon="icons/ui-layered-pane.png"
             id="uk.ac.diamond.scisoft.rixs.QRLoadedFilePart"
             name="RIXS Data Files"
             restorable="true">
       </e4view>
       <e4view
-            allowMultiple="true"
-            class="org.dawnsci.datavis.view.parts.LoadedFilePart"
+            class="uk.ac.diamond.scisoft.rixs.rcp.view.PRLoadedFilePart"
             icon="icons/ui-layered-pane.png"
             id="uk.ac.diamond.scisoft.rixs.PRLoadedFilePart"
             name="RIXS Results Files"
