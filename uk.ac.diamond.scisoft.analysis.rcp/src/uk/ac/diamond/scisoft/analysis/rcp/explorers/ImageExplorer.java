@@ -29,7 +29,6 @@ import org.eclipse.january.dataset.DoubleDataset;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IntegerDataset;
-import org.eclipse.january.dataset.LazyDataset;
 import org.eclipse.january.metadata.IMetadata;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -304,7 +303,7 @@ public class ImageExplorer extends AbstractExplorer implements ISelectionProvide
 		if (imageFilenames.size() > 1) {
  		    Collections.sort(imageFilenames, new SortNatural<String>(true));
 			ImageStackLoader loader = new ImageStackLoader(imageFilenames , mon);
-			LazyDataset lazyDataset = new LazyDataset(FOLDER_STACK, loader.getDType(), loader.getShape(), loader);
+			ILazyDataset lazyDataset = loader.createLazyDataset(FOLDER_STACK);
 			data.addDataset(lazyDataset.getName(), lazyDataset);
 		}
 		
