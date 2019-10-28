@@ -1,0 +1,50 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>uk.ac.diamond</groupId>
+	<artifactId>scisoft-ui</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>uk.ac.diamond</groupId>
+		<artifactId>uk.ac.diamond.aggregator</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
+
+	<modules>
+		<module>uk.ac.diamond.optid</module>
+<module>uk.ac.diamond.optid.feature</module>
+<module>uk.ac.diamond.scisoft</module>
+<module>uk.ac.diamond.scisoft.analysis.plotclient</module>
+<module>uk.ac.diamond.scisoft.analysis.polling</module>
+<module>uk.ac.diamond.scisoft.analysis.powder.indexer.feature</module>
+<module>uk.ac.diamond.scisoft.analysis.powder.indexer.rcp</module>
+<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.feature</module>
+<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp</module>
+<module>uk.ac.diamond.scisoft.analysis.rcp</module>
+<module>uk.ac.diamond.scisoft.analysis.rcp.contributions</module>
+<module>uk.ac.diamond.scisoft.analysis.rcp.test</module>
+<module>uk.ac.diamond.scisoft.arpes.calibration</module>
+<module>uk.ac.diamond.scisoft.arpes.calibration.test</module>
+<module>uk.ac.diamond.scisoft.customprojects.feature</module>
+<module>uk.ac.diamond.scisoft.customprojects.rcp</module>
+<module>uk.ac.diamond.scisoft.deprecated.rcp</module>
+<module>uk.ac.diamond.scisoft.feedback</module>
+<module>uk.ac.diamond.scisoft.feedback.feature</module>
+<module>uk.ac.diamond.scisoft.imagegrid</module>
+<module>uk.ac.diamond.scisoft.pydev.rcp</module>
+<module>uk.ac.diamond.scisoft.pydev.rcp.test</module>
+<module>uk.ac.diamond.scisoft.qstatMonitor</module>
+<module>uk.ac.diamond.scisoft.rixs.feature</module>
+<module>uk.ac.diamond.scisoft.rixs.rcp</module>
+<module>uk.ac.diamond.sda.polling</module>
+<module>uk.ac.diamond.scisoft.system.info</module>
+<module>uk.ac.diamond.scisoft.ui.feature</module>
+<module>uk.ac.diamond.sda.meta</module>
+<module>uk.ac.diamond.sda.meta.extended</module>
+<module>uk.ac.diamond.sda.navigator</module>
+<module>uk.ac.diamond.sda.navigator.test</module>
+	</modules>
+</project>
