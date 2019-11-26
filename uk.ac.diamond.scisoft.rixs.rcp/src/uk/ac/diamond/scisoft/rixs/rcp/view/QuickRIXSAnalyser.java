@@ -407,7 +407,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 			rect[0] = 0;
 			rect[1] = 0;
-			runProcessing(false, false);
+			runProcessing(true, false);
 			return;
 		}
 		if (r != null) {
@@ -452,7 +452,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 						XAxisBoxROI ab = (XAxisBoxROI) roi;
 						rect[0] = (int) Math.floor(ab.getPointX());
 						rect[1] = (int) Math.ceil(ab.getLength(0));
-						runProcessing(false, false);
+						runProcessing(true, false);
 					}
 				}
 			});
@@ -516,7 +516,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			} catch (OperationCanceledException | InterruptedException e) {
 			}
 			for (ProcessFileJob j : jobs) {
-				if (j.getResult().getCode() == IStatus.WARNING || j.getData() == null) {
+				IStatus jr = j.getResult();
+				if ((jr != null && jr.getCode() == IStatus.WARNING) || j.getData() == null) {
 					retry = true;
 					return;
 				}
@@ -811,12 +812,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				RectangularROI roi = (RectangularROI) elModel.getRoiA();
 				if (length == 0) {
 					if (roi != null) {
-						elModel.setRoiA(null);
+						elModel.internalSetRoiA(null);
 					}
 				} else {
 					if (roi == null) {
 						roi = new RectangularROI(shape[rank - 2], shape[rank - 1], 0);
-						elModel.setRoiA(roi);
+						elModel.internalSetRoiA(roi);
 					}
 					if (elModel.getEnergyDirection() == ENERGY_DIRECTION.FAST) {
 						roi.setPoint(start, 0);
