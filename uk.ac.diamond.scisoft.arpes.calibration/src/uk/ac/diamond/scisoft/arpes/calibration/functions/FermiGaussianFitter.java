@@ -22,7 +22,6 @@ import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
 import org.eclipse.january.IMonitor;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetFactory;
-import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.DoubleDataset;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.IndexIterator;
@@ -275,7 +274,7 @@ public class FermiGaussianFitter {
 				residual.ipower(2);
 				residualsDS.set(residual.sum(), position);
 				try {
-					IDataset residuals = DatasetUtils.cast(residualsDS, residualsDS.getDType());
+					IDataset residuals = residualsDS.getView(false);
 					residuals.setName("residuals");
 					plot(ARPESCalibrationConstants.RESIDUALS_SYSTEM, anglesAxisDS, residuals);
 					calibrationData.addList(ARPESCalibrationConstants.RESIDUALS_DATA, residuals);
