@@ -41,7 +41,7 @@
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            category="org.dawnsci.preferences.root"
+            category="uk.ac.diamond.scisoft.analysis.rcp.preferences.root"
             class="uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.preferences.PowderIndexerPreferencePage"
             id="uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.preferences"
             name="Powder Indexer Preferences">
