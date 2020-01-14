@@ -207,9 +207,6 @@
                <instanceof value="uk.ac.diamond.sda.navigator.srs.SRSTreeData"/> 
             </or>
          </possibleChildren>
-         <actionProvider
-               class="uk.ac.diamond.sda.navigator.actions.SRSActionProvider"
-               id="uk.ac.diamond.sda.navigator.actions.SRSOpenProvider"/>
       </navigatorContent>
    </extension>
    <!-- Bind the content extensions to the navigator viewer -->
