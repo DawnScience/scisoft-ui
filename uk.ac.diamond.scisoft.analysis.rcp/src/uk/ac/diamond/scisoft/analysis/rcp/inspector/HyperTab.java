@@ -15,8 +15,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import org.dawnsci.slicing.tools.hyper.HyperType;
-import org.dawnsci.slicing.tools.hyper.HyperView;
+import org.dawnsci.multidimensional.ui.hyper.HyperType;
+import org.dawnsci.multidimensional.ui.hyper.HyperView;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.IMonitor;
 import org.eclipse.january.dataset.Dataset;

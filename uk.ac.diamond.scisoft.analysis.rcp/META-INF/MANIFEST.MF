@@ -33,7 +33,8 @@ Require-Bundle: org.eclipse.ui,
  uk.ac.diamond.scisoft.imagegrid,
  org.dawnsci.datavis.api,
  org.eclipse.dawnsci.nexus,
- org.dawnsci.datavis.model
+ org.dawnsci.datavis.model,
+ org.dawnsci.multidimensional.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: com.swtdesigner,
  uk.ac.diamond.scisoft.analysis.rcp,
