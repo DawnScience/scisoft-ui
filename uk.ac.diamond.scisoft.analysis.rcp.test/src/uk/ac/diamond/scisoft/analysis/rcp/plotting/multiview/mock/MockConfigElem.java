@@ -144,4 +144,8 @@ public class MockConfigElem implements IConfigurationElement {
 	public String getValue(String locale) throws InvalidRegistryObjectException {
 		throw new AssumptionViolatedException("Methods in MockConfigElem should not be called");
 	}
+
+	public int getHandleId() {
+		return 0;
+	}
 }
