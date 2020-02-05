@@ -14,7 +14,6 @@ import java.util.Map;
 
 import org.eclipse.dawnsci.analysis.api.fitting.functions.IFunction;
 import org.eclipse.dawnsci.analysis.api.message.DataMessageComponent;
-import org.eclipse.january.dataset.DTypeUtils;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
@@ -54,7 +53,7 @@ public class GoldCalibrationPageTwo extends FunctionFittingCalibrationWizardPage
 	 */
 	private void setMean() {
 		IDataset iregionDataset = (IDataset)calibrationData.getList(ARPESCalibrationConstants.REGION_DATANAME);
-		Dataset regionDataset = DatasetUtils.cast(iregionDataset, DTypeUtils.getDType(iregionDataset));
+		Dataset regionDataset = DatasetUtils.convertToDataset(iregionDataset);
 		Dataset meanDataset = regionDataset.mean(0);
 		meanDataset.setName(ARPESCalibrationConstants.MEAN_DATANAME);
 		calibrationData.addList(ARPESCalibrationConstants.MEAN_DATANAME, meanDataset);
