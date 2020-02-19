@@ -1,6 +1,7 @@
 package uk.ac.diamond.scisoft.rixs.rcp.dialog;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.RowLayout;
@@ -75,6 +77,9 @@ public class AlignDialog extends Dialog implements IRegionListener {
 
 	private TableViewer resultTable;
 
+	private Color originalColour = null;
+	private static Color doneColour = null;
+
 	public AlignDialog(Shell parentShell, IPlottingSystem<?> plottingSystem) {
 		super(parentShell);
 
@@ -87,14 +92,14 @@ public class AlignDialog extends Dialog implements IRegionListener {
 
 	@Override
 	public void regionsRemoved(RegionEvent evt) {
-		resetPlotItems();
+		resetPlotItems(false);
 	}
 
 	@Override
 	public void regionRemoved(RegionEvent evt) {
 		IRegion r = evt.getRegion();
 		if (r != null && ALIGN_REGION.equals(r.getName())) {
-			resetPlotItems();
+			resetPlotItems(false);
 		}
 	}
 
@@ -116,6 +121,10 @@ public class AlignDialog extends Dialog implements IRegionListener {
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
+		if (doneColour == null) {
+			Display d = Display.getCurrent();
+			doneColour = d.getSystemColor(SWT.COLOR_DARK_CYAN);
+		}
 		Composite comp = (Composite) super.createDialogArea(parent); // implementation returns a composite with grid layout
 
 		Composite alignComp = new Composite(comp, SWT.NONE);
@@ -272,13 +281,16 @@ public class AlignDialog extends Dialog implements IRegionListener {
 		int code = super.open();
 		getButton(IDialogConstants.CANCEL_ID).setToolTipText("Reset plots");
 		getButton(IDialogConstants.OK_ID).setToolTipText("Keep alignment");
+		setRegionVisible(true);
+
 		return code;
 	}
 
 	private void updatePlotItems() {
-		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
-		plotItems.clear();
-		for (ILineTrace t : traces) {
+		if (!plotItems.isEmpty()) {
+			return;
+		}
+		for (ILineTrace t : plottingSystem.getTracesByClass(ILineTrace.class)) {
 			String n = t.getName();
 			if (RESAMPLE_AVERAGE.equals(n)) {
 				continue;
@@ -291,17 +303,24 @@ public class AlignDialog extends Dialog implements IRegionListener {
 	}
 
 	/**
-	 * Clear old state
+	 * Reset plot to unaligned and clear old state if needed
 	 */
-	public void resetPlotItems() {
-		for (PlotItem pi : plotItems.values()) {
-			pi.setAuto(0);
-			pi.setManual(0);
+	public void resetPlotItems(boolean clear) {
+		if (clear) {
+			setRegionVisible(false);
+			removeRegion();
+			currentROI = null;
+			plotItems.clear();
+		} else {
+			for (PlotItem pi : plotItems.values()) {
+				pi.setAuto(0);
+				pi.setManual(0);
+			}
 		}
 		if (!resultTable.getControl().isDisposed()) {
 			resultTable.refresh();
 			updateResetButton();
-			setRegionVisible(false);
+			setRegionDone(false);
 		}
 	}
 
@@ -346,6 +365,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 		IRegion r = null;
 		try {
 			r = plottingSystem.createRegion(ALIGN_REGION, RegionType.XAXIS);
+			originalColour = r.getRegionColor();
 			r.addROIListener(new IROIListener() {
 
 				@Override
@@ -354,6 +374,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 
 				@Override
 				public void roiDragged(ROIEvent evt) {
+					setRegionDone(false);
 				}
 
 				@Override
@@ -382,6 +403,17 @@ public class AlignDialog extends Dialog implements IRegionListener {
 		}
 	}
 
+	/**
+	 * Set selection region's done state by changing colour
+	 * @param done
+	 */
+	public void setRegionDone(boolean done) {
+		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
+		if (r != null) {
+			r.setRegionColor(done ? doneColour : originalColour);
+		}
+	}
+
 	private boolean ensureRegionOK(IRegion r, double[] xs) {
 		IAxis axis = plottingSystem.getSelectedXAxis();
 		double l = axis.getLower();
@@ -393,7 +425,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 		}
 		return true;
 	}
-	
+
 	private double[] getLimits() {
 		if (currentROI == null) {
 			return null;
@@ -417,7 +449,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 	private void alignPlots(double lx, double hx) {
 		logger.debug("Region bounds are {}, {}", lx, hx);
 		removeAveragePlot();
-		List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
+		Collection<ILineTrace> traces = plottingSystem.getTracesByClass(ILineTrace.class);
 
 		IDataset[] input = new IDataset[2 * traces.size()];
 		int i = 0;
@@ -478,26 +510,9 @@ public class AlignDialog extends Dialog implements IRegionListener {
 			plotAverage(data, minSize);
 		}
 
+		setRegionDone(true);
 		plottingSystem.repaint(false);
-
 		resultTable.refresh();
-
-		new Thread(new Runnable() {
-			
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(1500);
-				} catch (InterruptedException e) {
-				}
-				Display.getDefault().syncExec(new Runnable() {
-					@Override
-					public void run() {
-						setRegionVisible(false);
-					}
-				});
-			}
-		}).start();
 	}
 
 	private void plotAverage(List<? extends IDataset> data, int minSize) {
@@ -539,10 +554,9 @@ public class AlignDialog extends Dialog implements IRegionListener {
 			if (plotAverage) {
 				removeAveragePlot();
 
-				List<ILineTrace> traces = new ArrayList<>(plottingSystem.getTracesByClass(ILineTrace.class));
 				List<IDataset> data = new ArrayList<>();
 				int minSize = Integer.MAX_VALUE;
-				for (ILineTrace nt : traces) {
+				for (ILineTrace nt : plottingSystem.getTracesByClass(ILineTrace.class)) {
 					if (RESAMPLE_AVERAGE.equals(nt.getName())) {
 						continue;
 					}
@@ -569,7 +583,7 @@ public class AlignDialog extends Dialog implements IRegionListener {
 			pi.setAuto(0);
 			pi.setManual(0);
 		}
-		setRegionVisible(true);
+		setRegionDone(false);
 		resultTable.refresh();
 		plottingSystem.repaint(false);
 	}
@@ -593,14 +607,18 @@ public class AlignDialog extends Dialog implements IRegionListener {
 		if (getReturnCode() == Window.CANCEL) {
 			plotOriginal();
 			removeRegion();
+		} else {
+			setRegionVisible(false);
 		}
-		setRegionVisible(false);
 		return super.close();
 	}
 
 	private void removeRegion() {
 		IRegion r = plottingSystem.getRegion(ALIGN_REGION);
 		if (r != null) {
+			if (plottingSystem.getTracesByClass(ILineTrace.class).size() == 0) {
+				currentROI = null;
+			}
 			plottingSystem.removeRegion(r);
 		}
 	}

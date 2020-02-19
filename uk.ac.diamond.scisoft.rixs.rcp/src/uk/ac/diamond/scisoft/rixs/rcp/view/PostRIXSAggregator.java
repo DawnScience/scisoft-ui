@@ -222,7 +222,7 @@ public class PostRIXSAggregator {
 	private void plotSelected(boolean reset) {
 		if (dialog != null) {
 			dialog.setRegionVisible(false);
-			dialog.resetPlotItems();
+			dialog.resetPlotItems(true);
 		}
 
 		if (reset) {
