@@ -36,11 +36,12 @@ public class HDF5TreeDialogHandler extends AbstractHandler {
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		List<IDataFilePackage> list = getSelectedFiles();
 		if (!list.isEmpty()) {
-			Tree tree = list.get(0).getTree();
+			IDataFilePackage p = list.get(0);
+			Tree tree = p.getTree();
 			
 			if (tree == null) return null;
 			
-			HDF5TreeDialog d = new HDF5TreeDialog(HandlerUtil.getActiveShell(event),tree, "");
+			HDF5TreeDialog d = new HDF5TreeDialog(HandlerUtil.getActiveShell(event),tree, p.getFilePath());
 			d.open();
 		}
 		
@@ -57,7 +58,7 @@ public class HDF5TreeDialogHandler extends AbstractHandler {
 	private List<IDataFilePackage> getSelectedFiles() {
 		
 		ISelectionService  selectionService= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-	    ISelection selection = selectionService.getSelection("org.dawnsci.datavis.view.parts.LoadedFilePart");    
+		ISelection selection = selectionService.getSelection("org.dawnsci.datavis.view.parts.LoadedFilePart");
 
 		List<IDataFilePackage> list = new ArrayList<>();
 		if (selection instanceof StructuredSelection) {
