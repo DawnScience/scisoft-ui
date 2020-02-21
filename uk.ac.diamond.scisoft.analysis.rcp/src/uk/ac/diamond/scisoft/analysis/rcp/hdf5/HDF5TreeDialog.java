@@ -25,6 +25,7 @@ import org.eclipse.dawnsci.analysis.api.tree.Tree;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -50,12 +51,15 @@ public class HDF5TreeDialog extends Dialog {
 
 	protected HDF5TreeDialog(Shell parentShell, Tree tree, String filename) {
 		super(parentShell);
+		setShellStyle(SWT.MODELESS | SWT.CLOSE | SWT.BORDER | SWT.TITLE | SWT.RESIZE);
+
 		this.tree = tree;
 		this.filename = filename;
 	}
 
 	@Override
 	public Control createDialogArea(Composite parent)  {
+		getShell().setText(filename);
 		Composite container = (Composite) super.createDialogArea(parent);
 		container.setLayout(new FillLayout());
 		SashForm sash = new SashForm(container, SWT.HORIZONTAL);
@@ -147,4 +151,14 @@ public class HDF5TreeDialog extends Dialog {
 		shell.setText("NeXus/HDF5 Tree");
 	}
 
+	@Override
+	protected void createButtonsForButtonBar(Composite parent) {
+		createButton(parent, IDialogConstants.CLOSE_ID, IDialogConstants.CLOSE_LABEL, true);
+	}
+
+	@Override
+	protected void buttonPressed(int buttonId) {
+		setReturnCode(buttonId);
+		close();
+	}
 }
