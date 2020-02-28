@@ -276,7 +276,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(elModel, "minPhotons"),
 				new ModelField(elModel, "delta"),
 				new ModelField(elModel, "cutoff"),
-				new ModelField(elModel, "peakFittingFactor")
+				new ModelField(elModel, "peakFittingFactor"),
+				new ModelField(elModel, "roiA")
 		);
 		modelViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
@@ -516,8 +517,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			} catch (OperationCanceledException | InterruptedException e) {
 			}
 			for (ProcessFileJob j : jobs) {
-				IStatus jr = j.getResult();
-				if ((jr != null && jr.getCode() == IStatus.WARNING) || j.getData() == null) {
+				IStatus s = j.getResult();
+				if (s == null) {
+					plottingSystem.autoscaleAxes();
+					return;
+				}
+				if (s.getCode() == IStatus.WARNING || j.getData() == null) {
 					retry = true;
 					return;
 				}
@@ -791,83 +796,105 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			file.setOnlySignals(true);
 			List<DataOptions> opts = file.getDataOptions();
 
-			if (!opts.isEmpty()) {
-				// need per-file instances as operations are not thread-safe 
-				SubtractFittedBackgroundOperation bop = null;
-				if (subtractModel.isSubtractBackground()) {
-					bop = new SubtractFittedBackgroundOperation();
-					bop.setModel(bgModel);
+			if (opts.isEmpty()) { // try again with any dataset
+				file.setOnlySignals(false);
+				opts = file.getDataOptions();
+				if (opts.isEmpty()) {
+					return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "No data found");
 				}
-				ElasticLineReduction eop = new ElasticLineReduction();
-				eop.setModel(elModel);
-				eop.propertyChange(null); // trigger update from model
+			}
 
-				ILazyDataset ld = opts.get(0).getLazyDataset();
-				int[] shape = ld.getShape();
-				int rank = shape.length;
-				if (rank < 2) {
-					return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "Image data must be in dataset of rank > 2");
+			DataOptions opt = null;
+			for (DataOptions o : opts) {
+				if (o.getLazyDataset().getRank() >= 2) {
+					opt = o;
+					break;
 				}
+			}
+			if (opt == null) {
+				return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "Cannot find any data of rank >= 2");
+			}
 
-				RectangularROI roi = (RectangularROI) elModel.getRoiA();
-				if (length == 0) {
-					if (roi != null) {
-						elModel.internalSetRoiA(null);
-					}
-				} else {
-					if (roi == null) {
-						roi = new RectangularROI(shape[rank - 2], shape[rank - 1], 0);
-						elModel.internalSetRoiA(roi);
-					}
+			// need per-file instances as operations are not thread-safe 
+			SubtractFittedBackgroundOperation bop = null;
+			if (subtractModel.isSubtractBackground()) {
+				bop = new SubtractFittedBackgroundOperation();
+				bop.setModel(bgModel);
+			}
+			ElasticLineReduction eop = new ElasticLineReduction();
+			eop.setModel(elModel);
+			eop.propertyChange(null); // trigger update from model
+
+			ILazyDataset ld = opts.get(0).getLazyDataset();
+			int[] shape = ld.getShape();
+			int rank = shape.length;
+			int[] dataDims = new int[] {rank - 2, rank - 1};
+			int[] imageShape = new int[] {shape[dataDims[1]], shape[dataDims[0]]}; // flip to display shape
+
+			RectangularROI roi = (RectangularROI) elModel.getRoiA();
+			if (length == 0) {
+				if (roi != null) { // reset
 					if (elModel.getEnergyDirection() == ENERGY_DIRECTION.FAST) {
-						roi.setPoint(start, 0);
-						roi.setLengths(length, roi.getLength(1));
+						roi.setPoint(0, roi.getPointY());
+						roi.setLengths(imageShape[0], roi.getLength(1));
 					} else {
-						roi.setPoint(0, start);
-						roi.setLengths(roi.getLength(0), length);
+						roi.setPoint(roi.getPointX(), 0);
+						roi.setLengths(roi.getLength(0), imageShape[1]);
 					}
 				}
-				int[] dataDims = new int[] {rank - 2, rank - 1};
+			} else {
+				if (roi == null) {
+					roi = new RectangularROI(imageShape[0], imageShape[1], 0);
+					elModel.internalSetRoiA(roi);
+				}
+				if (elModel.getEnergyDirection() == ENERGY_DIRECTION.FAST) {
+					roi.setPoint(start, roi.getPointY());
+					roi.setLengths(length, roi.getLength(1));
+				} else {
+					roi.setPoint(roi.getPointX(), start);
+					roi.setLengths(roi.getLength(0), length);
+				}
+			}
 
-				Dataset[] axes = new Dataset[rank - dataDims.length]; // assume axes are the same for all auxiliary data
-				AxesMetadata amd = ld.getFirstMetadata(AxesMetadata.class);
-				ILazyDataset[] lAxes = amd == null ? null : amd.getAxes();
-				if (lAxes != null) {
-					for (int r = 0; r < axes.length; r++) {
-						ILazyDataset la = lAxes[r];
-						if (la != null) {
-							try {
-								Dataset ad = DatasetUtils.sliceAndConvertLazyDataset(la).squeeze();
-								ad.setName(MetadataPlotUtils.removeSquareBrackets(ad.getName()));
-								axes[r] = ad;
-							} catch (DatasetException e) {
-							}
+			Dataset[] axes = new Dataset[rank - dataDims.length]; // assume axes are the same for all auxiliary data
+			AxesMetadata amd = ld.getFirstMetadata(AxesMetadata.class);
+			ILazyDataset[] lAxes = amd == null ? null : amd.getAxes();
+			if (lAxes != null) {
+				for (int r = 0; r < axes.length; r++) {
+					ILazyDataset la = lAxes[r];
+					if (la != null) {
+						try {
+							Dataset ad = DatasetUtils.sliceAndConvertLazyDataset(la).squeeze();
+							ad.setName(MetadataPlotUtils.removeSquareBrackets(ad.getName()));
+							axes[r] = ad;
+						} catch (DatasetException e) {
 						}
 					}
 				}
+			}
 
-				int total = ShapeUtils.calcSize(Arrays.copyOf(shape, rank - 2));
-				SliceNDIterator iter = new SliceNDIterator(new SliceND(shape), dataDims);
-				SliceND slice = iter.getCurrentSlice();
-				SourceInformation sri = new SourceInformation(file.getFilePath(), opts.get(0).getName(), ld);
-				SubMonitor sub = SubMonitor.convert(monitor, total);
-				sub.setTaskName("Processing images in " + file.getName());
-				int i = 0;
-				while (iter.hasNext()) {
-					sub.newChild(1);
-					SliceInformation si = new SliceInformation(slice, slice, slice, dataDims, total, i++);
-					try {
-						Dataset image = DatasetUtils.convertToDataset(ld.getSlice(slice)).squeezeEnds();
-						image.addMetadata(new SliceFromSeriesMetadata(sri, si));
-						processImage(bop, eop, image, si, axes);
-					} catch (DatasetException e) {
-						break;
-					} catch (OutOfMemoryError e) {
-						data = null;
-						return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "Out of memory");
-					}
+			int total = ShapeUtils.calcSize(Arrays.copyOf(shape, rank - 2));
+			SliceNDIterator iter = new SliceNDIterator(new SliceND(shape), dataDims);
+			SliceND slice = iter.getCurrentSlice();
+			SourceInformation sri = new SourceInformation(file.getFilePath(), opts.get(0).getName(), ld);
+			SubMonitor sub = SubMonitor.convert(monitor, total);
+			sub.setTaskName("Processing images in " + file.getName());
+			int i = 0;
+			while (iter.hasNext()) {
+				sub.newChild(1);
+				SliceInformation si = new SliceInformation(slice, slice, slice, dataDims, total, i++);
+				try {
+					Dataset image = DatasetUtils.convertToDataset(ld.getSlice(slice)).squeezeEnds();
+					image.addMetadata(new SliceFromSeriesMetadata(sri, si));
+					processImage(bop, eop, image, si, axes);
+				} catch (DatasetException e) {
+					break;
+				} catch (OutOfMemoryError e) {
+					data = null;
+					return new Status(IStatus.WARNING, QuickRIXSPerspective.ID, "Out of memory");
 				}
 			}
+
 			return Status.OK_STATUS;
 		}
 
