@@ -1,4 +1,5 @@
 Manifest-Version: 1.0
+Eclipse-BundleShape: dir
 Bundle-ManifestVersion: 2
 Bundle-Name: QstatMonitor
 Bundle-SymbolicName: uk.ac.diamond.scisoft.qstatMonitor;singleton:=true
