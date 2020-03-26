@@ -73,8 +73,9 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 	 * @param slistener for single clicks
 	 * @param dlistener for double clicks
 	 * @param clistener for context click
+	 * @param defaultMessage message to display when any dataset has multiple values. Can be null
 	 */
-	public HDF5TableTree(Composite parent, Listener slistener, Listener dlistener, Listener clistener) {
+	public HDF5TableTree(Composite parent, Listener slistener, Listener dlistener, Listener clistener, String defaultMessage) {
 		super(parent, SWT.NONE);
 		setLayout(new FillLayout());
 		this.slistener = slistener;
@@ -160,7 +161,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 		});
 
 		tViewer.setContentProvider(new HDF5LazyContentProvider(tViewer, treeFilter));
-		tViewer.setLabelProvider(new HDF5LabelProvider());
+		tViewer.setLabelProvider(new HDF5LabelProvider(defaultMessage));
 		if (slistener != null)
 			tree.addListener(SWT.MouseUp, slistener);
 		if (dlistener != null)
@@ -394,6 +395,17 @@ class HDF5LazyContentProvider implements ILazyTreeContentProvider {
 
 class HDF5LabelProvider implements ITableLabelProvider {
 	private URI treeURI;
+	private String multipleValueMessage = "Double-click to view";
+
+	/**
+	 * Construct label provider with given message
+	 * @param multiValueMessage text displayed when a dataset has more than one value. Can be null for default message
+	 */
+	public HDF5LabelProvider(String multiValueMessage) {
+		if (multiValueMessage != null) {
+			multipleValueMessage = multiValueMessage;
+		}
+	}
 
 	@Override
 	public Image getColumnImage(Object element, int columnIndex) {
@@ -534,7 +546,7 @@ class HDF5LabelProvider implements ITableLabelProvider {
 						msg += " " + units.getFirstElement();
 					}
 				} else {
-					msg = "Double-click to view";
+					msg = multipleValueMessage;
 				}
 				break;
 			}

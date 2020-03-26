@@ -115,7 +115,7 @@ public class HDF5TreeExplorer extends AbstractExplorer implements ISelectionProv
 				if (event.button == 1)
 					handleDoubleClick();
 			}
-		}, contextListener);
+		}, contextListener, null);
 		initDragDrop(tableTree);
 		
 		cListeners = new HashSet<ISelectionChangedListener>();

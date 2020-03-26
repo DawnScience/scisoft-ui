@@ -63,7 +63,7 @@ public class HDF5TreeDialog extends Dialog {
 		Composite container = (Composite) super.createDialogArea(parent);
 		container.setLayout(new FillLayout());
 		SashForm sash = new SashForm(container, SWT.HORIZONTAL);
-		HDF5TableTree tt = new HDF5TableTree(sash, null, null, null);
+		HDF5TableTree tt = new HDF5TableTree(sash, null, null, null, "Select to view");
 		tt.setFilename(filename);
 		tt.setInput(tree.getNodeLink());
 
