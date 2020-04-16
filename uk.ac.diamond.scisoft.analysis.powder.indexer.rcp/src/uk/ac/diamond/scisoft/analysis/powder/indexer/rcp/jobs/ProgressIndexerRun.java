@@ -20,7 +20,6 @@ import uk.ac.diamond.scisoft.analysis.powder.indexer.indexers.PowderIndexerFacto
 import uk.ac.diamond.scisoft.analysis.powder.indexer.indexers.StandardConstantParameters;
 import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.Activator;
 import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.PowderIndexerManager;
-import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.preferences.PowderIndexerConstants;
 
 
 /**

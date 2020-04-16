@@ -11,7 +11,7 @@ package uk.ac.diamond.scisoft.analysis.rcp.plotting.multiview;
 
 import java.util.Set;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

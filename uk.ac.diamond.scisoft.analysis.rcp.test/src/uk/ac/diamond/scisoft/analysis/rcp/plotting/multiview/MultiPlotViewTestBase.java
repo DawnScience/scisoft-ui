@@ -12,7 +12,7 @@ package uk.ac.diamond.scisoft.analysis.rcp.plotting.multiview;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.dawb.common.ui.util.EclipseUtils;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.PlatformUI;
@@ -20,7 +20,6 @@ import org.eclipse.ui.PlatformUI;
 import uk.ac.diamond.scisoft.analysis.plotclient.IPlotWindowManager;
 import uk.ac.diamond.scisoft.analysis.rcp.plotting.PlotWindow;
 import uk.ac.diamond.scisoft.analysis.rcp.plotting.RcpPlottingTestBase;
-import uk.ac.diamond.scisoft.analysis.rcp.views.PlotView;
 
 /**
  * All the plot view tests in this package have some common code located here in their common super class

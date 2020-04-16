@@ -9,7 +9,7 @@
 
 package uk.ac.diamond.scisoft.analysis.rcp.plotting.rpc.sdaplotter;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.IntegerDataset;
