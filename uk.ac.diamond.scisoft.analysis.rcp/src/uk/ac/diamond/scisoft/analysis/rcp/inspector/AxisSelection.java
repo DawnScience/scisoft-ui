@@ -14,9 +14,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
-import org.apache.commons.collections.Transformer;
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.collections4.Predicate;
 import org.eclipse.january.dataset.ILazyDataset;
 
 import uk.ac.diamond.scisoft.analysis.axis.AxisChoice;
@@ -127,33 +126,21 @@ public class AxisSelection extends InspectorProperty implements Iterable<String>
 	private List<String> names;
 	private final String suffix;
 
-	Transformer orderTransformer = new Transformer() {
+	Predicate<AxisSelData> axisSelectionPredicate = new Predicate<AxisSelData>() {
 		@Override
-		public Object transform(Object o) {
-			if (o instanceof AxisSelData)
-				return ((AxisSelData) o).getOrder();
-			return null;
+		public boolean evaluate(AxisSelData o) {
+			return o.isSelected();
 		}
 	};
 
-	Predicate axisSelectionPredicate = new Predicate() {
-		@Override
-		public boolean evaluate(Object o) {
-			if (o instanceof AxisSelData)
-				return ((AxisSelData) o).isSelected();
-			return false;
-		}
-	};
-
-	class OrderPredicate implements Predicate {
+	class OrderPredicate implements Predicate<AxisSelData> {
 		int order;
 		public void setOrder(int order) {
 			this.order = order;
 		}
 
 		@Override
-		public boolean evaluate(Object obj) {
-			AxisSelData a = (AxisSelData) obj;
+		public boolean evaluate(AxisSelData a) {
 			return order < a.getOrder();
 		}
 	}
@@ -240,7 +227,7 @@ public class AxisSelection extends InspectorProperty implements Iterable<String>
 			asData.add(0, a);
 		} else {
 			orderPredicate.setOrder(order); // find first >= order
-			Object first = CollectionUtils.find(asData, orderPredicate);
+			AxisSelData first = IteratorUtils.find(asData.iterator(), orderPredicate);
 			if (first == null) {
 				names.add(name);
 				asData.add(a);
@@ -322,7 +309,7 @@ public class AxisSelection extends InspectorProperty implements Iterable<String>
 	 * @param fire
 	 */
 	public void selectAxis(int index, boolean fire) {
-		AxisSelData a = (AxisSelData) CollectionUtils.find(asData, axisSelectionPredicate);
+		AxisSelData a = IteratorUtils.find(asData.iterator(), axisSelectionPredicate);
 		if (a != null)
 			a.setSelected(false);
 
@@ -427,7 +414,7 @@ public class AxisSelection extends InspectorProperty implements Iterable<String>
 	 * @return index or -1 if nothing selected
 	 */
 	public int getSelectedIndex() {
-		AxisSelData a = (AxisSelData) CollectionUtils.find(asData, axisSelectionPredicate);
+		AxisSelData a = IteratorUtils.find(asData.iterator(), axisSelectionPredicate);
 		return asData.indexOf(a);
 	}
 
@@ -445,7 +432,7 @@ public class AxisSelection extends InspectorProperty implements Iterable<String>
 	 * @return selected choice
 	 */
 	public AxisChoice getSelectedAxis() {
-		AxisSelData a = (AxisSelData) CollectionUtils.find(asData, axisSelectionPredicate);
+		AxisSelData a = IteratorUtils.find(asData.iterator(), axisSelectionPredicate);
 		return (a == null) ? null : a.getData();
 	}
 

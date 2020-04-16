@@ -55,7 +55,7 @@ Export-Package: com.swtdesigner,
  uk.ac.diamond.scisoft.analysis.rcp.views,
  uk.ac.diamond.scisoft.analysis.rcp.views.plot,
  uk.ac.diamond.scisoft.analysis.rcp.wizards
-Import-Package: org.apache.commons.collections,
+Import-Package: org.apache.commons.collections4,
  org.dawb.common.util.io,
  org.dawb.common.util.list,
  org.dawnsci.common.widgets.file,
