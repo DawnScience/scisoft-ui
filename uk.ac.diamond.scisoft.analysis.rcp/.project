@@ -3,7 +3,6 @@
 	<name>uk.ac.diamond.scisoft.analysis.rcp</name>
 	<comment></comment>
 	<projects>
-		<project>tp</project>
 		<project>uk.ac.diamond.scisoft.analysis</project>
 	</projects>
 	<buildSpec>
