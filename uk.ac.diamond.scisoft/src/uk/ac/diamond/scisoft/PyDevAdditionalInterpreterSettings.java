@@ -34,6 +34,7 @@ public class PyDevAdditionalInterpreterSettings extends InterpreterNewCustomEntr
 		entriesToAdd.add("SCISOFT_RPC_PORT=${scisoft_rpc_port}");
 		entriesToAdd.add("SCISOFT_RMI_PORT=${scisoft_rmi_port}");
 		entriesToAdd.add("SCISOFT_RPC_TEMP=${scisoft_rpc_temp}");
+		entriesToAdd.add("IPYTHONENABLE=True"); // PyDev post 7.1 needs this to make the interactive console use IPython
 		return entriesToAdd;
 	}
 
