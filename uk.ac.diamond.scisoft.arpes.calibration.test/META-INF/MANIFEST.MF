@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Arpes calibration test fragrment
+Bundle-Name: ARPES Calibration Tests
 Bundle-SymbolicName: uk.ac.diamond.scisoft.arpes.calibration.test
 Bundle-Version: 1.0.0.qualifier
 Bundle-Vendor: Diamond Light Source

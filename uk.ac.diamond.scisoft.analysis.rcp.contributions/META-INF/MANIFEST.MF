@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Editors
+Bundle-Name: RCP fragments
 Bundle-SymbolicName: uk.ac.diamond.scisoft.analysis.rcp.contributions;singleton:=true
 Bundle-Version: 1.3.0.qualifier
 Bundle-Vendor: Diamond Light Source

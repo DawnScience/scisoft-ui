@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="uk.ac.diamond.scisoft.feedback.feature"
-      label="Scisoft Feedback feature"
+      label="Scisoft Feedback Feature"
       version="1.0.0.qualifier"
       provider-name="Diamond Light Source">
 
