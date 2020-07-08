@@ -22,8 +22,6 @@
 		<module>uk.ac.diamond.scisoft.arpes.calibration</module>
 		<module>uk.ac.diamond.scisoft.customprojects.feature</module>
 		<module>uk.ac.diamond.scisoft.customprojects.rcp</module>
-		<module>uk.ac.diamond.scisoft.feedback</module>
-		<module>uk.ac.diamond.scisoft.feedback.feature</module>
 		<module>uk.ac.diamond.scisoft.imagegrid</module>
 		<module>uk.ac.diamond.scisoft.qstatMonitor</module>
 		<module>uk.ac.diamond.scisoft.rixs.feature</module>
@@ -51,6 +49,8 @@
 			<modules>
 				<module>uk.ac.diamond.scisoft.analysis.rcp.test</module>
 				<module>uk.ac.diamond.scisoft.arpes.calibration.test</module>
+				<module>uk.ac.diamond.scisoft.feedback</module>
+				<module>uk.ac.diamond.scisoft.feedback.feature</module>
 				<module>uk.ac.diamond.sda.navigator.test</module>
 			</modules>
 		</profile>
