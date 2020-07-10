@@ -149,7 +149,7 @@ interface InspectionTab {
  * Abstract base class
  */
 abstract class ATab implements InspectionTab {
-	protected static final Logger logger = LoggerFactory.getLogger(ATab.class);
+	private static final Logger logger = LoggerFactory.getLogger(ATab.class);
 	protected static final String PLOTNAME = "Dataset Plot";
 
 	protected String text;
@@ -227,6 +227,8 @@ abstract class ATab implements InspectionTab {
  * Straightforward plotting tabs
  */
 class PlotTab extends ATab {
+	private static final Logger logger = LoggerFactory.getLogger(PlotTab.class);
+
 	private static final String VOLVIEWNAME = "Remote Volume Viewer";
 	private String explorerName;
 	// this is the current limit on the number of lines that stack can handle well
@@ -1257,6 +1259,8 @@ class PlotTab extends ATab {
  */
 class DataTab extends PlotTab {
 
+	private static final Logger logger = LoggerFactory.getLogger(DataTab.class);
+
 	public DataTab(IWorkbenchPartSite partSite, InspectorType type, String title, String[] axisNames) {
 		super(partSite, type, title, axisNames);
 	}
@@ -1357,6 +1361,8 @@ class DataTab extends PlotTab {
  * Scatter point plots
  */
 class ScatterTab extends PlotTab {
+	private static final Logger logger = LoggerFactory.getLogger(ScatterTab.class);
+
 	private static final int POINTSIZE = 4;
 	private static final String CONSTANT = "constant";
 	private static final String DATA = "data";

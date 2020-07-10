@@ -36,11 +36,15 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.PartInitException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.rcp.inspector.DatasetSelection.InspectorType;
 
 public class HyperTab extends PlotTab {
-		
+
+	private static final Logger logger = LoggerFactory.getLogger(HyperTab.class);
+
 	private HyperType hyperType;
 
 	public HyperTab(IWorkbenchPartSite partSite, InspectorType type, String title, String[] axisNames) {
