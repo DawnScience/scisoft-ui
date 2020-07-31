@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.preferences.ScopedPreferenceStore;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,5 +143,13 @@ public class AnalysisRCPActivator extends AbstractUIPlugin implements ServerPort
 		if (plottingPreferenceStore == null)
 			plottingPreferenceStore = new ScopedPreferenceStore(InstanceScope.INSTANCE, IPlottingSystem.PREFERENCE_STORE);
 		return plottingPreferenceStore;
+	}
+	
+	public static <T> T getService(final Class<T> serviceClass) {
+		if (plugin == null) return null;
+		BundleContext bc = plugin.getBundleContext();
+		ServiceReference<T> ref = bc.getServiceReference(serviceClass);
+		if (ref==null) return null;
+		return bc.getService(ref);
 	}
 }

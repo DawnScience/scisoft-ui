@@ -111,6 +111,13 @@
             id="uk.ac.diamond.scisoft.analysis.rcp.access.category"
             name="Data Access">
       </category>
+      <view
+            class="uk.ac.diamond.scisoft.analysis.rcp.views.ARPESPlotView"
+            icon="icons/ARPESViewIcon.png"
+            id="uk.ac.diamond.scisoft.analysis.rcp.views.ARPESPlotView"
+            name="ARPESview"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.help.contexts">
