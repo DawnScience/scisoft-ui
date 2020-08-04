@@ -39,7 +39,6 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.jobs.JobGroup;
-import org.eclipse.dawnsci.analysis.api.processing.IOperationService;
 import org.eclipse.dawnsci.analysis.api.processing.OperationData;
 import org.eclipse.dawnsci.analysis.api.processing.model.AbstractOperationModel;
 import org.eclipse.dawnsci.analysis.api.processing.model.ModelField;
@@ -112,25 +111,23 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private IPlottingSystem<?> plottingSystem;
 
-	private SubtractFittedBackgroundOperation bgOp;
 	private SubtractFittedBackgroundModel bgModel;
 
-	private ElasticLineReduction elOp;
 	private ElasticLineReductionModel elModel;
+	private int roiMax = 1;
 
 	private List<ProcessFileJob> jobs;
 	private Map<String, ProcessFileJob> cachedJobs;
 
 	private PlotOption poSpectrum;
 	private PlotOption poSpectrumWithFit;
+	private PlotOption poPosn;
 	private PlotOption poFWHM;
 	private PlotOption poHeight;
 	private PlotOption poArea;
 	private PlotOption poElasticLineSlope;
 	private PlotOption poElasticLineIntercept;
 	private Map<String, PlotOption> poAll;
-
-	private static final String ZERO = "0";
 
 	static class PlotOption {
 		private final String oName;
@@ -148,8 +145,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			return oName;
 		}
 
-		public String getDataName() {
-			return dName;
+		public String getDataName(int r) {
+			return String.format(dName, r);
 		}
 
 		public String getPlotFormat() {
@@ -176,20 +173,22 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private void createPlotOptions() {
 		// these are summary data
 		poAll = new LinkedHashMap<>();
-		poSpectrum = new PlotOption("Spectrum", ElasticLineReduction.ES_PREFIX + ZERO, "%s");
+		poSpectrum = new PlotOption("Spectrum", ElasticLineReduction.ES_PREFIX + "%d", "%s");
 		poAll.put(poSpectrum.getOptionName(), poSpectrum);
-		poSpectrumWithFit = new PlotOption("SpectrumWithFit", ElasticLineReduction.ESF_PREFIX + ZERO, "%s-fit");
+		poSpectrumWithFit = new PlotOption("SpectrumWithFit", ElasticLineReduction.ESF_PREFIX + "%d", "%s-fit");
 		poAll.put(poSpectrumWithFit.getOptionName(), poSpectrumWithFit);
-		poFWHM = new PlotOption("FWHM", ElasticLineReduction.ESFWHM_PREFIX + ZERO, "FWHM");
+		poPosn = new PlotOption("Posn", ElasticLineReduction.ESPOSN_PREFIX + "%d", "Posn");
+		poAll.put(poPosn.getOptionName(), poPosn);
+		poFWHM = new PlotOption("FWHM", ElasticLineReduction.ESFWHM_PREFIX + "%d", "FWHM");
 		poAll.put(poFWHM.getOptionName(), poFWHM);
-		poArea = new PlotOption("Area", ElasticLineReduction.ESAREA_PREFIX + ZERO, "Area");
+		poArea = new PlotOption("Area", ElasticLineReduction.ESAREA_PREFIX + "%d", "Area");
 		poAll.put(poArea.getOptionName(), poArea);
-		poHeight = new PlotOption("Height", ElasticLineReduction.ESHEIGHT_PREFIX + ZERO, "Height");
+		poHeight = new PlotOption("Height", ElasticLineReduction.ESHEIGHT_PREFIX + "%d", "Height");
 		poAll.put(poHeight.getOptionName(), poHeight);
 
-		poElasticLineSlope = new PlotOption("ElasticLineSlope", "line_0_m", "elastic line slope");
+		poElasticLineSlope = new PlotOption("ElasticLineSlope", "line_%d_m", "elastic line slope");
 		poAll.put(poElasticLineSlope.getOptionName(), poElasticLineSlope);
-		poElasticLineIntercept = new PlotOption("ElasticLineIntercept", "line_0_c", "elastic line intercept");
+		poElasticLineIntercept = new PlotOption("ElasticLineIntercept", "line_%d_c", "elastic line intercept");
 		poAll.put(poElasticLineIntercept.getOptionName(), poElasticLineIntercept);
 	}
 
@@ -230,7 +229,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	@PostConstruct
-	public void createComposite(Composite parent, IPlottingService plottingService, IOperationService opService) {
+	public void createComposite(Composite parent, IPlottingService plottingService) {
 		fileStateListener = new FileControllerStateEventListener() {
 
 			@Override
@@ -251,11 +250,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					runProcessing(true, false); // reset plot as y scale can be very different
 				}
 			});
-			bgOp = (SubtractFittedBackgroundOperation) opService.create(SubtractFittedBackgroundOperation.class.getName());
-			bgModel = bgOp.getModel();
+			bgModel = new SubtractFittedBackgroundModel();
 			bgModel.addPropertyChangeListener(this);
-			elOp = (ElasticLineReduction) opService.create(ElasticLineReduction.class.getName());
-			elModel = elOp.getModel();
+			elModel = new ElasticLineReductionModel();
 			elModel.setRoiA(null);
 			elModel.setRoiB(null);
 			elModel.addPropertyChangeListener(this);
@@ -277,7 +274,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(elModel, "delta"),
 				new ModelField(elModel, "cutoff"),
 				new ModelField(elModel, "peakFittingFactor"),
-				new ModelField(elModel, "roiA")
+				new ModelField(elModel, "roiA"),
+				new ModelField(elModel, "roiB")
 		);
 		modelViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
@@ -453,6 +451,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 						XAxisBoxROI ab = (XAxisBoxROI) roi;
 						rect[0] = (int) Math.floor(ab.getPointX());
 						rect[1] = (int) Math.ceil(ab.getLength(0));
+						System.err.println("Start, length = " + Arrays.toString(rect));
 						runProcessing(true, false);
 					}
 				}
@@ -470,6 +469,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
+		roiMax = elModel.getRoiA() != null && elModel.getRoiB() != null ? 2 : 1;
 		runProcessing(false, false);
 	}
 
@@ -498,12 +498,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			ProcessFileJob j = cachedJobs.get(path);
 			if (j == null || j.getData() == null) {
 				j = new ProcessFileJob("QR per file: " + f.getName(), f);
+				j.setRegion(rect);
 				j.setJobGroup(jg);
 				j.setPriority(Job.LONG);
 				j.schedule();
 				cachedJobs.put(path, j);
+			} else {
+				j.setRegion(rect);
 			}
-			j.setRegion(rect);
 			jobs.add(j);
 		}
 		retry = false;
@@ -515,6 +517,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					jg.join(250, null);
 				}
 			} catch (OperationCanceledException | InterruptedException e) {
+				System.err.println("Problem: " + e);
 			}
 			for (ProcessFileJob j : jobs) {
 				IStatus s = j.getResult();
@@ -547,13 +550,15 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		Set<PlotOption> ps = new LinkedHashSet<>();
 		PlotOption po = null;
 		for (PlotOption p : poAll.values()) {
-			String dn = p.getDataName();
-			if (options.contains(dn)) {
-				ps.add(p);
-				if (po == null) {
-					po = p;
+			for (int r = 0; r < roiMax; r++) {
+				String dn = p.getDataName(r);
+				if (options.contains(dn)) {
+					ps.add(p);
+					if (po == null) {
+						po = p;
+					}
+					options.remove(dn);
 				}
-				options.remove(dn);
 			}
 		}
 
@@ -626,6 +631,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			addPointData(plots, plotOption);
 		} else if (plotOption == poElasticLineSlope) {
 			addPointData(plots, plotOption);
+		} else if (plotOption == poPosn) {
+			addPointData(plots, plotOption);
 		} else if (plotOption == poFWHM) {
 			addPointData(plots, plotOption);
 		} else if (plotOption == poArea) {
@@ -642,6 +649,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	private void addPointData(Map<String, Dataset> plots, PlotOption option) {
+		for (int r = 0; r < roiMax; r++) {
+			addPointData(plots, option, r);
+		}
+	}
+
+	private void addPointData(Map<String, Dataset> plots, PlotOption option, int r) {
 		List<Double> x = new ArrayList<>();
 		List<Double> y = new ArrayList<>();
 		String xName = null;
@@ -652,7 +665,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			LoadedFile f = j.getFile();
 			Dataset v = f.getLabelValue();
 			Map<String, Dataset> map = j.getData();
-			Dataset pd = map == null ? null : map.get(option.getDataName());
+			Dataset pd = map == null ? null : map.get(option.getDataName(r));
 
 			if (pd == null) {
 				continue;
@@ -685,13 +698,13 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 
 		if (!y.isEmpty()) {
-			Dataset r = DatasetFactory.createFromList(y);
+			Dataset yr = DatasetFactory.createFromList(y);
 			if (!x.isEmpty()) {
 				Dataset xd = DatasetFactory.createFromList(x);
 				xd.setName(xName);
-				MetadataUtils.setAxes(r, xd);
+				MetadataUtils.setAxes(yr, xd);
 			}
-			plots.put(option.getPlotFormat(), r);
+			plots.put(String.format(option.getPlotFormat() + "-%d", r), yr);
 		}
 	}
 
@@ -702,35 +715,38 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 			LoadedFile f = j.getFile();
 			String n = String.format(option.getPlotFormat(), f.getName());
-			List<Dataset> pd = get1DPlotData(j.getData(), option.getDataName());
-			Dataset v = f.getLabelValue();
-			
-			if (pd.size() > 1) {
-				Dataset x = pd.remove(pd.size() - 1);
-				if (v == null) {
-					v = x;
+
+			for (int r = 0; r < roiMax; r++) {
+				List<Dataset> pd = get1DPlotData(j.getData(), option.getDataName(r));
+				Dataset v = f.getLabelValue();
+				
+				if (pd.size() > 1) {
+					Dataset x = pd.remove(pd.size() - 1);
+					if (v == null) {
+						v = x;
+					}
 				}
-			}
-			if (v != null) {
-				v.squeeze();
-				if (v.getRank() == 0) {
-					v.setShape(1);
+				if (v != null) {
+					v.squeeze();
+					if (v.getRank() == 0) {
+						v.setShape(1);
+					}
 				}
-			}
-			int i = -1;
-			for (Dataset r : pd) {
-				i++;
-				if (r == null) {
-					continue;
+				int i = -1;
+				for (Dataset yr : pd) {
+					i++;
+					if (yr == null) {
+						continue;
+					}
+					yr.squeeze();
+					String name;
+					if (v == null) {
+						name = String.format("%s-%d:%d", n, r, i);
+					} else {
+						name = String.format("%s-%d:%d (%s)", n, r, i, v.getObject(i));
+					}
+					plots.put(name, yr);
 				}
-				r.squeeze();
-				String name;
-				if (v == null) {
-					name = String.format("%s:%d", n, i);
-				} else {
-					name = String.format("%s:%d (%s)", n, i, v.getObject(i));
-				}
-				plots.put(name, r);
 			}
 		}
 	}
@@ -821,8 +837,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				bop = new SubtractFittedBackgroundOperation();
 				bop.setModel(bgModel);
 			}
+			ElasticLineReductionModel model = elModel.copy();
 			ElasticLineReduction eop = new ElasticLineReduction();
-			eop.setModel(elModel);
+			eop.setModel(model);
 			eop.propertyChange(null); // trigger update from model
 
 			ILazyDataset ld = opts.get(0).getLazyDataset();
@@ -831,28 +848,28 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			int[] dataDims = new int[] {rank - 2, rank - 1};
 			int[] imageShape = new int[] {shape[dataDims[1]], shape[dataDims[0]]}; // flip to display shape
 
-			RectangularROI roi = (RectangularROI) elModel.getRoiA();
-			if (length == 0) {
-				if (roi != null) { // reset
-					if (elModel.getEnergyDirection() == ENERGY_DIRECTION.FAST) {
-						roi.setPoint(0, roi.getPointY());
-						roi.setLengths(imageShape[0], roi.getLength(1));
-					} else {
-						roi.setPoint(roi.getPointX(), 0);
-						roi.setLengths(roi.getLength(0), imageShape[1]);
-					}
+			RectangularROI ra = (RectangularROI) elModel.getRoiA();
+			RectangularROI rb = (RectangularROI) elModel.getRoiB();
+			if (roiMax == 1) {
+				if (rb == null) {
+					ra = ra == null ? new RectangularROI(imageShape[0], imageShape[1], 0) : ra.copy();
+				} else {
+					rb = rb.copy();
 				}
 			} else {
-				if (roi == null) {
-					roi = new RectangularROI(imageShape[0], imageShape[1], 0);
-					elModel.internalSetRoiA(roi);
+				ra = ra.copy();
+				rb = rb.copy();
+			}
+			model.setRoiA(ra);
+			model.setRoiB(rb);
+
+			if (length != 0) {
+				boolean isFast = model.getEnergyDirection() == ENERGY_DIRECTION.FAST;
+				if (ra != null) {
+					cropROI(ra, isFast);
 				}
-				if (elModel.getEnergyDirection() == ENERGY_DIRECTION.FAST) {
-					roi.setPoint(start, roi.getPointY());
-					roi.setLengths(length, roi.getLength(1));
-				} else {
-					roi.setPoint(roi.getPointX(), start);
-					roi.setLengths(roi.getLength(0), length);
+				if (rb != null) {
+					cropROI(rb, isFast);
 				}
 			}
 
@@ -896,6 +913,16 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 
 			return Status.OK_STATUS;
+		}
+
+		private void cropROI(RectangularROI roi, boolean isFast) {
+			if (isFast) {
+				roi.setPoint(start, roi.getPointY());
+				roi.setLengths(length, roi.getLength(1));
+			} else {
+				roi.setPoint(roi.getPointX(), start);
+				roi.setLengths(roi.getLength(0), length);
+			}
 		}
 
 		private void processImage(SubtractFittedBackgroundOperation bop, ElasticLineReduction eop, Dataset image, SliceInformation si, Dataset[] axes) {
