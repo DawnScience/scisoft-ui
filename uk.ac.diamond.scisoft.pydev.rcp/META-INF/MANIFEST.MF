@@ -24,3 +24,4 @@ Require-Bundle: org.eclipse.jface,
  org.eclipse.core.variables,
  uk.ac.diamond.scisoft.analysis.xmlrpc
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: uk.ac.diamond.scisoft.pydev.rcp
