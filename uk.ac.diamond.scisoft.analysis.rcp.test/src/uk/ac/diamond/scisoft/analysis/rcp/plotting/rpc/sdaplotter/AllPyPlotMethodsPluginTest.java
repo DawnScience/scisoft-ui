@@ -10,6 +10,7 @@
 package uk.ac.diamond.scisoft.analysis.rcp.plotting.rpc.sdaplotter;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.dawb.common.util.net.NetUtils;
 import org.eclipse.january.dataset.DatasetFactory;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.january.dataset.IntegerDataset;
@@ -59,10 +60,16 @@ public class AllPyPlotMethodsPluginTest extends RcpPlottingTestBase {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 
-		redirectPlotter = new ReDirectOverRpcPlotterImpl();
+		int port = NetUtils.getFreePort(8192);
+		redirectPlotter = new ReDirectOverRpcPlotterImpl(port);
+		try {
+			Thread.sleep(1500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 
 		// Launch the AnalysisRpc server that receives our requests and sends them back to us
-		runPythonFileBackground("loopback.py");
+		runPythonFileBackground("loopback.py", port + 1);
 	}
 
 	public AllPyPlotMethodsPluginTest() {

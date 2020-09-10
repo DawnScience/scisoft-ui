@@ -35,7 +35,7 @@ public class AutomatedManualPlottingPluginTest extends RcpPlottingTestBase {
 	public void testManualPlotTestPython() throws Exception {
 		// Launch the AnalysisRpc server that receives our requests and sends them back to us
 		Assert.assertTrue(ArrayUtils.indexOf(PlotServerProvider.getPlotServer().getGuiNames(), "Plot 1 DNP Python") == -1);
-		runPythonFile("manual_plot_test.py", true);
+		runPythonFile("manual_plot_test_over_dnp.py", true);
 		Assert.assertTrue(ArrayUtils.indexOf(PlotServerProvider.getPlotServer().getGuiNames(), "Plot 1 DNP Python") != -1);
 	}
 

@@ -123,29 +123,39 @@ abstract public class RcpPlottingTestBase {
 		EclipseUtils.delay(5000, true);
 	}
 	
-	public static String getScriptPath(String file) throws Exception {
+	private static String getScriptPath(String file) throws Exception {
 		URL script = FileLocator.toFileURL(FileLocator.find(new URL("platform:/plugin/uk.ac.diamond.scisoft.python/test/scisoftpy/" + file)));
 		return script.getPath();
 	}
-	
-	public static String getScisoftPyPath() throws Exception {
+
+	private static String getScisoftPyPath() throws Exception {
 		URL src = FileLocator.toFileURL(FileLocator.find(new URL("platform:/plugin/uk.ac.diamond.scisoft.python/src")));
 		return src.getPath();
 	}
-	
-	public static String[] makeEnv() {
+
+	private static String[] makeEnv(int loopbackPort) {
 		int port = AnalysisRpcServerProvider.getInstance().getPort();
 		Assert.assertFalse(port == 0); // Server must be started ok by now, otherwise the script won't successfully connect to anything
-		String[] envp = new String[] { "SCISOFT_RPC_PORT=" + port };
+		String[] envp = loopbackPort < 0 ? new String[] { "SCISOFT_RPC_PORT=" + port } :
+			new String[] { "SCISOFT_RPC_PORT=" + port, "LOOPBACK_SERVER_PORT=" + loopbackPort };
 		return envp;
 	}
-	
-	public static void runPythonFile(String file, boolean failOnAnyOutput) throws Exception {
-		PythonHelper.runPythonFile(getScriptPath(file), new String[] {getScisoftPyPath()}, makeEnv(), failOnAnyOutput);
+
+	protected static void runPythonFile(String file, boolean failOnAnyOutput) throws Exception {
+		try {
+			PythonHelper.runPythonFile(getScriptPath(file), new String[] {getScisoftPyPath()}, makeEnv(-1), failOnAnyOutput);
+		} catch (Throwable t) {
+			t.printStackTrace();
+			throw t;
+		}
 	}
 
-	public static void runPythonFileBackground(String file) throws Exception {
-		PythonHelper.runPythonFileBackground(getScriptPath(file), new String[] {getScisoftPyPath()}, makeEnv());
+	protected static void runPythonFileBackground(String file, int port) throws Exception {
+		try {
+			PythonHelper.runPythonFileBackground(getScriptPath(file), new String[] {getScisoftPyPath()}, makeEnv(port));
+		} catch (Throwable t) {
+			t.printStackTrace();
+			throw t;
+		}
 	}
-	
 }

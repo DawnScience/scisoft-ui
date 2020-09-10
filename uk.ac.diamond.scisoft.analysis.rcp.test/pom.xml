@@ -20,11 +20,41 @@
 				<artifactId>tycho-surefire-plugin</artifactId>
 				<version>${tycho.version}</version>
 				<configuration>
+					<!-- commented out running python and plotting plugin tests as can't get surefire configured
+					to resolve platform URLs to find python scripts
+					<useUIHarness>true</useUIHarness>
+					<showEclipseLog>true</showEclipseLog>
+					<product>org.eclipse.platform.ide</product -->
 					<excludes>
 						<exclude>*PluginTest</exclude>
+						<!-- exclude>**/RpcRmiVariablesPluginTest.java</exclude>
+						<exclude>**/PlotWindowManager*PluginTest.java</exclude>
+						<exclude>**/DiffractionViewerPluginTest.java</exclude>
+						<exclude>**/ShowPlotViewMenuPluginTest.java</exclude -->
 					</excludes>
 				</configuration>
 			</plugin>
+			<!-- plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<version>${tycho.version}</version>
+				<configuration>
+					<dependency-resolution>
+						<extraRequirements>
+							<requirement>
+								<type>eclipse-plugin</type>
+								<id>uk.ac.diamond.scisoft.python</id>
+								<versionRange>0.0.0</versionRange>
+							</requirement>
+							<requirement>
+								<type>eclipse-plugin</type>
+								<id>uk.ac.diamond.scisoft.python.test</id>
+								<versionRange>0.0.0</versionRange>
+							</requirement>
+						</extraRequirements>
+					</dependency-resolution>
+				</configuration>
+			</plugin -->
 		</plugins>
 	</build>
 </project>
