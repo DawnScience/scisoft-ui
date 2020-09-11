@@ -65,7 +65,7 @@
 				<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.feature</module>
 				<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp</module>
 				<module>uk.ac.diamond.scisoft.pydev.rcp</module>
-				<!--module>uk.ac.diamond.scisoft.pydev.rcp.test</module -->
+				<module>uk.ac.diamond.scisoft.pydev.rcp.test</module>
 			</modules>
 		</profile>
 		<profile>
@@ -79,7 +79,7 @@
 				<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.feature</module>
 				<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp</module>
 				<module>uk.ac.diamond.scisoft.pydev.rcp</module>
-				<!--module>uk.ac.diamond.scisoft.pydev.rcp.test</module -->
+				<module>uk.ac.diamond.scisoft.pydev.rcp.test</module>
 			</modules>
 		</profile>
 	</profiles>

@@ -30,3 +30,4 @@ Import-Package: org.dawb.common.ui.perspective,
 Export-Package: uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp,
  uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp.views
 Bundle-Vendor: Diamond Light Source
+Automatic-Module-Name: uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp
