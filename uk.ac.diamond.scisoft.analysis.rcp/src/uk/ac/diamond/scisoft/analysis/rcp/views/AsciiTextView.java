@@ -33,8 +33,6 @@ import org.eclipse.ui.part.ViewPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.swtdesigner.SWTResourceManager;
-
 import uk.ac.diamond.scisoft.analysis.rcp.AnalysisRCPActivator;
 import uk.ac.diamond.scisoft.analysis.rcp.handlers.AsciiMonitorAction;
 
@@ -74,7 +72,6 @@ public class AsciiTextView extends ViewPart {
 		container.setLayout(new FillLayout(SWT.HORIZONTAL));
 		{
 			text = new StyledText(container, SWT.BORDER | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL | SWT.CANCEL | SWT.MULTI | SWT.DOUBLE_BUFFERED);
-			text.setFont(SWTResourceManager.getFont("Courier New", 10, SWT.NORMAL));
 		}
 
 		createActions();

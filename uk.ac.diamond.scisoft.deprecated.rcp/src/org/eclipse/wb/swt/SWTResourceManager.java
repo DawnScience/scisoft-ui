@@ -1,13 +1,14 @@
-/*
- * Copyright (c) 2012 Diamond Light Source Ltd.
- *
+/*******************************************************************************
+ * Copyright (c) 2011 Google, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- */
-
-package com.swtdesigner;
+ *
+ * Contributors:
+ *    Google, Inc. - initial API and implementation
+ *******************************************************************************/
+package org.eclipse.wb.swt;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -36,9 +37,6 @@ import org.eclipse.swt.widgets.Display;
  * <p>
  * This class may be freely distributed as part of any application or plugin.
  * <p>
- * Copyright (c) 2003 - 2007, Instantiations, Inc. <br>
- * All Rights Reserved
- * 
  * @author scheglov_ke
  * @author Dan Rubel
  */
