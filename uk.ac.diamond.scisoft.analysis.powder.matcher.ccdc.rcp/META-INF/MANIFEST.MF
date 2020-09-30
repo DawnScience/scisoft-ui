@@ -21,8 +21,7 @@ Require-Bundle: org.eclipse.ui,
  org.dawnsci.plotting
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
-Import-Package: org.dawb.common.ui.perspective,
- org.dawb.common.ui.widgets,
+Import-Package: org.dawb.common.ui.widgets,
  org.dawnsci.common.widgets.spinner,
  org.dawnsci.plotting.views,
  org.eclipse.dawnsci.plotting.api.tool,
