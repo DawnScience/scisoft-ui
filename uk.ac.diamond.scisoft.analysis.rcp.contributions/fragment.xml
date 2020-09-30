@@ -151,11 +151,6 @@
             name="LoadHDF5Tree">
       </command>
       <command
-            defaultHandler="uk.ac.diamond.scisoft.analysis.rcp.handlers.CompareFilesHandler"
-            id="uk.ac.diamond.scisoft.analysis.rcp.CompareFilesHandler"
-            name="Dataset Compare">
-      </command>
-      <command
       		id="uk.ac.diamond.scisoft.analysis.rcp.PlotPrintGraphAction"
       		name="Print the plotting">
       		<commandParameter
@@ -491,40 +486,6 @@
                  label="DAWN">
            </menu>
         </menuContribution>
-        <menuContribution
-            locationURI="popup:uk.ac.diamond.scisoft.explorer.group">
-           <command
-                 commandId="uk.ac.diamond.scisoft.analysis.rcp.CompareFilesHandler"
-                 label="Compare files"
-                 style="push">
-              <visibleWhen
-                    checkEnabled="false">
-                    <and>
-                        <iterate ifEmpty="false" operator="and">
-                            <instanceof value="org.eclipse.core.resources.IFile" />
-                        </iterate>
-                        <count value="(1-" />
-                    </and>
-              </visibleWhen>
-           </command>
-        </menuContribution>
-        <menuContribution
-            locationURI="popup:uk.ac.diamond.sda.navigator.views.FileView?after=uk.ac.diamond.sda.navigator.separator2">
-           <command
-                 commandId="uk.ac.diamond.scisoft.analysis.rcp.CompareFilesHandler"
-                 label="Compare files"
-                 style="push">
-              <visibleWhen
-                    checkEnabled="false">
-                    <and>
-                        <iterate ifEmpty="false" operator="and">
-                            <instanceof value="java.io.File" />
-                        </iterate>
-                        <count value="(1-" />
-                    </and>
-              </visibleWhen>
-           </command>
-        </menuContribution>
    </extension>
    <extension
          id="uk.ac.diamond.scisoft.analysis.rcp.GDADataNature"
@@ -678,12 +639,6 @@
             id="uk.ac.diamond.scisoft.analysis.rcp.editors.hdf5"
             name="Nexus/HDF5 Editor">
       </editor>
-      <editor
-            default="false"
-            class="uk.ac.diamond.scisoft.analysis.rcp.editors.CompareFilesEditor"
-            id="uk.ac.diamond.scisoft.analysis.rcp.editors.CompareFilesEditor"
-            name="Compare">
-      </editor>
    </extension>
    <extension
          point="org.eclipse.ui.newWizards">
@@ -771,13 +726,6 @@
             contentFile="cheat/MultipleFileOpenTutorial.xml"
             id="uk.ac.diamond.scisoft.analysis.rcp.contributions.MultipleFileOpenCheatSheet"
             name="Opening Multiple Files">
-      </cheatsheet>
-      <cheatsheet
-            category="uk.ac.diamond.scisoft.analysis.rcp.contributions.DExploreCategory"
-            composite="false"
-            contentFile="cheat/CompareFilesIntro.xml"
-            id="uk.ac.diamond.scisoft.analysis.rcp.contributions.CompareFilesCheatSheet"
-            name="Compare Files Editor Introduction">
       </cheatsheet>
       <category
             id="uk.ac.diamond.scisoft.analysis.rcp.contributions.printing.category"

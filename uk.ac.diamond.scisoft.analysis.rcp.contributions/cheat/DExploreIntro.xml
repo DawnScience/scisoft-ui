@@ -1,85 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <compositeCheatsheet name="DExplore Introduction">
-	<taskGroup name="Data Exploration Perspective">
-		<intro>
-			This perspective allows you to explore your data
-		</intro>
-		<taskGroup name="Introduction">
-			<intro>
-				This introduction will show you how to use some basic features of the data exploration,
+   <taskGroup name="Data Exploration Perspective" skip="false">
+      <intro>
+         This perspective allows you to explore your data
+      </intro>
+      <taskGroup name="Introduction" skip="false">
+         <intro>
+            This introduction will show you how to use some basic features of the data exploration,
 				<b>DExplore</b>, perspective.
-			</intro>
-			<onCompletion>
-				Congratulations, you have completed the tutorial and now know how to use the data
+         </intro>
+         <onCompletion>
+            Congratulations, you have completed the tutorial and now know how to use the data
 				exploration perspective.
-			</onCompletion>
-			<task kind="cheatsheet" name="Open Data Exploration Perspective">
-				<param name="path" value="OpenDExplore.xml"/>
-				<param name="showIntro" value="false"/>
-				<intro>
-				</intro>
-			</task>
-			<task kind="cheatsheet" name="Accessing Your Data" skip="true">
-				<param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.FileOpenCheatSheet"/>
-				<intro>
-					Access to your data can be achieved in a variety of methods. This tutorial explains
+         </onCompletion>
+         <task kind="cheatsheet" name="Open Data Exploration Perspective" skip="false">
+            <intro>
+            </intro>
+            <param name="path" value="OpenDExplore.xml">
+            </param>
+            <param name="showIntro" value="false">
+            </param>
+         </task>
+         <task kind="cheatsheet" name="Accessing Your Data" skip="true">
+            <intro>
+               Access to your data can be achieved in a variety of methods. This tutorial explains
 					those methods.
-				</intro>
-				<onCompletion>
-					Congratulations, you have successfully open a data file in the editor area.
-				</onCompletion>
-			</task>
-			<task kind="cheatsheet" name="Understanding the File Editors" skip="true">
-				<param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.FileEditorCheatSheet"/>
-				<intro>
-					The data file is presented in the editor area in different manners according to
+            </intro>
+            <onCompletion>
+               Congratulations, you have successfully open a data file in the editor area.
+            </onCompletion>
+            <param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.FileOpenCheatSheet">
+            </param>
+         </task>
+         <task kind="cheatsheet" name="Understanding the File Editors" skip="true">
+            <intro>
+               The data file is presented in the editor area in different manners according to
 					their format type. This tutorial explains those types.
-				</intro>
-				<onCompletion>
-					Now, select an item to inspect and read the next tutorial.
-				</onCompletion>
-			</task>
-			<task kind="cheatsheet" name="Inspecting Your Data" skip="true">
-				<param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.InspectorCheatSheet"/>
-				<intro>
-					After selecting an item to inspect, choose how to examine or visualize it with the
+            </intro>
+            <onCompletion>
+               Now, select an item to inspect and read the next tutorial.
+            </onCompletion>
+            <param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.FileEditorCheatSheet">
+            </param>
+         </task>
+         <task kind="cheatsheet" name="Inspecting Your Data" skip="true">
+            <intro>
+               After selecting an item to inspect, choose how to examine or visualize it with the
 					<b>Dataset Inspector</b>.
-				</intro>
-				<onCompletion>
-					Congratulations, you have visualized your data. Play around further to familiarise
+            </intro>
+            <onCompletion>
+               Congratulations, you have visualized your data. Play around further to familiarise
 					yourself with the controls that manipulate the data. Understand the nature of
 					multi-dimensional datasets.
-				</onCompletion>
-			</task>
-		</taskGroup>
-		<taskGroup name="Advanced Use">
-			<intro>
-				This tutorial will show you how to use advanced features of the data exploration,
+            </onCompletion>
+            <param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.InspectorCheatSheet">
+            </param>
+         </task>
+      </taskGroup>
+      <taskGroup name="Advanced Use" skip="false">
+         <intro>
+            This tutorial will show you how to use advanced features of the data exploration,
 				<b>DExplore</b>, perspective.
-			</intro>
-			<onCompletion>
-				Congratulations, you have completed the tutorial and now know how to expertly use the
+         </intro>
+         <onCompletion>
+            Congratulations, you have completed the tutorial and now know how to expertly use the
 				data exploration perspective.
-			</onCompletion>
-			<task kind="cheatsheet" name="Accessing Multiple Files In Your Data" skip="true">
-				<param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.MultipleFileOpenCheatSheet"/>
-				<intro>
-					This tutorial explains how to open multiple files to compare equivalent datasets.
-				</intro>
-				<onCompletion>
-					Congratulations, you have successfully open a set of files in the editor area.
-				</onCompletion>
-			</task>
-			<task kind="cheatsheet" name="Comparing Multiple Files" skip="true">
-				<param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.CompareFilesCheatSheet"/>
-				<intro>
-					In the previous step, you opened a set of files for comparison. This tutorial
-					explains how to use the compare files editor.
-				</intro>
-				<onCompletion>
-					Congratulations, you have compared datasets from multiple files.
-				</onCompletion>
-			</task>
-		</taskGroup>
-	</taskGroup>
+         </onCompletion>
+         <task kind="cheatsheet" name="Accessing Multiple Files In Your Data" skip="true">
+            <intro>
+               This tutorial explains how to open multiple files to compare equivalent datasets.
+            </intro>
+            <onCompletion>
+               Congratulations, you have successfully open a set of files in the editor area.
+            </onCompletion>
+            <param name="id" value="uk.ac.diamond.scisoft.analysis.rcp.contributions.MultipleFileOpenCheatSheet">
+            </param>
+         </task>
+      </taskGroup>
+   </taskGroup>
 </compositeCheatsheet>

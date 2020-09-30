@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.SDAPlotter;
 import uk.ac.diamond.scisoft.analysis.axis.AxisChoice;
-import uk.ac.diamond.scisoft.analysis.rcp.editors.CompareFilesEditor;
 import uk.ac.diamond.scisoft.analysis.rcp.explorers.AbstractExplorer;
 import uk.ac.diamond.scisoft.analysis.rcp.inspector.DatasetSelection.InspectorType;
 import uk.ac.diamond.scisoft.analysis.rcp.views.DatasetTableView;
@@ -1034,7 +1033,7 @@ class PlotTab extends ATab {
 
 			Dataset[] yaxes = new Dataset[lines];
 			String sName = slicedAxes.get(1).getName();
-			boolean isDimAxis = sName.startsWith(AbstractExplorer.DIM_PREFIX) || sName.equals(CompareFilesEditor.INDEX);
+			boolean isDimAxis = sName.startsWith(AbstractExplorer.DIM_PREFIX);
 			String dName = reorderedData.getName();
 			for (int i = 0; i < lines; i++) {
 				Dataset slice = reorderedData.getSlice(new int[] {0, i}, new int[] {dims[0], i+1}, null);
