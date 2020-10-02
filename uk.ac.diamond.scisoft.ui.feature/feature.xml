@@ -62,20 +62,6 @@ limitations under the License.
          unpack="false"/>
 
    <plugin
-         id="uk.ac.diamond.sda.polling"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="uk.ac.diamond.scisoft.analysis.polling"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="uk.ac.diamond.scisoft.system.info"
          download-size="0"
          install-size="0"
@@ -102,12 +88,6 @@ limitations under the License.
          install-size="0"
          version="0.0.0"
          unpack="false"/>
-
-   <plugin
-         id="uk.ac.diamond.scisoft.qstatMonitor"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"/>
 
    <plugin
          id="org.apache.commons.io"

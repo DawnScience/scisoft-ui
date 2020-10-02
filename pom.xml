@@ -16,17 +16,14 @@
 
 	<modules>
 		<module>uk.ac.diamond.scisoft.analysis.plotclient</module>
-		<module>uk.ac.diamond.scisoft.analysis.polling</module>
 		<module>uk.ac.diamond.scisoft.analysis.rcp</module>
 		<module>uk.ac.diamond.scisoft.analysis.rcp.contributions</module>
 		<module>uk.ac.diamond.scisoft.arpes.calibration</module>
 		<module>uk.ac.diamond.scisoft.customprojects.feature</module>
 		<module>uk.ac.diamond.scisoft.customprojects.rcp</module>
 		<module>uk.ac.diamond.scisoft.imagegrid</module>
-		<module>uk.ac.diamond.scisoft.qstatMonitor</module>
 		<module>uk.ac.diamond.scisoft.rixs.feature</module>
 		<module>uk.ac.diamond.scisoft.rixs.rcp</module>
-		<module>uk.ac.diamond.sda.polling</module>
 		<module>uk.ac.diamond.scisoft.system.info</module>
 		<module>uk.ac.diamond.scisoft.ui.feature</module>
 		<module>uk.ac.diamond.sda.meta</module>
@@ -42,6 +39,8 @@
 			</activation>
 			<modules>
 				<module>uk.ac.diamond.scisoft.deprecated.rcp</module>
+				<module>uk.ac.diamond.scisoft.analysis.polling</module>
+				<module>uk.ac.diamond.sda.polling</module>
 			</modules>
 		</profile>
 		<profile>
