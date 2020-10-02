@@ -25,8 +25,7 @@ Import-Package: org.dawb.common.ui.perspective,
  org.dawb.common.ui.widgets,
  org.dawnsci.common.widgets.spinner,
  org.dawnsci.plotting.views,
- org.eclipse.dawnsci.plotting.api.tool,
- uk.ac.diamond.scisoft.analysis.powder.indexer.indexers
+ org.eclipse.dawnsci.plotting.api.tool
 Export-Package: uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp,
  uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp.views
 Bundle-Vendor: Diamond Light Source
