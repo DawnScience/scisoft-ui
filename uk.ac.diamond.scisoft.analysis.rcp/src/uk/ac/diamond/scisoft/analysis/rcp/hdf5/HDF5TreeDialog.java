@@ -21,6 +21,7 @@ import java.util.Arrays;
 import org.eclipse.dawnsci.analysis.api.tree.DataNode;
 import org.eclipse.dawnsci.analysis.api.tree.Node;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
+import org.eclipse.dawnsci.analysis.api.tree.SymbolicNode;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.DatasetUtils;
@@ -93,7 +94,7 @@ public class HDF5TreeDialog extends Dialog {
 
 					Node d = n.getDestination();
 					if (d instanceof DataNode) {
-						DataNode dn = (DataNode)d;
+						DataNode dn = (DataNode) d;
 						b.append(System.lineSeparator());
 						b.append("Chunk Size: ");
 						b.append(dn.getChunkShape() == null ? "Not chunked" : Arrays.toString(dn.getChunkShape()));
@@ -110,6 +111,14 @@ public class HDF5TreeDialog extends Dialog {
 								b.append(e);
 							}
 						}
+					} else if (d instanceof SymbolicNode) {
+						SymbolicNode sn = (SymbolicNode) d;
+						b.append(System.lineSeparator());
+						b.append("Links to: ");
+						b.append(sn.getPath());
+						b.append(System.lineSeparator());
+						b.append("In file: ");
+						b.append(sn.getSourceURI());
 					}
 				}
 

@@ -9,8 +9,8 @@
 
 package uk.ac.diamond.scisoft.analysis.rcp.hdf5;
 
+import java.io.File;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Iterator;
 
 import org.dawb.common.ui.selection.SelectedTreeItemInfo;
@@ -239,10 +239,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 		if (tViewer != null && tViewer.getContentProvider() != null) {
 			tViewer.setInput(tree);
 			HDF5LabelProvider lp = (HDF5LabelProvider) tViewer.getLabelProvider();
-			try {
-				lp.setSourceURI(new URI(filename));
-			} catch (URISyntaxException e) {
-			}
+			lp.setSourceURI(new File(filename).toURI());
 //		    TODO decide whether this is needed
 //		    tViewer.getTree().setItemCount(countChildren(tree, treeFilter));
 		}
