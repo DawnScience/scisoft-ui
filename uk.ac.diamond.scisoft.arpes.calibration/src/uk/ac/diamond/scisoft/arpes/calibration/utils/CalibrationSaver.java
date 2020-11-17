@@ -14,7 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.dawnsci.analysis.api.message.DataMessageComponent;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
-import org.eclipse.dawnsci.analysis.tree.impl.AttributeImpl;
+import org.eclipse.dawnsci.analysis.tree.TreeFactory;
 import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.dawnsci.nexus.NexusException;
 import org.eclipse.dawnsci.nexus.NexusFile;
@@ -118,9 +118,9 @@ public class CalibrationSaver implements IRunnableWithProgress {
 				nodePath = nodePath.concat("/" + node);
 				GroupNode group = nexus.getGroup(nodePath, true);
 				if (i < nodes.length - 1) {
-					nexus.addAttribute(group, new AttributeImpl(NexusConstants.NXCLASS, NexusConstants.ENTRY));
+					nexus.addAttribute(group, TreeFactory.createAttribute(NexusConstants.NXCLASS, NexusConstants.ENTRY));
 				} else {
-					nexus.addAttribute(group, new AttributeImpl(NexusConstants.NXCLASS, NexusConstants.DATA));
+					nexus.addAttribute(group, TreeFactory.createAttribute(NexusConstants.NXCLASS, NexusConstants.DATA));
 					data.setName(NexusConstants.DATA_DATA);
 					nexus.createData(group, data);
 					if (yaxisData != null) {
