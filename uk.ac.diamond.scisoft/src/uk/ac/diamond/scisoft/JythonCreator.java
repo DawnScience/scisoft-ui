@@ -112,11 +112,6 @@ public class JythonCreator implements IStartup {
 	public static final String INTERPRETER_NAME = "Jython" + JythonPath.getJythonMajorVersion();
 
 	/**
-	 * Boolean to set to true if running jython scripts that utilise ScisoftPy in IDE
-	 */
-	public static final String RUN_IN_ECLIPSE = "run.in.eclipse";
-
-	/**
 	 * Variables containing paths have been moved to u.a.d.jython.util.JythonPath
 	 */
 	private static final String[] removedLibEndings = {
@@ -141,17 +136,20 @@ public class JythonCreator implements IStartup {
 
 		logger.debug("Initialising the Jython interpreter setup");
 
-		boolean isRunningInEclipse = Boolean.getBoolean(RUN_IN_ECLIPSE);
 
 		// Horrible Hack warning: This code is copied from parts of Pydev to set up the interpreter and save it.
 		{
 
-			File pluginsDir = JythonPath.getPluginsDirectory(isRunningInEclipse); // plugins or git workspace directory
+			File pluginsDir = JythonPath.getPluginsDirectory(); // plugins or git workspace directory
 			if (pluginsDir == null) {
 				logger.error("Failed to find plugins directory!");
 				return;
 			}
 			logger.debug("Plugins directory is {}", pluginsDir);
+			boolean isRunningInEclipse = JythonPath.isRunningInEclipse(pluginsDir);
+			if (isRunningInEclipse) {
+				logger.debug("Running in Eclipse");
+			}
 
 			// Set cache directory to something not in the installation directory
 			IPreferenceStore pyStore = PyDevUiPrefs.getPreferenceStore();
@@ -171,7 +169,7 @@ public class JythonCreator implements IStartup {
 			System.setProperty("python.cachedir", cachePath);
 
 			// check for the existence of this standard pydev script
-			final File script = CorePlugin.getScriptWithinPySrc("interpreterInfo.py");
+			final File script = CorePlugin.getScriptWithinPySrc("interpreterInfo.py").getCanonicalFile();
 			if (!script.exists()) {
 				logger.error("The file specified does not exist: {} ", script);
 				throw new RuntimeException("The file specified does not exist: " + script);
@@ -189,7 +187,7 @@ public class JythonCreator implements IStartup {
 			}
 			
 			//If the interpreter directory comes back unset, we don't want to go any further.
-			File interpreterDirectory = JythonPath.getInterpreterDirectory(isRunningInEclipse);
+			File interpreterDirectory = JythonPath.getInterpreterDirectory();
 			if (interpreterDirectory == null) {
 				logger.error("Interpreter directory not set. Cannot find interpreter.");
 				return;
@@ -279,7 +277,7 @@ public class JythonCreator implements IStartup {
 			// Also need allPluginsDirs for later parts
 			final List<File> allPluginDirs = JythonPath.findDirs(pluginsDir, extraPlugins, isRunningInEclipse);
 			// Get Jython paths for DAWN libs
-			pyPaths.addAll(JythonPath.assembleJyPaths(pluginsDir, allPluginDirs, extraPlugins, isRunningInEclipse));
+			pyPaths.addAll(JythonPath.assembleJyPaths(pluginsDir, allPluginDirs, extraPlugins));
 
 			Set<String> removals = new HashSet<String>();
 			for (String s : info.libs) {
@@ -295,34 +293,7 @@ public class JythonCreator implements IStartup {
 			info.libs.addAll(pyPaths);
 
 			// now set up the dynamic library environment
-			File libraryDir = new File(pluginsDir.getParent(), "lib");
 			Set<String> paths = new LinkedHashSet<String>();
-			String hdf5Lib = null; // where HDF5 libraries reside
-			if (!isRunningInEclipse && libraryDir.exists()) {
-				hdf5Lib = libraryDir.getAbsolutePath();
-				paths.add(hdf5Lib);
-			} else {
-				// check each plugin directory's for dynamic libraries
-				String osarch = Platform.getOS() + "-" + Platform.getOSArch();
-				logger.debug("Using OS and ARCH: {}", osarch);
-				for (File dir : allPluginDirs) {
-					File d = new File(dir, "lib");
-					if (d.isDirectory()) {
-						d = new File(d, osarch);
-						if (d.isDirectory()) {
-							String p = d.getAbsolutePath();
-							if (paths.add(p)) {
-								logger.debug("Adding library path: {}", d);
-								if (hdf5Lib == null && p.contains("hdf.hdf5lib")) {
-									hdf5Lib = p;
-								}
-							}
-						}
-					}
-				}
-
-			}
-
 			// add from environment variables
 			String ldPath = System.getenv(pathEnv);
 			if (ldPath != null) {
@@ -330,6 +301,11 @@ public class JythonCreator implements IStartup {
 					paths.add(p);
 				}
 			}
+			PyDevAdditionalInterpreterSettings settings = new PyDevAdditionalInterpreterSettings();
+			Collection<String> envVariables = settings.getAdditionalEnvVariables();
+
+			addLibraryPathsAndHDF5PluginPath(envVariables, paths, allPluginDirs);
+
 			StringBuilder allPaths = new StringBuilder();
 			for (String p : paths) {
 				allPaths.append(p);
@@ -337,8 +313,7 @@ public class JythonCreator implements IStartup {
 			}
 			String libraryPath = allPaths.length() > 0 ? allPaths.substring(0, allPaths.length()-1) : null;
 
-			PyDevAdditionalInterpreterSettings settings = new PyDevAdditionalInterpreterSettings();
-			Collection<String> envVariables = settings.getAdditionalEnvVariables();
+
 			if (libraryPath == null) {
 				logger.warn("{} not defined as no library paths were found!", pathEnv);
 			} else {
@@ -359,17 +334,6 @@ public class JythonCreator implements IStartup {
 					ev += e + "|";
 				}
 				envVariables.add(ev);
-			}
-
-			// pass on HDF5 plugin path
-			final String HDF5_PLUGIN_PATH = "HDF5_PLUGIN_PATH";
-			String hdf5PluginPath = System.getenv(HDF5_PLUGIN_PATH);
-			if (hdf5PluginPath == null) {
-				hdf5PluginPath = hdf5Lib;
-			}
-			if (hdf5PluginPath != null) {
-				logger.debug("Found {}: {}", HDF5_PLUGIN_PATH, hdf5PluginPath);
-				envVariables.add(HDF5_PLUGIN_PATH + "=" + hdf5PluginPath);
 			}
 
 			info.setEnvVariables(envVariables.toArray(new String[envVariables.size()]));
@@ -436,15 +400,75 @@ public class JythonCreator implements IStartup {
 			logger.debug("Finished the Jython interpreter setup");
 		}
 	}
-	
+
+	final static String HDF5_PLUGIN_PATH = "HDF5_PLUGIN_PATH";
+
+	/**
+	 * Add HDF5 OS and architecture-specific native plugin libraries location to environment variables
+	 * @param envVariables
+	 * @param allPluginDirs
+	 */
+	public static void addHDF5PluginPath(Collection<String> envVariables, List<File> allPluginDirs) {
+		addLibraryPathsAndHDF5PluginPath(envVariables, null, allPluginDirs);
+	}
+
+	/**
+	 * Add all OS and architecture-specific native plugin libraries location to environment variables and paths
+	 * @param envVariables
+	 * @param paths (can be null when only HDF5 libraries needed)
+	 * @param allPluginDirs
+	 */
+	private static void addLibraryPathsAndHDF5PluginPath(Collection<String> envVariables, Set<String> paths, List<File> allPluginDirs) {
+		String hdf5Lib = addAllNativeLibraries(paths, allPluginDirs);
+
+		String hdf5PluginPath = System.getenv(HDF5_PLUGIN_PATH);
+		if (hdf5PluginPath == null) {
+			hdf5PluginPath = hdf5Lib;
+		}
+
+		if (hdf5PluginPath != null) {
+			if (paths != null) { // only log when called by initialiseInterpreter
+				logger.debug("Found {}: {}", HDF5_PLUGIN_PATH, hdf5PluginPath);
+			}
+			envVariables.add(HDF5_PLUGIN_PATH + "=" + hdf5PluginPath);
+		}
+	}
+
+	private static String addAllNativeLibraries(Set<String> paths, List<File> allPluginDirs) {
+		String hdf5Lib = null;
+		String osarch = Platform.getOS() + "-" + Platform.getOSArch();
+		if (paths != null) { // only log when called by initialiseInterpreter
+			logger.debug("Using OS and ARCH: {}", osarch);
+		}
+		for (File dir : allPluginDirs) {
+			File d = new File(dir, "lib");
+			if (d.isDirectory()) {
+				d = new File(d, osarch);
+				if (d.isDirectory()) {
+					String p = d.getAbsolutePath();
+					boolean isHDF5 = p.contains("hdf.hdf5lib");
+					if (paths == null) {
+						if (isHDF5) {
+							return p;
+						}
+					} else if (paths.add(p)) {
+						logger.debug("Adding library path: {}", d);
+						if (isHDF5 && hdf5Lib == null) {
+							hdf5Lib = p;
+						}
+					}
+				}
+			}
+		}
+		return hdf5Lib;
+	}
 
 	private void createSwtEntries(Set<String> extraPlugins) {
-		
-		final String ws   = System.getProperty("osgi.ws");
+		final String ws   = Platform.getWS();
 		if (ws == null) return;
-		final String os   = System.getProperty("osgi.os");
+		final String os   = Platform.getOS();
 		if (os == null) return;
-		final String arch = System.getProperty("osgi.arch");
+		final String arch = Platform.getOSArch();
 		if (arch == null) return;
 		
 		extraPlugins.add("org.eclipse.swt_"); // Core SWT
@@ -458,6 +482,4 @@ public class JythonCreator implements IStartup {
 		for (String p : paths.split(File.pathSeparator))
 			logger.debug("\t{}", p);
 	}
-
-
 }
