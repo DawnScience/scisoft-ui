@@ -9,12 +9,6 @@
             id="uk.ac.diamond.scisoft.rixs.QRPerspective"
             name="QuickRIXS">
       </perspective>
-      <perspective
-            class="uk.ac.diamond.scisoft.rixs.rcp.PostRIXSPerspective"
-            icon="icons/chequered-stairs.png"
-            id="uk.ac.diamond.scisoft.rixs.PRPerspective"
-            name="PostRIXS">
-      </perspective>
    </extension>
    <extension
          point="org.eclipse.ui.views">
@@ -25,13 +19,6 @@
             name="RIXS Data Files"
             restorable="true">
       </e4view>
-      <e4view
-            class="uk.ac.diamond.scisoft.rixs.rcp.view.PRLoadedFilePart"
-            icon="icons/ui-layered-pane.png"
-            id="uk.ac.diamond.scisoft.rixs.PRLoadedFilePart"
-            name="RIXS Results Files"
-            restorable="true">
-      </e4view>
       <view
             class="org.eclipse.dawnsci.plotting.api.VanillaPlottingSystemView"
             icon="icons/chart_curve.png"
@@ -39,25 +26,11 @@
             name="QuickRIXS Plot"
             restorable="true">
       </view>
-      <view
-            class="org.eclipse.dawnsci.plotting.api.VanillaPlottingSystemView"
-            icon="icons/chart_curve.png"
-            id="uk.ac.diamond.scisoft.rixs.PRPlot"
-            name="RIXS Plot"
-            restorable="true">
-      </view>
       <e4view
             class="uk.ac.diamond.scisoft.rixs.rcp.view.QuickRIXSAnalyser"
             icon="icons/stairs.png"
             id="uk.ac.diamond.scisoft.rixs.QRAnalyser"
             name="RIXS Analyser"
-            restorable="true">
-      </e4view>
-      <e4view
-            class="uk.ac.diamond.scisoft.rixs.rcp.view.PostRIXSAggregator"
-            icon="icons/chequered-stairs.png"
-            id="uk.ac.diamond.scisoft.rixs.PRAggregator"
-            name="RIXS Plot Options"
             restorable="true">
       </e4view>
    </extension>
@@ -129,10 +102,7 @@
                   checkEnabled="false">
                <with
                      variable="activeWorkbenchWindow.activePerspective">
-                  <or>
-                     <equals value="uk.ac.diamond.scisoft.rixs.QRPerspective"/>
-                     <equals value="uk.ac.diamond.scisoft.rixs.PRPerspective"/>
-                  </or>
+                  <equals value="uk.ac.diamond.scisoft.rixs.QRPerspective"/>
                </with>
             </visibleWhen>
          </menu>
@@ -142,72 +112,6 @@
          point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension
             targetID="uk.ac.diamond.scisoft.rixs.QRPerspective">
-         <hiddenMenuItem
-               id="org.eclipse.ui.run">
-         </hiddenMenuItem>
-         <hiddenMenuItem
-               id="navigate">
-         </hiddenMenuItem>
-         <hiddenMenuItem
-               id="project">
-         </hiddenMenuItem>
-         <hiddenMenuItem
-               id="org.dawnsci.menu.main.tools">
-         </hiddenMenuItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.workbench.navigate">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.debug.ui.launchActionSet">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.dawb.tango.extensions.shared.memory">
-         </hiddenToolBarItem>
-         <hiddenMenuItem
-               id="org.eclipse.search.menu">
-         </hiddenMenuItem>
-         <hiddenMenuItem
-               id="file">
-         </hiddenMenuItem>
-         <hiddenMenuItem
-               id="edit">
-         </hiddenMenuItem>
-         <hiddenToolBarItem
-               id="newWizardDropDown">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.edit.text.gotoLastEditPosition">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.navigate.backwardHistory">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.file.save">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.file.saveAll">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.search.OpenSearchDialogPage">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.navigate.next">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.navigate.previous">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="uk.ac.diamond.scisoft.analysis.rcp.plotting.actions.showPlotViewToolbarCommand">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.eclipse.ui.navigate.forwardHistory">
-         </hiddenToolBarItem>
-         <hiddenToolBarItem
-               id="org.dawnsci.datavis.e4.addons.histogramtoolbar">
-         </hiddenToolBarItem>
-      </perspectiveExtension>
-      <perspectiveExtension
-            targetID="uk.ac.diamond.scisoft.rixs.PRPerspective">
          <hiddenMenuItem
                id="org.eclipse.ui.run">
          </hiddenMenuItem>
