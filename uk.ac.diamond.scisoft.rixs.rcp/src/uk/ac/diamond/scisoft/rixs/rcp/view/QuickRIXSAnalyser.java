@@ -51,6 +51,7 @@ import org.eclipse.dawnsci.analysis.dataset.slicer.SliceInformation;
 import org.eclipse.dawnsci.analysis.dataset.slicer.SourceInformation;
 import org.eclipse.dawnsci.plotting.api.IPlottingService;
 import org.eclipse.dawnsci.plotting.api.IPlottingSystem;
+import org.eclipse.dawnsci.plotting.api.axis.IAxis;
 import org.eclipse.dawnsci.plotting.api.region.IROIListener;
 import org.eclipse.dawnsci.plotting.api.region.IRegion;
 import org.eclipse.dawnsci.plotting.api.region.IRegion.RegionType;
@@ -89,6 +90,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.processing.operations.MetadataUtils;
 import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtraction.SubtractFittedBackgroundModel;
@@ -96,12 +99,14 @@ import uk.ac.diamond.scisoft.analysis.processing.operations.backgroundsubtractio
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReduction;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.ElasticLineReductionModel;
 import uk.ac.diamond.scisoft.analysis.processing.operations.rixs.RixsBaseModel.ENERGY_DIRECTION;
+import uk.ac.diamond.scisoft.analysis.processing.operations.utils.KnownDetector;
 import uk.ac.diamond.scisoft.rixs.rcp.QuickRIXSPerspective;
 
 /**
  * Part to configure reduction and plot result
  */
 public class QuickRIXSAnalyser implements PropertyChangeListener {
+	protected static final Logger logger = LoggerFactory.getLogger(QuickRIXSAnalyser.class);
 
 	private static final int MAX_THREADS = 3; // limited to reduce memory usage
 
@@ -222,7 +227,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		subtractModel = new SubtractBGModel();
 
 		maxThreads = Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), MAX_THREADS);
-		System.err.println("Number of threads: " + maxThreads);
+		logger.debug("Number of threads: {}", maxThreads);
 		cachedJobs = new HashMap<>();
 
 		createPlotOptions();
@@ -243,22 +248,18 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		fileController.addStateListener(fileStateListener);
 		plottingSystem = plottingService.getPlottingSystem(QuickRIXSPerspective.PLOT_NAME, true);
 
-		try {
-			subtractModel.addPropertyChangeListener(new PropertyChangeListener() {
-				@Override
-				public void propertyChange(PropertyChangeEvent evt) {
-					runProcessing(true, false); // reset plot as y scale can be very different
-				}
-			});
-			bgModel = new SubtractFittedBackgroundModel();
-			bgModel.addPropertyChangeListener(this);
-			elModel = new ElasticLineReductionModel();
-			elModel.setRoiA(null);
-			elModel.setRoiB(null);
-			elModel.addPropertyChangeListener(this);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		subtractModel.addPropertyChangeListener(new PropertyChangeListener() {
+			@Override
+			public void propertyChange(PropertyChangeEvent evt) {
+				runProcessing(true, false); // reset plot as y scale can be very different
+			}
+		});
+		bgModel = new SubtractFittedBackgroundModel();
+		bgModel.addPropertyChangeListener(this);
+		elModel = new ElasticLineReductionModel();
+		elModel.setRoiA(null);
+		elModel.setRoiB(null);
+		elModel.addPropertyChangeListener(this);
 
 		// Create custom set of ModelFields from models
 		parent.setLayout(new GridLayout());
@@ -416,10 +417,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 		}
 		if (r == null) {
-			r = createRegion();
-		} else {
-			// reprocess???
-			System.out.println();
+			createRegion();
 		}
 	}
 
@@ -430,10 +428,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		}
 	}
 
-	private IRegion createRegion() {
-		IRegion r = null;
+	private void createRegion() {
 		try {
-			r = plottingSystem.createRegion(IMAGE_REGION, RegionType.XAXIS);
+			IRegion r = plottingSystem.createRegion(IMAGE_REGION, RegionType.XAXIS);
 			r.addROIListener(new IROIListener() {
 
 				@Override
@@ -451,15 +448,14 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 						XAxisBoxROI ab = (XAxisBoxROI) roi;
 						rect[0] = (int) Math.floor(ab.getPointX());
 						rect[1] = (int) Math.ceil(ab.getLength(0));
-						System.err.println("Start, length = " + Arrays.toString(rect));
+						logger.debug("Start, length = {}", Arrays.toString(rect));
 						runProcessing(true, false);
 					}
 				}
 			});
 		} catch (Exception e) {
-			System.err.println("Could not create alignment region" + e);
+			logger.error("Could not create alignment region", e);
 		}
-		return r;
 	}
 
 	@PreDestroy
@@ -517,7 +513,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					jg.join(250, null);
 				}
 			} catch (OperationCanceledException | InterruptedException e) {
-				System.err.println("Problem: " + e);
+				logger.error("Problem running QuickRIXS jobs", e);
 			}
 			for (ProcessFileJob j : jobs) {
 				IStatus s = j.getResult();
@@ -621,11 +617,16 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			l.setData(x, r);
 		}
 		plottingSystem.getSelectedXAxis().setTitle(xName);
+		if (reset && rect[1] != 0 && (o == poSpectrum || o == poSpectrumWithFit)) {
+			// set X axis when range selected set range so clipping is more obvious
+			IAxis a = plottingSystem.getSelectedXAxis();
+			a.setRange(rect[0], rect[0] + rect[1]);
+			reset = false;
+		}
 		plottingSystem.repaint(reset);
 	}
 
 	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
-		// TODO generalize to handle all plots
 		Map<String, Dataset> plots = new LinkedHashMap<>();
 		if (plotOption == poElasticLineIntercept) {
 			addPointData(plots, plotOption);
@@ -679,8 +680,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			if (xName == null && v != null) {
 				xName = v.getName();
 			}
-			System.err.println(v);
-			System.err.println(pd);
+			logger.trace("Point label: {}", v);
+			logger.trace("Point data: {}", pd);
 
 			if (v == null) {
 				IndexIterator it = pd.getIterator();
@@ -842,23 +843,18 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			eop.setModel(model);
 			eop.propertyChange(null); // trigger update from model
 
-			ILazyDataset ld = opts.get(0).getLazyDataset();
+			ILazyDataset ld = opt.getLazyDataset();
 			int[] shape = ld.getShape();
 			int rank = shape.length;
 			int[] dataDims = new int[] {rank - 2, rank - 1};
-			int[] imageShape = new int[] {shape[dataDims[1]], shape[dataDims[0]]}; // flip to display shape
 
-			RectangularROI ra = (RectangularROI) elModel.getRoiA();
-			RectangularROI rb = (RectangularROI) elModel.getRoiB();
+			RectangularROI ra = elModel.getRoiA() == null ? null : new RectangularROI(elModel.getRoiA());
+			RectangularROI rb = elModel.getRoiB() == null ? null : new RectangularROI(elModel.getRoiB());
 			if (roiMax == 1) {
-				if (rb == null) {
-					ra = ra == null ? new RectangularROI(imageShape[0], imageShape[1], 0) : ra.copy();
-				} else {
-					rb = rb.copy();
+				if (ra == null) {
+					KnownDetector detector = KnownDetector.getDetector(file.getFilePath(), opt.getName(), ld);
+					ra = KnownDetector.getDefaultROI(detector, shape, roiMax, 0, 10);
 				}
-			} else {
-				ra = ra.copy();
-				rb = rb.copy();
 			}
 			model.setRoiA(ra);
 			model.setRoiB(rb);
@@ -893,7 +889,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			int total = ShapeUtils.calcSize(Arrays.copyOf(shape, rank - 2));
 			SliceNDIterator iter = new SliceNDIterator(new SliceND(shape), dataDims);
 			SliceND slice = iter.getCurrentSlice();
-			SourceInformation sri = new SourceInformation(file.getFilePath(), opts.get(0).getName(), ld);
+			SourceInformation sri = new SourceInformation(file.getFilePath(), opt.getName(), ld);
 			SubMonitor sub = SubMonitor.convert(monitor, total);
 			sub.setTaskName("Processing images in " + file.getName());
 			int i = 0;
@@ -1012,7 +1008,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 					}
 				}
 				if (s != slices) {
-					System.err.println("Error: missing data");
+					logger.error("Error: missing data from processing job");
 					continue; // skip when there are not specified number of datasets
 				}
 				d = DatasetUtils.concatenate(ds, 0);
