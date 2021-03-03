@@ -86,6 +86,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -133,6 +134,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private PlotOption poElasticLineSlope;
 	private PlotOption poElasticLineIntercept;
 	private Map<String, PlotOption> poAll;
+	private PlotOption currentPlotOption;
 
 	static class PlotOption {
 		private final String oName;
@@ -299,10 +301,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			public void selectionChanged(SelectionChangedEvent event) {
 				ISelection s = event.getSelection();
 				if (s instanceof IStructuredSelection) {
-					PlotOption po = (PlotOption) ((IStructuredSelection) s).getFirstElement();
-					scaleText.setText(Double.toString(po.getXScale()));
-					offsetText.setText(Double.toString(po.getXOffset()));
-					plotResults(po, true);
+					currentPlotOption = (PlotOption) ((IStructuredSelection) s).getFirstElement();
+					scaleText.setText(Double.toString(currentPlotOption.getXScale()));
+					offsetText.setText(Double.toString(currentPlotOption.getXOffset()));
+					plotResults(true);
 				}
 			}
 		});
@@ -336,14 +338,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		offsetText.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
-				ISelection s = plotCombo.getSelection();
-				if (s instanceof IStructuredSelection) {
-					PlotOption po = (PlotOption) ((IStructuredSelection) s).getFirstElement();
+				if (currentPlotOption != null) {
 					try {
-						po.setXOffset(Double.parseDouble(offsetText.getText()));
-						plotResults(po, true);
+						currentPlotOption.setXOffset(Double.parseDouble(offsetText.getText()));
+						plotResults(true);
 					} catch (NumberFormatException ex) {
-						offsetText.setText(Double.toString(po.getXOffset()));
+						offsetText.setText(Double.toString(currentPlotOption.getXOffset()));
 					}
 				}
 			}
@@ -357,14 +357,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		scaleText.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
-				ISelection s = plotCombo.getSelection();
-				if (s instanceof IStructuredSelection) {
-					PlotOption po = (PlotOption) ((IStructuredSelection) s).getFirstElement();
+				if (currentPlotOption != null) {
 					try {
-						po.setXScale(Double.parseDouble(scaleText.getText()));
-						plotResults(po, true);
+						currentPlotOption.setXScale(Double.parseDouble(scaleText.getText()));
+						plotResults(true);
 					} catch (NumberFormatException ex) {
-						scaleText.setText(Double.toString(po.getXScale()));
+						scaleText.setText(Double.toString(currentPlotOption.getXScale()));
 					}
 				}
 			}
@@ -473,6 +471,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
 		if (files.isEmpty()) {
 			plottingSystem.clear();
+			jobs.clear();
 			return;
 		}
 
@@ -528,7 +527,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			}
 
 			populateCombo();
-			plotResults(poSpectrum, resetPlot);
+			plotResults(resetPlot);
 		});
 		t.start();
 		if (retry) {
@@ -561,26 +560,26 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		if (po == null) {
 			return;
 		}
+		if (currentPlotOption == null) {
+			currentPlotOption = po;
+		}
 		PlotOption fpo = po;
-		Display.getDefault().asyncExec(new Runnable() {
-			@Override
-			public void run() {
-				scaleText.setText(Double.toString(fpo.getXScale()));
-				offsetText.setText(Double.toString(fpo.getXOffset()));
+		Display.getDefault().asyncExec(() -> {
+			scaleText.setText(Double.toString(fpo.getXScale()));
+			offsetText.setText(Double.toString(fpo.getXOffset()));
 
-				plotCombo.setInput(ps);
-				plotCombo.getCombo().select(0);
-			}
+			plotCombo.setInput(ps);
+			Combo c = plotCombo.getCombo();
+			c.select(c.indexOf(currentPlotOption.getOptionName()));
 		});
 	}
 
-	private void plotResults(PlotOption o, boolean reset) {
+	private void plotResults(boolean reset) {
 		removeRegion();
-		if (jobs.isEmpty()) {
+		if (jobs.isEmpty() || currentPlotOption == null) {
 			return;
 		}
-
-		Map<String, Dataset> plots = createPlotData(o);
+		Map<String, Dataset> plots = createPlotData();
 		if (plots.isEmpty()) {
 			return;
 		}
@@ -593,8 +592,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			reset = true;
 		}
 		String xName = null;
-		double xo = o.getXOffset();
-		double xs = o.getXScale();
+		double xo = currentPlotOption.getXOffset();
+		double xs = currentPlotOption.getXScale();
 		for (String n : plots.keySet()) {
 			Dataset r = plots.get(n);
 			Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(r);
@@ -617,7 +616,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			l.setData(x, r);
 		}
 		plottingSystem.getSelectedXAxis().setTitle(xName);
-		if (reset && rect[1] != 0 && (o == poSpectrum || o == poSpectrumWithFit)) {
+		if (reset && rect[1] != 0 && (currentPlotOption == poSpectrum || currentPlotOption == poSpectrumWithFit)) {
 			// set X axis when range selected set range so clipping is more obvious
 			IAxis a = plottingSystem.getSelectedXAxis();
 			a.setRange(rect[0], rect[0] + rect[1]);
@@ -626,36 +625,36 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		plottingSystem.repaint(reset);
 	}
 
-	private Map<String, Dataset> createPlotData(PlotOption plotOption) {
+	private Map<String, Dataset> createPlotData() {
 		Map<String, Dataset> plots = new LinkedHashMap<>();
-		if (plotOption == poElasticLineIntercept) {
-			addPointData(plots, plotOption);
-		} else if (plotOption == poElasticLineSlope) {
-			addPointData(plots, plotOption);
-		} else if (plotOption == poPosn) {
-			addPointData(plots, plotOption);
-		} else if (plotOption == poFWHM) {
-			addPointData(plots, plotOption);
-		} else if (plotOption == poArea) {
-			addPointData(plots, plotOption);
-		} else if (plotOption == poHeight) {
-			addPointData(plots, plotOption);
-		} else if (plotOption == poSpectrumWithFit) {
-			addSpectrumData(plots, plotOption);
+		if (currentPlotOption == poElasticLineIntercept) {
+			addPointData(plots);
+		} else if (currentPlotOption == poElasticLineSlope) {
+			addPointData(plots);
+		} else if (currentPlotOption == poPosn) {
+			addPointData(plots);
+		} else if (currentPlotOption == poFWHM) {
+			addPointData(plots);
+		} else if (currentPlotOption == poArea) {
+			addPointData(plots);
+		} else if (currentPlotOption == poHeight) {
+			addPointData(plots);
+		} else if (currentPlotOption == poSpectrumWithFit) {
+			addSpectrumData(plots, currentPlotOption);
 			addSpectrumData(plots, poSpectrum);
-		} else if (plotOption == poSpectrum) {
-			addSpectrumData(plots, plotOption);
+		} else if (currentPlotOption == poSpectrum) {
+			addSpectrumData(plots, currentPlotOption);
 		}
 		return plots;
 	}
 
-	private void addPointData(Map<String, Dataset> plots, PlotOption option) {
+	private void addPointData(Map<String, Dataset> plots) {
 		for (int r = 0; r < roiMax; r++) {
-			addPointData(plots, option, r);
+			addPointData(plots, r);
 		}
 	}
 
-	private void addPointData(Map<String, Dataset> plots, PlotOption option, int r) {
+	private void addPointData(Map<String, Dataset> plots, int r) {
 		List<Double> x = new ArrayList<>();
 		List<Double> y = new ArrayList<>();
 		String xName = null;
@@ -666,7 +665,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			LoadedFile f = j.getFile();
 			Dataset v = f.getLabelValue();
 			Map<String, Dataset> map = j.getData();
-			Dataset pd = map == null ? null : map.get(option.getDataName(r));
+			Dataset pd = map == null ? null : map.get(currentPlotOption.getDataName(r));
 
 			if (pd == null) {
 				continue;
@@ -705,7 +704,7 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				xd.setName(xName);
 				MetadataUtils.setAxes(yr, xd);
 			}
-			plots.put(String.format(option.getPlotFormat() + "-%d", r), yr);
+			plots.put(String.format(currentPlotOption.getPlotFormat() + "-%d", r), yr);
 		}
 	}
 
