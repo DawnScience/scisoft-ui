@@ -24,9 +24,11 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
+import org.eclipse.e4.ui.workbench.modeling.ESelectionService;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.ui.ISelectionService;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
@@ -57,8 +59,17 @@ public class HDF5TreeDialogHandler extends AbstractHandler {
 
 	private List<IDataFilePackage> getSelectedFiles() {
 		
-		ISelectionService  selectionService= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		ISelection selection = selectionService.getSelection("org.dawnsci.datavis.view.parts.LoadedFilePart");
+		IWorkbenchPage ss = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		ISelection selection = ss.getSelection();
+		
+		if (selection == null) {
+			IWorkbenchPart activePart = ss.getActivePart();
+			ESelectionService ess = (ESelectionService) activePart.getSite().getService(ESelectionService.class);
+			Object s = ess.getSelection();
+			if (s instanceof ISelection) {
+				selection = (ISelection)s;
+			}
+		}
 
 		List<IDataFilePackage> list = new ArrayList<>();
 		if (selection instanceof StructuredSelection) {
