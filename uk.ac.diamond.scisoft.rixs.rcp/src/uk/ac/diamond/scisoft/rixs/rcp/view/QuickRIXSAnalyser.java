@@ -224,6 +224,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private Text offsetText;
 
+	private Button resetButton;
+
 	public QuickRIXSAnalyser() {
 		jobs = new ArrayList<>();
 		subtractModel = new SubtractBGModel();
@@ -380,18 +382,21 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				selectRegion(false);
+				resetButton.setEnabled(true);
 			}
 		});
 
-		Button rb = new Button(plotComp, SWT.PUSH);
-		rb.setText("Reset range");
-		rb.setToolTipText("Reset to original range");
-		rb.addSelectionListener(new SelectionAdapter() {
+		resetButton = new Button(plotComp, SWT.PUSH);
+		resetButton.setText("Reset range");
+		resetButton.setToolTipText("Reset to original range");
+		resetButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				selectRegion(true);
+				resetButton.setEnabled(false);
 			}
 		});
+		resetButton.setEnabled(false);
 	}
 
 	private static final String IMAGE_REGION = "Image region";
@@ -470,8 +475,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	private void runProcessing(boolean resetPlot, boolean useCachedResults) {
 		List<LoadedFile> files = FileControllerUtils.getSelectedFiles(fileController);
 		if (files.isEmpty()) {
-			plottingSystem.clear();
-			jobs.clear();
+			new Thread(() -> {
+				synchronized (jobs) {
+					jobs.clear();
+					plottingSystem.clear();
+				}
+			}).start();
 			return;
 		}
 
@@ -484,48 +493,52 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	boolean retry = false;
 	private void dispatchJobs(List<LoadedFile> files, final boolean resetPlot, final boolean useCachedResults) {
 		final JobGroup jg = new JobGroup("QR jobs", maxThreads, files.size());
-		jobs.clear();
-		if (!useCachedResults) {
-			cachedJobs.clear();
-		}
-		for (LoadedFile f : files) {
-			String path = f.getFilePath();
-			ProcessFileJob j = cachedJobs.get(path);
-			if (j == null || j.getData() == null) {
-				j = new ProcessFileJob("QR per file: " + f.getName(), f);
-				j.setRegion(rect);
-				j.setJobGroup(jg);
-				j.setPriority(Job.LONG);
-				j.schedule();
-				cachedJobs.put(path, j);
-			} else {
-				j.setRegion(rect);
+		synchronized (jobs) {
+			jobs.clear();
+			if (!useCachedResults) {
+				cachedJobs.clear();
 			}
-			jobs.add(j);
+			for (LoadedFile f : files) {
+				String path = f.getFilePath();
+				ProcessFileJob j = cachedJobs.get(path);
+				if (j == null || j.getData() == null) {
+					j = new ProcessFileJob("QR per file: " + f.getName(), f);
+					j.setRegion(rect);
+					j.setJobGroup(jg);
+					j.setPriority(Job.LONG);
+					j.schedule();
+					cachedJobs.put(path, j);
+				} else {
+					j.setRegion(rect);
+				}
+				jobs.add(j);
+			}
 		}
+
 		retry = false;
 		Thread t = new Thread(() -> {
-			try {
-				while (!jg.getActiveJobs().isEmpty()) {
-					// waiting for a time out and repeating avoids a race condition
-					// where jobs finish before this join is executed
-					jg.join(250, null);
+			synchronized (jobs) {
+				try {
+					while (!jg.getActiveJobs().isEmpty()) {
+						// waiting for a time out and repeating avoids a race condition
+						// where jobs finish before this join is executed
+						jg.join(250, null);
+					}
+				} catch (OperationCanceledException | InterruptedException e) {
+					logger.error("Problem running QuickRIXS jobs", e);
 				}
-			} catch (OperationCanceledException | InterruptedException e) {
-				logger.error("Problem running QuickRIXS jobs", e);
+				for (ProcessFileJob j : jobs) {
+					IStatus s = j.getResult();
+					if (s == null) {
+						plottingSystem.autoscaleAxes();
+						return;
+					}
+					if (s.getCode() == IStatus.WARNING || j.getData() == null) {
+						retry = true;
+						return;
+					}
+				}
 			}
-			for (ProcessFileJob j : jobs) {
-				IStatus s = j.getResult();
-				if (s == null) {
-					plottingSystem.autoscaleAxes();
-					return;
-				}
-				if (s.getCode() == IStatus.WARNING || j.getData() == null) {
-					retry = true;
-					return;
-				}
-			}
-
 			populateCombo();
 			plotResults(resetPlot);
 		});
@@ -537,9 +550,12 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private void populateCombo() {
 		Set<String> options = new LinkedHashSet<>();
-		for (ProcessFileJob j : jobs) {
-			if (j.getResult().isOK()) {
-				options.addAll(j.getData().keySet());
+		synchronized (jobs) {
+			for (ProcessFileJob j : jobs) {
+				IStatus s = j.getResult();
+				if (s != null && s.isOK()) {
+					options.addAll(j.getData().keySet());
+				}
 			}
 		}
 		Set<PlotOption> ps = new LinkedHashSet<>();
@@ -576,11 +592,15 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 
 	private void plotResults(boolean reset) {
 		removeRegion();
-		if (jobs.isEmpty() || currentPlotOption == null) {
-			return;
+		synchronized (jobs) {
+			if (jobs.isEmpty() || currentPlotOption == null) {
+				plottingSystem.clear();
+				return;
+			}
 		}
 		Map<String, Dataset> plots = createPlotData();
 		if (plots.isEmpty()) {
+			plottingSystem.clear();
 			return;
 		}
 
@@ -616,11 +636,15 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 			l.setData(x, r);
 		}
 		plottingSystem.getSelectedXAxis().setTitle(xName);
-		if (reset && rect[1] != 0 && (currentPlotOption == poSpectrum || currentPlotOption == poSpectrumWithFit)) {
-			// set X axis when range selected set range so clipping is more obvious
+		if (reset) {
 			IAxis a = plottingSystem.getSelectedXAxis();
-			a.setRange(rect[0], rect[0] + rect[1]);
-			reset = false;
+			if (rect[1] != 0 && (currentPlotOption == poSpectrum || currentPlotOption == poSpectrumWithFit)) {
+				// set X axis when range selected set range so clipping is more obvious
+				a.setRange(rect[0], rect[0] + rect[1]);
+				a.setAutoscale(false);
+			} else {
+				a.setAutoscale(true);
+			}
 		}
 		plottingSystem.repaint(reset);
 	}
@@ -658,45 +682,48 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 		List<Double> x = new ArrayList<>();
 		List<Double> y = new ArrayList<>();
 		String xName = null;
-		for (ProcessFileJob j : jobs) {
-			if (!j.getResult().isOK()) {
-				continue;
-			}
-			LoadedFile f = j.getFile();
-			Dataset v = f.getLabelValue();
-			Map<String, Dataset> map = j.getData();
-			Dataset pd = map == null ? null : map.get(currentPlotOption.getDataName(r));
-
-			if (pd == null) {
-				continue;
-			}
-			if (v == null) {
-				Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(pd);
-				if (axes.length > 0) {
-					v = axes[0];
+		
+		synchronized (jobs) {
+			for (ProcessFileJob j : jobs) {
+				IStatus s = j.getResult();
+				if (s == null || !s.isOK()) {
+					continue;
 				}
-			}
-			if (xName == null && v != null) {
-				xName = v.getName();
-			}
-			logger.trace("Point label: {}", v);
-			logger.trace("Point data: {}", pd);
-
-			if (v == null) {
-				IndexIterator it = pd.getIterator();
-				while (it.hasNext()) {
-					y.add(pd.getElementDoubleAbs(it.index));
+				LoadedFile f = j.getFile();
+				Dataset v = f.getLabelValue();
+				Map<String, Dataset> map = j.getData();
+				Dataset pd = map == null ? null : map.get(currentPlotOption.getDataName(r));
+	
+				if (pd == null) {
+					continue;
 				}
-			} else {
-				BroadcastIterator it = BroadcastPairIterator.createIterator(v, pd);
-				it.setOutputDouble(true);
-				while (it.hasNext()) {
-					x.add(it.aDouble);
-					y.add(it.bDouble);
+				if (v == null) {
+					Dataset[] axes = MetadataUtils.getAxesAndMakeMissing(pd);
+					if (axes.length > 0) {
+						v = axes[0];
+					}
+				}
+				if (xName == null && v != null) {
+					xName = v.getName();
+				}
+				logger.trace("Point label: {}", v);
+				logger.trace("Point data: {}", pd);
+	
+				if (v == null) {
+					IndexIterator it = pd.getIterator();
+					while (it.hasNext()) {
+						y.add(pd.getElementDoubleAbs(it.index));
+					}
+				} else {
+					BroadcastIterator it = BroadcastPairIterator.createIterator(v, pd);
+					it.setOutputDouble(true);
+					while (it.hasNext()) {
+						x.add(it.aDouble);
+						y.add(it.bDouble);
+					}
 				}
 			}
 		}
-
 		if (!y.isEmpty()) {
 			Dataset yr = DatasetFactory.createFromList(y);
 			if (!x.isEmpty()) {
@@ -709,43 +736,46 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 	}
 
 	private void addSpectrumData(Map<String, Dataset> plots, PlotOption option) {
-		for (ProcessFileJob j : jobs) {
-			if (!j.getResult().isOK()) {
-				continue;
-			}
-			LoadedFile f = j.getFile();
-			String n = String.format(option.getPlotFormat(), f.getName());
-
-			for (int r = 0; r < roiMax; r++) {
-				List<Dataset> pd = get1DPlotData(j.getData(), option.getDataName(r));
-				Dataset v = f.getLabelValue();
-				
-				if (pd.size() > 1) {
-					Dataset x = pd.remove(pd.size() - 1);
-					if (v == null) {
-						v = x;
-					}
+		synchronized (jobs) {
+			for (ProcessFileJob j : jobs) {
+				IStatus s = j.getResult();
+				if (s == null || !s.isOK()) {
+					continue;
 				}
-				if (v != null) {
-					v.squeeze();
-					if (v.getRank() == 0) {
-						v.setShape(1);
+				LoadedFile f = j.getFile();
+				String n = String.format(option.getPlotFormat(), f.getName());
+	
+				for (int r = 0; r < roiMax; r++) {
+					List<Dataset> pd = get1DPlotData(j.getData(), option.getDataName(r));
+					Dataset v = f.getLabelValue();
+					
+					if (pd.size() > 1) {
+						Dataset x = pd.remove(pd.size() - 1);
+						if (v == null) {
+							v = x;
+						}
 					}
-				}
-				int i = -1;
-				for (Dataset yr : pd) {
-					i++;
-					if (yr == null) {
-						continue;
+					if (v != null) {
+						v.squeeze();
+						if (v.getRank() == 0) {
+							v.setShape(1);
+						}
 					}
-					yr.squeeze();
-					String name;
-					if (v == null) {
-						name = String.format("%s-%d:%d", n, r, i);
-					} else {
-						name = String.format("%s-%d:%d (%s)", n, r, i, v.getObject(i));
+					int i = -1;
+					for (Dataset yr : pd) {
+						i++;
+						if (yr == null) {
+							continue;
+						}
+						yr.squeeze();
+						String name;
+						if (v == null) {
+							name = String.format("%s-%d:%d", n, r, i);
+						} else {
+							name = String.format("%s-%d:%d (%s)", n, r, i, v.getObject(i));
+						}
+						plots.put(name, yr);
 					}
-					plots.put(name, yr);
 				}
 			}
 		}
