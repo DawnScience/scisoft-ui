@@ -75,4 +75,12 @@
             priority="3">
       </plotmode>
    </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="uk.ac.diamond.scisoft.analysis.rcp.preference.ScisoftPreferencePage"
+            id="uk.ac.diamond.scisoft.analysis.rcp.preferences.root"
+            name="DAWN">
+      </page>
+   </extension>
 </plugin>

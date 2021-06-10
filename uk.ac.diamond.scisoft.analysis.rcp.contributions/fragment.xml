@@ -506,11 +506,6 @@
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            class="uk.ac.diamond.scisoft.analysis.rcp.preference.ScisoftPreferencePage"
-            id="uk.ac.diamond.scisoft.analysis.rcp.preferences.root"
-            name="DAWN">
-      </page>
-      <page
             category="org.dawb.workbench.ui.visualizationPreferences"
             class="uk.ac.diamond.scisoft.analysis.rcp.preference.PlotViewPreferencePage"
             id="uk.ac.diamond.scisoft.analysis.rcp.plotViewPreferencePage"
