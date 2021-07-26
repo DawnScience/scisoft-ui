@@ -91,7 +91,7 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 		try {
 			Composite buttonComp = new Composite(lComp, SWT.None);
 			buttonComp.setLayoutData(GridDataFactory.fillDefaults().grab(true, false).create());
-			buttonComp.setLayout(new GridLayout(2,false));
+			buttonComp.setLayout(new GridLayout(3,false));
 			
 			this.composite = new PerpendicularImageCutsComposite(inner, SWT.None, AnalysisRCPActivator.getService(IPlottingService.class));
 			this.composite.setLayoutData(GridDataFactory.fillDefaults().grab(false, true).create());
@@ -119,9 +119,21 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 				
 			});
 			
-			Button sum = new Button(buttonComp, SWT.RADIO);
-			sum.setText("Sum");
-			sum.setSelection(isSum);
+			Button sumb = new Button(buttonComp, SWT.RADIO);
+			sumb.setText("Sum");
+			sumb.setSelection(isSum);
+			
+			Button clear = new Button(buttonComp, SWT.PUSH);
+			clear.setText("Clear");
+			clear.addSelectionListener(new SelectionAdapter() {
+				
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					sum = null;
+				}
+				
+			});
+			
 			
 		} catch (Exception e) {
 			logger.error("Cannot locate any plotting System!", e);
