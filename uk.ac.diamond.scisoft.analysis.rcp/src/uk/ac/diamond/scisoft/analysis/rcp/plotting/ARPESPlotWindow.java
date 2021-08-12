@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 
 import uk.ac.diamond.scisoft.analysis.plotclient.IPlotWindowManager;
 import uk.ac.diamond.scisoft.analysis.plotclient.PlotWindowManager;
+import uk.ac.diamond.scisoft.analysis.plotserver.AxisMapBean;
 import uk.ac.diamond.scisoft.analysis.plotserver.DataBean;
 import uk.ac.diamond.scisoft.analysis.plotserver.DatasetWithAxisInformation;
 import uk.ac.diamond.scisoft.analysis.plotserver.IBeanScriptingManager;
@@ -62,7 +63,9 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 
 	private PerpendicularImageCutsComposite composite;
 	
-	private Dataset sum;
+	//Dont touch this outside of the update method!
+	private ImageWithAxes sum;
+	
 	private boolean isSum = false;
 
 	private PerpendicularCutsHelper helper;
@@ -114,7 +117,7 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
 					isSum = !live.getSelection();
-					sum = null;
+					updateSum(null, null, null, true);
 				}
 				
 			});
@@ -129,7 +132,7 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 				
 				@Override
 				public void widgetSelected(SelectionEvent e) {
-					sum = null;
+					updateSum(null, null, null, true);
 				}
 				
 			});
@@ -146,7 +149,9 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 		Dataset d = data.get(0).getData();
 		
 		if (isSum) {
-			d = incrementSum(d);
+			final Dataset xAxisValues = dbPlot.getAxis(AxisMapBean.XAXIS);
+			final Dataset yAxisValues = dbPlot.getAxis(AxisMapBean.YAXIS);
+			d = updateSum(d,xAxisValues, yAxisValues, false);
 			data.get(0).setData(d);
 		}
 		
@@ -167,16 +172,25 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 		}
 	}
 	
-	private Dataset incrementSum(Dataset d) {
-		//First take a local copy of the sum,
-		//it may be set to null elsewhere,
-		//this will prevent a potential NPE when we increment
-		Dataset lsum = sum;
-		if (lsum == null) {
-			lsum = sum = DatasetUtils.cast(DoubleDataset.class, d);
-			return lsum;
+	synchronized private Dataset updateSum(Dataset d, Dataset xaxis, Dataset yaxis, boolean forceClear) {
+		
+		if (forceClear) {
+			sum = null;
+			return null;
 		}
-		return lsum.iadd(d);
+		
+		if (sum == null) {
+			sum = new ImageWithAxes(d, xaxis, yaxis);
+			return d;
+		}
+		
+		if (sum.sameAxes(xaxis, yaxis)) {
+			return sum.sumImage(d);
+		} else {
+			sum = new ImageWithAxes(d, xaxis, yaxis);
+			return d;
+		}
+		
 	}
 	
 	@Override
@@ -185,6 +199,28 @@ public class ARPESPlotWindow extends AbstractPlotWindow {
 		if (!plottingSystem.isDisposed()) {
 			plottingSystem.dispose();
 		}
+	}
+	
+	private class ImageWithAxes {
+		
+		private Dataset image;
+		private Dataset xaxis;
+		private Dataset yaxis;
+		
+		public ImageWithAxes(Dataset image, Dataset xaxis, Dataset yaxis) {
+			this.image = DatasetUtils.cast(DoubleDataset.class, image);
+			this.xaxis = xaxis;
+			this.yaxis = yaxis;
+		}
+		
+		public boolean sameAxes(Dataset xaxis, Dataset yaxis) {
+			return this.xaxis.equals(xaxis) && this.yaxis.equals(yaxis);
+		}
+		
+		public Dataset sumImage(Dataset image) {
+			return this.image.iadd(image);
+		}
+		
 	}
 	
 }
