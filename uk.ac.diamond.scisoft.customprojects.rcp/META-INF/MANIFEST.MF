@@ -3,7 +3,6 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Non-Recursive Projects RCP
 Bundle-SymbolicName: uk.ac.diamond.scisoft.customprojects.rcp;singleton:=true
 Bundle-Version: 1.4.0.qualifier
-Eclipse-BundleShape: dir
 Bundle-Activator: uk.ac.diamond.scisoft.customprojects.rcp.internal.CustomProjectActivator
 Bundle-Vendor: Diamond Light Source
 Require-Bundle: org.eclipse.core.runtime,
