@@ -214,7 +214,7 @@ public class DatasetTablePlotViewer extends IPlottingSystemViewer.Stub<Composite
 	}
 	
 	@Override
-	public  <U extends ITrace> U createTrace(String name, Class<? extends ITrace> clazz) {
+	public  <U extends ITrace> U createTrace(String name, Class<U> clazz) {
 		if (clazz == ITableDataTrace.class) {
 			return null;
 		}
