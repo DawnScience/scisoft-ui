@@ -45,7 +45,7 @@ import uk.ac.diamond.scisoft.analysis.io.LoaderFactory;
  *
  *   @author gerring
  *   @date Aug 31, 2010
- *   @project org.edna.workbench.actions
+ *   @project org.dawb.workbench.actions
  **/
 public class CSVUtils {
 
@@ -84,7 +84,7 @@ public class CSVUtils {
 			ErrorDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
 					              "File Not Converted", 
 					              ne.getMessage(),
-					              new Status(IStatus.WARNING, "org.edna.workbench.actions", message, ne));
+					              new Status(IStatus.WARNING, "org.dawb.workbench.actions", message, ne));
 
 		}
 		
@@ -134,7 +134,7 @@ public class CSVUtils {
 			ErrorDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
 					              "File Not Converted", 
 					              ne.getMessage(),
-					              new Status(IStatus.WARNING, "org.edna.workbench.actions", message, ne));
+					              new Status(IStatus.WARNING, "org.dawb.workbench.actions", message, ne));
 		}
 		
 	}
