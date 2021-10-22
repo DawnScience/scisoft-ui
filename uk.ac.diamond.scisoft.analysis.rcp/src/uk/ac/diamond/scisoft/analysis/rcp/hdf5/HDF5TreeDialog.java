@@ -25,6 +25,7 @@ import org.eclipse.dawnsci.analysis.api.tree.SymbolicNode;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
 import org.eclipse.january.DatasetException;
 import org.eclipse.january.dataset.DatasetUtils;
+import org.eclipse.january.dataset.ShapeUtils;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.ISelection;
@@ -101,8 +102,7 @@ public class HDF5TreeDialog extends Dialog {
 						b.append(System.lineSeparator());
 						b.append("Max Size: ");
 						b.append(dn.getMaxShape() == null ? "Not set" : Arrays.toString(dn.getMaxShape()));
-
-						if (!dn.isString() && dn.getDataset().getSize() <= 128) {
+						if (!dn.isString() && ShapeUtils.calcLongSize(dn.getDataset().getShape()) <= 128) {
 							b.append(System.lineSeparator());
 							b.append("Value: ");
 							try {
