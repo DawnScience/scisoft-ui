@@ -100,7 +100,9 @@ public class ROIManager implements IROIListener, IRegionListener {
 
 	@Override
 	public void regionsRemoved(RegionEvent evt) {
-		clearGUIBean();
+		if (!evt.isDisposed()) {
+			clearGUIBean();
+		}
 		roi = null;
 	}
 
