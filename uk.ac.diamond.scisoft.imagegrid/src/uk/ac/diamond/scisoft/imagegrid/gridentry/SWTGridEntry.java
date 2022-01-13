@@ -14,10 +14,10 @@ import java.io.IOException;
 
 import org.dawnsci.plotting.services.util.SWTImageUtils;
 import org.eclipse.dawnsci.plotting.api.histogram.IPaletteService;
+import org.eclipse.january.dataset.CompoundDataset;
 import org.eclipse.january.dataset.Dataset;
 import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.IDataset;
-import org.eclipse.january.dataset.RGBDataset;
 import org.eclipse.january.dataset.Stats;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -157,122 +157,78 @@ public class SWTGridEntry extends AbstractGridEntry {
 		return gridImage == null;
 	}
 
+	private double[] minMax(CompoundDataset d, double lo, double hi) {
+		int e = d.getElementsPerItem();
+		double[] mm;
+		if (hi < 1) {
+			if (lo > 0) {
+				mm = Stats.quantile(d.getElementsView(0), lo, hi);
+				for (int i = 1; i < e; i++) {
+					double[] ti = Stats.quantile(d.getElementsView(i), lo, hi);
+					mm[0] = Math.max(mm[0], ti[0]);
+					mm[1] = Math.min(mm[1], ti[1]);
+				}
+			} else {
+				Dataset v = d.getElementsView(0);
+				mm = new double[] {v.min().doubleValue(), Stats.quantile(v, hi)};
+				for (int i = 1; i < e; i++) {
+					v = d.getElementsView(i);
+					double tl = v.min().doubleValue();
+					mm[0] = Math.max(mm[0], tl);
+					double th = Stats.quantile(v, hi);
+					mm[1] = Math.min(mm[1], th);
+				}
+			}
+		} else if (lo > 0) {
+			Dataset v = d.getElementsView(0);
+			mm = new double[] {Stats.quantile(v, lo), v.max().doubleValue()};
+			for (int i = 1; i < e; i++) {
+				v = d.getElementsView(i);
+				double tl = Stats.quantile(v, lo);
+				mm[0] = Math.max(mm[0], tl);
+				double th = v.max().doubleValue();
+				mm[1] = Math.min(mm[1], th);
+			}
+		} else {
+			Dataset v = d.getElementsView(0);
+			mm = new double[] {v.min().doubleValue(), v.max().doubleValue()};
+			for (int i = 1; i < e; i++) {
+				v = d.getElementsView(i);
+				double tl = v.min().doubleValue();
+				mm[0] = Math.max(mm[0], tl);
+				double th = v.max().doubleValue();
+				mm[1] = Math.min(mm[1], th);
+			}
+		}
+		return mm;
+	}
+
 	@Override
 	public void createImage(final IDataset ids) {
-		
-		final Dataset ds = DatasetUtils.convertToDataset(ids);
-		
 		if (canvas.isDisposed() || isDisposed) return;
+
 		canvas.getDisplay().asyncExec(new Runnable() {
 			@Override
 			public void run() {
+				final Dataset ds = DatasetUtils.convertToDataset(ids);
+
 				final int[] shape = ds.getShape();
 				try {
 					if (shape.length == 2) {
-						double[] m;
-						if (hiThreshold < 1) {
-							if (loThreshold > 0) {
-								if (ds instanceof RGBDataset) {
-									RGBDataset rgb = (RGBDataset) ds;
-									m = Stats.quantile(rgb.createRedDataset(Dataset.INT16), loThreshold, hiThreshold);
-									double[] t = Stats.quantile(rgb.createGreenDataset(Dataset.INT16), loThreshold, hiThreshold);
-									if (m[0] > t[0])
-										m[0] = t[0];
-									if (m[1] < t[1])
-										m[1] = t[1];
-									t = Stats.quantile(rgb.createBlueDataset(Dataset.INT16), loThreshold, hiThreshold);
-									if (m[0] > t[0])
-										m[0] = t[0];
-									if (m[1] < t[1])
-										m[1] = t[1];
-								} else {
+						double[] m = new double[2];
+						if (ds instanceof CompoundDataset) {
+							m = minMax((CompoundDataset) ds, loThreshold, hiThreshold);
+						} else {
+							if (hiThreshold < 1) {
+								if (loThreshold > 0) {
 									m = Stats.quantile(ds, loThreshold, hiThreshold);
-								}
-							} else {
-								if (ds instanceof RGBDataset) {
-									RGBDataset rgb = (RGBDataset) ds;
-									Dataset c = rgb.createRedDataset(Dataset.INT16);
-									double min = c.min().doubleValue();
-									double max = Stats.quantile(c, hiThreshold);
-									double t;
-
-									c = rgb.createGreenDataset(Dataset.INT16);
-									t = c.min().doubleValue();
-									if (min > t)
-										min = t;
-									t = Stats.quantile(c, hiThreshold);
-									if (max < t)
-										max = t;
-
-									c = rgb.createBlueDataset(Dataset.INT16);
-									t = c.min().doubleValue();
-									if (min > t)
-										min = t;
-									t = Stats.quantile(c, hiThreshold);
-									if (max < t)
-										max = t;
-
-									m = new double[] {min, max};
 								} else {
 									m = new double[] {ds.min().doubleValue(), Stats.quantile(ds, hiThreshold)};
 								}
-							}
-						} else {
-							if (loThreshold > 0) {
-								if (ds instanceof RGBDataset) {
-									RGBDataset rgb = (RGBDataset) ds;
-									Dataset c = rgb.createRedDataset(Dataset.INT16);
-									double min = Stats.quantile(c, loThreshold);
-									double max = c.max().doubleValue();
-									double t;
-
-									c = rgb.createGreenDataset(Dataset.INT16);
-									t = Stats.quantile(c, loThreshold);
-									if (min > t)
-										min = t;
-									t = c.max().doubleValue();
-									if (max < t)
-										max = t;
-
-									c = rgb.createBlueDataset(Dataset.INT16);
-									t = Stats.quantile(c, loThreshold);
-									if (min > t)
-										min = t;
-									t = c.max().doubleValue();
-									if (max < t)
-										max = t;
-									m = new double[] {min, max};
-								} else {
-									m = new double[] {Stats.quantile(ds, loThreshold), ds.max().doubleValue()};
-								}
+							} else if (loThreshold > 0) {
+								m = new double[] {Stats.quantile(ds, loThreshold), ds.max().doubleValue()};
 							} else {
-								if (ds instanceof RGBDataset) {
-									RGBDataset rgb = (RGBDataset) ds;
-									Dataset c = rgb.createRedDataset(Dataset.INT16);
-									double min = c.min().doubleValue();
-									double max = c.max().doubleValue();
-									double t;
-
-									c = rgb.createGreenDataset(Dataset.INT16);
-									t = c.min().doubleValue();
-									if (min > t)
-										min = t;
-									t = c.max().doubleValue();
-									if (max < t)
-										max = t;
-
-									c = rgb.createBlueDataset(Dataset.INT16);
-									t = c.min().doubleValue();
-									if (min > t)
-										min = t;
-									t = c.max().doubleValue();
-									if (max < t)
-										max = t;
-									m = new double[] {min, max};
-									
-								} else {
-									m = new double[] {ds.min().doubleValue(), ds.max().doubleValue()};
-								}
+								m = new double[] {ds.min().doubleValue(), ds.max().doubleValue()};
 							}
 						}
 						// Old mapping not necessary anymore 
