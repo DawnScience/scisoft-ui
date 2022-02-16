@@ -14,13 +14,14 @@ import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.swt.graphics.Image;
 
-import uk.ac.diamond.scisoft.feedback.utils.FeedbackConstants;
+import uk.ac.diamond.scisoft.feedback.Activator;
 import uk.ac.diamond.scisoft.feedback.utils.FeedbackUtils;
 
 /**
  * Label Provider of the Table Viewer
  */
 public class AttachedFileLabelProvider implements ITableLabelProvider {
+	public final Image DELETE = Activator.getImageDescriptor("icons/delete_obj.png").createImage();
 
 	@Override
 	public void addListener(ILabelProviderListener listener) {
@@ -28,6 +29,7 @@ public class AttachedFileLabelProvider implements ITableLabelProvider {
 
 	@Override
 	public void dispose() {
+		DELETE.dispose();
 	}
 
 	@Override
@@ -45,7 +47,7 @@ public class AttachedFileLabelProvider implements ITableLabelProvider {
 			return null;
 		if (element == null)
 			return null;
-		return FeedbackConstants.DELETE;
+		return DELETE;
 	}
 
 	@Override

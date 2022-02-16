@@ -10,6 +10,7 @@ package uk.ac.diamond.scisoft.arpes.calibration;
 
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -62,10 +63,6 @@ public class Activator extends AbstractUIPlugin {
 		return plugin;
 	}
 
-	public static ImageDescriptor getImageDescriptor(String imageFilePath) {
-		return imageDescriptorFromPlugin(PLUGIN_ID, imageFilePath);
-	}
-
 	/**
 	 * Looks for OSGI service, used by ServiceManager
 	 * 
@@ -89,6 +86,29 @@ public class Activator extends AbstractUIPlugin {
 	public static Image getImage(String path) {
 		ImageDescriptor des = imageDescriptorFromPlugin(PLUGIN_ID, path);
 		return des.createImage();
+	}
+
+	/**
+	 * Returns an image descriptor for the image file at the given
+	 * plug-in relative path
+	 *
+	 * @param path plugin relative path of image file
+	 * @return the image descriptor
+	 */
+	public static ImageDescriptor getImageDescriptor(String path) {
+		return imageDescriptorFromPlugin(PLUGIN_ID, path);
+	}
+
+	/**
+	 * Get image from given path and add dispose listener so caller does not need to dispose
+	 * @param w widget
+	 * @param path plugin relative path of image file
+	 * @return image
+	 */
+	public static Image getImageAndAddDisposeListener(Widget w, String path) {
+		Image i = getImageDescriptor(path).createImage();
+		w.addDisposeListener(e -> i.dispose());
+		return i;
 	}
 
 }

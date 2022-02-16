@@ -17,7 +17,6 @@ import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Cursor;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -28,6 +27,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IPerspectiveDescriptor;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewSite;
@@ -40,7 +40,6 @@ import org.eclipse.ui.forms.events.IHyperlinkListener;
 import org.eclipse.ui.forms.widgets.Hyperlink;
 import org.eclipse.ui.ide.IDE;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.IPerspectiveDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +55,6 @@ public class MainView extends ViewPart {
 
 	private static final String[] CLUSTER_QUEUE_LIST = new String[] {"Low", "Medium", "High"};
 
-	private Image imgFolder = Activator.getDefault().getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_OBJ_FOLDER).createImage();
-	
 	// Store values after perspective closed
 	private IPreferenceStore propertyStore;
 	
@@ -252,7 +249,7 @@ public class MainView extends ViewPart {
 		
 		// Button - Directory dialog
 		Button btnDir = new Button(comp, SWT.PUSH);
-		btnDir.setImage(imgFolder);
+		btnDir.setImage(PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJ_FOLDER));
 		
 		// Button - Set working directory
 		final Button btnSave = new Button(comp, SWT.PUSH);
@@ -469,12 +466,7 @@ public class MainView extends ViewPart {
 		if (getSite() != null) {
 			getSite().getWorkbenchWindow().removePerspectiveListener(perspectiveListener);
 		}
-		
-		// Dispose acquired images
-		if (imgFolder != null) {
-			imgFolder.dispose();
-		}
-		
+
 		// Restore working directory value to default on close
 		propertyStore.setToDefault(PropertyConstants.P_WORK_DIR);
 		// Reset generated file paths on close
@@ -482,9 +474,11 @@ public class MainView extends ViewPart {
 		propertyStore.setToDefault(PropertyConstants.P_MAG_STR_PATH);
 		propertyStore.setToDefault(PropertyConstants.P_LOOKUP_GEN_PATH);
 		propertyStore.setToDefault(PropertyConstants.P_GENOME_DIR);
-		
+		disposeCursor(lblIdDesStatus.getCursor());
+		disposeCursor(lblLookGenStatus.getCursor());
+		disposeCursor(lblMagStrStatus.getCursor());
 		super.dispose();
-    }
+	}
 	
 	/**
 	 * Updates label to status of file generation complete
@@ -493,10 +487,17 @@ public class MainView extends ViewPart {
 		label.setText("Open");
 		label.setUnderlined(true);
 		label.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GREEN));
+		disposeCursor(label.getCursor());
 		label.setCursor(new Cursor(Display.getCurrent(), SWT.CURSOR_HAND));
 		label.addHyperlinkListener(listener);
 	}
-	
+
+	private static void disposeCursor(Cursor c) {
+		if (c != null && !c.isDisposed()) {
+			c.dispose();
+		}
+	}
+
 	/**
 	 * Updates label to status of file generation not complete
 	 */
@@ -504,6 +505,7 @@ public class MainView extends ViewPart {
 		label.setText("Not complete");
 		label.setUnderlined(false);
 		label.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_RED));
+		disposeCursor(label.getCursor());
 		label.setCursor(new Cursor(Display.getCurrent(), SWT.CURSOR_ARROW));
 		label.removeHyperlinkListener(listener);
 	}

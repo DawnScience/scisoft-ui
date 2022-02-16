@@ -21,7 +21,6 @@ public class FeedbackConstants {
 	public static final String FROM_PREF = FeedbackConstants.class.getName() + ".emailAddress";
 	public static final String SUBJ_PREF = FeedbackConstants.class.getName() + ".subject";
 
-	public static final Image DELETE = Activator.getImageDescriptor("icons/delete_obj.png").createImage();
 	public static final String MAIL_TO = "scisoftjira@diamond.ac.uk";
 	public static final String DAWN_MAILING_LIST = "DAWN@JISCMAIL.AC.UK";
 

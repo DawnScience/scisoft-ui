@@ -8,6 +8,7 @@ import org.eclipse.jface.dialogs.ProgressMonitorDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -20,6 +21,7 @@ import uk.ac.diamond.scisoft.analysis.powder.indexer.rcp.Activator;
 class IndexerProgressDialog extends ProgressMonitorDialog {
 
 	private Text outputArea;
+	private Image powderImage;
 
 	public IndexerProgressDialog(Shell parent) {
 		super(parent);
@@ -57,7 +59,8 @@ class IndexerProgressDialog extends ProgressMonitorDialog {
 	@Override
 	protected Control createContents(Composite parent) {
 		this.getShell().setText("Determing Structure");
-		this.getShell().setImage(Activator.getImage("icons/powderIndexing.png"));
+		powderImage = Activator.getImage("icons/powderIndexing.png");
+		this.getShell().setImage(powderImage);
 
 		super.createContents(parent);
 
@@ -102,6 +105,15 @@ class IndexerProgressDialog extends ProgressMonitorDialog {
 		});
 
 		return parent;
+	}
+
+	@Override
+	public boolean close() {
+		boolean ok = super.close();
+		if (ok) {
+			powderImage.dispose();
+		}
+		return ok;
 	}
 
 	private void streamLog(String message) {

@@ -205,6 +205,8 @@ class AxisSelectionLabelProvider implements ITableLabelProvider {
 
 	@Override
 	public void dispose() {
+		CHECKED.dispose();
+		UNCHECKED.dispose();
 	}
 
 	@Override

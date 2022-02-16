@@ -110,7 +110,7 @@ public class GoldCalibrationPageFive extends CalibrationWizardPage {
 
 		Button fileButton = new Button(container, SWT.PUSH);
 		fileButton.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, false, 1, 1));
-		fileButton.setImage(Activator.getImageDescriptor("icons/folder.png").createImage());
+		fileButton.setImage(Activator.getImageAndAddDisposeListener(fileButton, "icons/folder.png"));
 		fileButton.setToolTipText("Browse to an external file");
 		fileButton.addSelectionListener(new SelectionAdapter() {
 			@Override

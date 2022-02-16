@@ -21,7 +21,6 @@ import org.eclipse.january.dataset.Slice;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -53,7 +52,6 @@ public class AxisSlicer {
 	private String name;
 
 	public static final int COLUMNS = 7;
-	private static final Image undo = AnalysisRCPActivator.getImageDescriptor("icons/arrow_undo.png").createImage();
 
 	public AxisSlicer(Composite parent) {
 		composite = parent;
@@ -181,7 +179,8 @@ public class AxisSlicer {
 		step.setToolTipText("Adjust step size in slice");
 
 		reset = new Button(composite, SWT.PUSH);
-		reset.setImage(undo);
+		reset.setImage(AnalysisRCPActivator.getImageAndAddDisposeListener(reset, "icons/arrow_undo.png"));
+
 		reset.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
