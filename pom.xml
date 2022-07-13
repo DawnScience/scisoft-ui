@@ -38,7 +38,6 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<modules>
-				<module>uk.ac.diamond.scisoft.deprecated.rcp</module>
 				<module>uk.ac.diamond.scisoft.analysis.polling</module>
 				<module>uk.ac.diamond.sda.polling</module>
 			</modules>
