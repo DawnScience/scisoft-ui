@@ -15,6 +15,7 @@
 	</parent>
 
 	<modules>
+		<module>org.eclipse.dawnsci.hdf5.editor</module>
 		<module>uk.ac.diamond.scisoft.analysis.plotclient</module>
 		<module>uk.ac.diamond.scisoft.analysis.rcp</module>
 		<module>uk.ac.diamond.scisoft.analysis.rcp.contributions</module>
