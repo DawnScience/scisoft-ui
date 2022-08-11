@@ -86,6 +86,7 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 					if (croi != null) {
 						final IRegion r = plottingSystem.getRegion(croi.getName());
 						if (r != null) {
+							rName = croi.getName(); // set so it is ignored later
 							plottingSystem.removeRegion(r);
 						}
 						croi = null;
@@ -119,7 +120,7 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 						if (r == croi || r == roi || (n != null && n.equals(rName))) {
 							continue; // no need to update current region
 						}
-						if (n != null && !names.remove(n)) {
+						if (n != null && !names.contains(n)) {
 							continue;
 						}
 
@@ -173,6 +174,10 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 			region.setFromServer(true);
 			region.setROI(roib);
 			plottingSystem.addRegion(region);
+			if (roib.isPlot()) {
+				region.setMobile(false);
+				region.setFill(false);
+			}
 			return region;
 		} catch (Exception e) {
 			logger.error("Problem creating new region from ROI", e);
