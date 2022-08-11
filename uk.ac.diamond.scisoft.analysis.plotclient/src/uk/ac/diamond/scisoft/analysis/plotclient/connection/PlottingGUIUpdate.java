@@ -174,7 +174,7 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 			region.setFromServer(true);
 			region.setROI(roib);
 			plottingSystem.addRegion(region);
-			if (roib.isPlot()) {
+			if (roib.isFixed()) {
 				region.setMobile(false);
 				region.setFill(false);
 			}
