@@ -220,13 +220,17 @@ public class ImageExplorerView extends ViewPart implements IObserver, SelectionL
 			btnHistoryBack = new Button(locationRow, SWT.LEFT);
 			btnHistoryBack.setEnabled(false);
 			btnHistoryBack.setToolTipText("Go back in history");
-			btnHistoryBack.setImage(AnalysisRCPActivator.getImageDescriptor("icons/arrow_left.png").createImage());
+			Image backImage = AnalysisRCPActivator.getImageDescriptor("icons/arrow_left.png").createImage();
+			btnHistoryBack.setImage(backImage);
+			btnHistoryBack.addDisposeListener(e -> backImage.dispose());
 			btnHistoryBack.addSelectionListener(this);
 			btnHistoryForw = new Button(locationRow, SWT.LEFT);
 			btnHistoryForw.setEnabled(false);
 			btnHistoryForw.setToolTipText("Go forward in history");
 			btnHistoryForw.addSelectionListener(this);
-			btnHistoryForw.setImage(AnalysisRCPActivator.getImageDescriptor("icons/arrow_right.png").createImage());
+			Image forwardImage = AnalysisRCPActivator.getImageDescriptor("icons/arrow_right.png").createImage();
+			btnHistoryForw.setImage(forwardImage);
+			btnHistoryForw.addDisposeListener(e -> forwardImage.dispose());
 			lblLocation = new Label(locationRow, SWT.LEFT);
 			lblLocation.setText("Location:");
 
@@ -244,7 +248,9 @@ public class ImageExplorerView extends ViewPart implements IObserver, SelectionL
 		compHUD.setText("Image Playback");
 		{
 			btnRewind = new Button(compHUD, SWT.PUSH);
-			btnRewind.setImage(AnalysisRCPActivator.getImageDescriptor("icons/control_start.png").createImage());
+			Image rewindImage = AnalysisRCPActivator.getImageDescriptor("icons/control_start.png").createImage();
+			btnRewind.setImage(rewindImage);
+			btnRewind.addDisposeListener(e -> rewindImage.dispose());
 			btnRewind.addSelectionListener(this);
 			btnRewind.setToolTipText("Rewind");
 			btnPlay = new Button(compHUD, SWT.TOGGLE);
@@ -254,15 +260,21 @@ public class ImageExplorerView extends ViewPart implements IObserver, SelectionL
 			btnPlay.addSelectionListener(this);
 			btnPlay.setToolTipText("Play/Pause");
 			btnStop = new Button(compHUD, SWT.PUSH);
-			btnStop.setImage(AnalysisRCPActivator.getImageDescriptor("icons/control_stop.png").createImage());
+			Image stopImage = AnalysisRCPActivator.getImageDescriptor("icons/control_stop.png").createImage();
+			btnStop.setImage(stopImage);
+			btnStop.addDisposeListener(e -> stopImage.dispose());
 			btnStop.addSelectionListener(this);
 			btnStop.setToolTipText("Stop playback");
 			btnForward = new Button(compHUD, SWT.PUSH);
-			btnForward.setImage(AnalysisRCPActivator.getImageDescriptor("icons/control_end.png").createImage());
+			Image endImage = AnalysisRCPActivator.getImageDescriptor("icons/control_end.png").createImage();
+			btnForward.setImage(endImage);
+			btnForward.addDisposeListener(e -> endImage.dispose());
 			btnForward.addSelectionListener(this);
 			btnForward.setToolTipText("Forward");
 			btnPlayLoop = new Button(compHUD, SWT.TOGGLE);
-			btnPlayLoop.setImage(AnalysisRCPActivator.getImageDescriptor("icons/control_repeat.png").createImage());
+			Image playImage = AnalysisRCPActivator.getImageDescriptor("icons/control_repeat.png").createImage();
+			btnPlayLoop.setImage(playImage);
+			btnPlayLoop.addDisposeListener(e -> playImage.dispose());
 			btnPlayLoop.setToolTipText("Playback loop (On/off)");
 			btnPlayLoop.addSelectionListener(this);
 			sldProgress = new Scale(compHUD, SWT.HORIZONTAL);
