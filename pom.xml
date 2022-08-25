@@ -67,19 +67,5 @@
 				<module>uk.ac.diamond.scisoft.pydev.rcp.test</module>
 			</modules>
 		</profile>
-		<profile>
-			<id>dawn-full</id>
-			<modules>
-				<module>uk.ac.diamond.optid</module>
-				<module>uk.ac.diamond.optid.feature</module>
-				<module>uk.ac.diamond.scisoft</module>
-				<module>uk.ac.diamond.scisoft.analysis.powder.indexer.feature</module>
-				<module>uk.ac.diamond.scisoft.analysis.powder.indexer.rcp</module>
-				<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.feature</module>
-				<module>uk.ac.diamond.scisoft.analysis.powder.matcher.ccdc.rcp</module>
-				<module>uk.ac.diamond.scisoft.pydev.rcp</module>
-				<module>uk.ac.diamond.scisoft.pydev.rcp.test</module>
-			</modules>
-		</profile>
 	</profiles>
 </project>
