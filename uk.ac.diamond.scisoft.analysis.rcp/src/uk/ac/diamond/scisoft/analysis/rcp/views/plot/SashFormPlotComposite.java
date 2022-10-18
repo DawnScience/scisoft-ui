@@ -9,6 +9,9 @@
 
 package uk.ac.diamond.scisoft.analysis.rcp.views.plot;
 
+import uk.ac.diamond.daq.util.logging.deprecation.DeprecationLogger;
+
+
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -48,6 +51,7 @@ import org.slf4j.Logger;
  */
 public class SashFormPlotComposite {
 
+	private static final DeprecationLogger logger = DeprecationLogger.getLogger(SashFormPlotComposite.class);
 	public static final String DEFAULT_PLOTTING_SYSTEM_NAME = "SashFormPlot";
 	
 	protected static int plottingSystemUID = 0;
@@ -83,12 +87,12 @@ public class SashFormPlotComposite {
 	 * Original constructor kept for backward compatibility, but better to use the simpler constructor and then call
 	 * addRegionListener() and addActions() if necessary.
 	 */
-	@Deprecated
+	@Deprecated(since="Dawn 1.9")
 	public SashFormPlotComposite(Composite parent, final IWorkbenchPart part, IROIListener regionListener,
 			final IAction... actions) throws Exception {
 
 		this(parent, part);
-
+		logger.deprecatedMethod("SashFormPlotComposite(Composite, IWorkbenchPart, IROIListener, IAction...)", null, "SashFormPlotComposite(Composite, IWorkbenchPart) and add other components instead");
 		if (regionListener != null) {
 			addRegionListener(regionListener);
 		}
@@ -273,8 +277,9 @@ public class SashFormPlotComposite {
 	 * @param text
 	 * @param logger
 	 */
-	@Deprecated
+	@Deprecated(since="Dawn 1.9")
 	public void appendStatus(final String text, Logger logger) {
+		SashFormPlotComposite.logger.deprecatedMethod("appendStatus(String, Logger)", null, "appendStatus(String) and log in the code calling this method instead");
 		if (logger != null) {
 			logger.info(text);
 		}

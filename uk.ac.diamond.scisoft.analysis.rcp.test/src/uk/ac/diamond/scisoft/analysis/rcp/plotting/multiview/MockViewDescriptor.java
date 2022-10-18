@@ -15,16 +15,21 @@ import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.views.IViewDescriptor;
 import org.junit.AssumptionViolatedException;
 
+import uk.ac.diamond.daq.util.logging.deprecation.DeprecationLogger;
+
 /**
  * Replaced by MockConfigElem
  */
-@Deprecated
+@Deprecated(since="Dawn 1.3")
 class MockViewDescriptor implements IViewDescriptor {
+	
+	private static final DeprecationLogger logger = DeprecationLogger.getLogger(MockViewDescriptor.class);
 	public static final String UK_AC_DIAMOND_TEST_VIEW = "uk.ac.diamond.test.view.";
 	private final String label;
 
 	public MockViewDescriptor(String label) {
 		this.label = label;
+		logger.deprecatedClass(null, "uk.ac.diamond.scisoft.analysis.rcp.plotting.multiview.mock.MockConfigElem");
 	}
 
 	@Override

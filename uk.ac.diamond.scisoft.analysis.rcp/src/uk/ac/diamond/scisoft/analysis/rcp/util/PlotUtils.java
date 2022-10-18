@@ -26,9 +26,8 @@ import org.eclipse.january.dataset.DoubleDataset;
 import org.eclipse.january.dataset.IDataset;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import uk.ac.diamond.daq.util.logging.deprecation.DeprecationLogger;
 import uk.ac.diamond.scisoft.analysis.plotserver.AxisMapBean;
 import uk.ac.diamond.scisoft.analysis.plotserver.DataBean;
 import uk.ac.diamond.scisoft.analysis.plotserver.DataBeanException;
@@ -38,10 +37,14 @@ import uk.ac.diamond.scisoft.analysis.plotserver.GuiParameters;
 import uk.ac.diamond.scisoft.analysis.plotserver.GuiPlotMode;
 import uk.ac.diamond.scisoft.analysis.rcp.plotting.AbstractPlotWindow;
 
-@Deprecated
+@Deprecated(since="Dawn 1.7.1")
 public class PlotUtils {
 
-	private static final Logger logger = LoggerFactory.getLogger(PlotUtils.class);
+	private static final DeprecationLogger logger = DeprecationLogger.getLogger(PlotUtils.class);
+	
+	private PlotUtils() {
+		
+	}
 	
 	
 	/**
@@ -57,7 +60,7 @@ public class PlotUtils {
 			                        final PlotMode         plotMode, 
 			                        final AbstractPlotWindow       plotWindow, 
 			                        final IProgressMonitor monitor) {
-		
+		logger.deprecatedMethod("create1DPlot(Dataset, List<Dataset>, PlotMode, AbstractPlotWindow, IProgressMonitor)");
 		if (xDataSet.getRank() != 1) return;
 
 		// We allow yDataSets to be null if they like.
@@ -137,7 +140,7 @@ public class PlotUtils {
 			                      final AbstractPlotWindow    plotWindow, 
 			                      final IProgressMonitor monitor) {
 		
-		
+		logger.deprecatedMethod("createPlot(Dataset, List<Dataset>, GuiPlotMode, AbstractPlotWindow, IProgressMonitor)");
 		final Display display = PlatformUI.getWorkbench().getDisplay();
 		if (display.isDisposed()) return;
 		
@@ -181,7 +184,8 @@ public class PlotUtils {
 
 
 	private static Serializable getTitle(Dataset x, List<Dataset> ys, final boolean isFileName) {
-		
+		logger.deprecatedMethod("getTitle(Dataset, List<Dataset>, boolean)");
+
 		final StringBuilder buf = new StringBuilder();
 		buf.append("Plot of");
 		final Set<String> used = new HashSet<String>(7);

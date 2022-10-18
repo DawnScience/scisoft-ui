@@ -11,12 +11,16 @@ package uk.ac.diamond.scisoft.analysis.rcp.util;
 
 import org.eclipse.swt.widgets.Composite;
 
+import uk.ac.diamond.daq.util.logging.deprecation.DeprecationLogger;
+
 /**
  * A spinner class that supports floating point numbers of fixed precision
  * @deprecated Use {@link org.dawnsci.common.widgets.spinner.FloatSpinner} instead
  */
-@Deprecated
+@Deprecated(since="Dawn 2.5")
 public class FloatSpinner extends org.dawnsci.common.widgets.spinner.FloatSpinner {
+	
+	private static final DeprecationLogger logger = DeprecationLogger.getLogger(FloatSpinner.class);
 	/**
 	 * Create a fixed float spinner
 	 * 
@@ -37,5 +41,6 @@ public class FloatSpinner extends org.dawnsci.common.widgets.spinner.FloatSpinne
 	 */
 	public FloatSpinner(Composite parent, int style, int width, int precision) {
 		super(parent, style, width, precision);
+		logger.deprecatedClass(null, "org.dawnsci.common.widgets.spinner.FloatSpinner");
 	}
 }

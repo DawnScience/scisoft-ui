@@ -38,7 +38,7 @@ Require-Bundle: org.eclipse.ui,
  org.apache.commons.collections4;bundle-version="4.1.0",
  org.eclipse.ui.intro;bundle-version="3.5.100",
  org.eclipse.e4.ui.workbench
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-9
 Export-Package: uk.ac.diamond.scisoft.analysis.rcp,
  uk.ac.diamond.scisoft.analysis.rcp.actions,
  uk.ac.diamond.scisoft.analysis.rcp.adapters,
@@ -58,6 +58,7 @@ Export-Package: uk.ac.diamond.scisoft.analysis.rcp,
  uk.ac.diamond.scisoft.analysis.rcp.views.plot,
  uk.ac.diamond.scisoft.analysis.rcp.wizards
 Import-Package: gda.observable,
- org.slf4j;version="[1.7.2,2.0.0)"
+ org.slf4j;version="[1.7.2,2.0.0)",
+ uk.ac.diamond.daq.util.logging.deprecation
 Bundle-ActivationPolicy: lazy
 Automatic-Module-Name: uk.ac.diamond.scisoft.analysis.rcp
