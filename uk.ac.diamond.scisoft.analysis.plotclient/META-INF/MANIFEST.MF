@@ -22,5 +22,5 @@ Import-Package: gda.observable,
  org.slf4j;version="[1.7.2,2.0.0)"
 Bundle-Activator: uk.ac.diamond.scisoft.analysis.plotclient.Activator
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Automatic-Module-Name: uk.ac.diamond.scisoft.analysis.plotclient
