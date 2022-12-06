@@ -195,7 +195,7 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 					logger.debug("Getting a plot gui update for {}; thd {} {}; bean {}", new Object[] {viewName, thd.getId(), thd.getName(), bean});
 					if (guiBean == null) {
 						guiBean = bean.copy(); // cache a local copy
-					} else {
+					} else if (bean != guiBean) {
 						guiBean.merge(bean); // or merge it
 					}
 					guiBean.remove(GuiParameters.ROICLEARALL); // this parameter must not persist

@@ -188,10 +188,15 @@ public class ROIManager implements IROIListener, IRegionListener {
 				updateROIMap();
 			}
 
-			if (or != null && or.equals(roi.getName())) { // replace current ROI
+			if (or == roi || (or != null && or.getName().equals(roi.getName()))) { // replace current ROI
 				roi = getFromROIMap(roi.getClass());
 			}
-			roi = updateGuiBean(roi.getClass(), roi, false);
+			if (roi == null) { // no more ROI of same class
+				roi = getFromROIMap(null);
+			}
+			if (roi != null) {
+				roi = updateGuiBean(roi.getClass(), roi, false);
+			}
 		} else {
 			updateROIMap();
 			roi = updateGuiBean(clazz, or, false);
@@ -272,7 +277,7 @@ public class ROIManager implements IROIListener, IRegionListener {
 		if (regions != null) {
 			for (IRegion iRegion : regions) {
 				IROI r = iRegion.getROI();
-				if (r != null && r.getClass().equals(clazz)) {
+				if (r != null && (clazz == null || r.getClass().equals(clazz))) {
 					return r;
 				}
 			}
