@@ -226,7 +226,6 @@ public class PlotWindowManager implements IPlotWindowManager, IObservable {
 	public void clearPlottingSystem(IPlottingSystem<?> plottingSystem, String viewName) {
 		try {
 			plottingSystem.reset();
-			plottingSystem.setTitle("");
 		} catch (Exception e) {
 			logger.error("Unable to clear plot view " + viewName, e);
 		}
