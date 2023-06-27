@@ -17,24 +17,51 @@ import java.util.HashSet;
  */
 public class TreeFilter {
 	Collection<String> unwantedNodeNames;
+	Collection<String> unwantedAttributeNames;
 
 	/**
 	 * Constructor that needs an array of the names of unwanted nodes
 	 *
 	 * @param names
 	 */
-	public TreeFilter(String[] names) {
+	public TreeFilter(String[] attrs) {
+		this(attrs, null);
+	}
+
+	/**
+	 * Constructor that needs an array of the names of unwanted nodes
+	 *
+	 * @param names
+	 */
+	public TreeFilter(String[] attrs, String[] names) {
+		unwantedAttributeNames = new HashSet<String>();
 		unwantedNodeNames = new HashSet<String>();
 
-		for (String n: names)
-			unwantedNodeNames.add(n);
+		if (attrs != null) {
+			for (String a: attrs) {
+				unwantedAttributeNames.add(a);
+			}
+		}
+		if (names != null) {
+			for (String n: names) {
+				unwantedNodeNames.add(n);
+			}
+		}
+	}
+
+	/**
+	 * @param attr
+	 * @return true if attr is not of those unwanted
+	 */
+	public boolean selectAttribute(String attr) {
+		return !unwantedAttributeNames.contains(attr);
 	}
 
 	/**
 	 * @param node
 	 * @return true if node is not of those unwanted
 	 */
-	public boolean select(String node) {
+	public boolean selectNode(String node) {
 		return !unwantedNodeNames.contains(node);
 	}
 }

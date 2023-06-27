@@ -83,7 +83,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 		this.clistener = clistener;
 
 		// set up tree filter to omit following node names
-		treeFilter = new TreeFilter(new String[] { "target", NexusConstants.NXCLASS});
+		treeFilter = new TreeFilter(new String[] { "target", NexusConstants.NXCLASS, NexusConstants.UNITS});
 
 		// set up tree and its columns
 		tViewer = new TreeViewer(this, SWT.BORDER|SWT.VIRTUAL);
@@ -206,7 +206,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 
 			Iterator<String> iter = node.getAttributeNameIterator();
 			while (iter.hasNext()) {
-				if (filter.select(iter.next())) {
+				if (filter.selectAttribute(iter.next())) {
 					count++;
 				}
 			}
@@ -222,7 +222,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 				GroupNode group = (GroupNode) node;
 				Iterator<String> nIter = group.getNodeNameIterator();
 				while (nIter.hasNext()) {
-					if (filter.select(nIter.next())) {
+					if (filter.selectNode(nIter.next())) {
 						count++;
 					}
 				}
@@ -350,7 +350,7 @@ class HDF5LazyContentProvider implements ILazyTreeContentProvider {
 		Iterator<String> iter = pNode.getAttributeNameIterator();
 		while (iter.hasNext()) {
 			String name = iter.next();
-			if (filter.select(name)) {
+			if (filter.selectAttribute(name)) {
 				if (index == count++) {
 					Attribute a = pNode.getAttribute(name);
 					viewer.replace(parent, index, a);
@@ -370,7 +370,7 @@ class HDF5LazyContentProvider implements ILazyTreeContentProvider {
 		if (pNode instanceof GroupNode) {
 			for (NodeLink link : (GroupNode) pNode) {
 				String name = link.getName();
-				if (filter.select(name)) {
+				if (filter.selectNode(name)) {
 					if (index == count++) {
 						viewer.replace(parent, index, link);
 						 updateChildCount(link, -1);
