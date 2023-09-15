@@ -31,8 +31,8 @@ import org.eclipse.swt.widgets.Canvas;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.diamond.osgi.services.ServiceProvider;
 import uk.ac.diamond.scisoft.analysis.plotserver.DatasetWithAxisInformation;
-import uk.ac.diamond.scisoft.imagegrid.ServiceHolder;
 
 /**
  * SWT Image implementation of a ImageGridEntry
@@ -85,7 +85,7 @@ public class SWTGridEntry extends AbstractGridEntry {
 		this(filename, additional);
 		this.canvas = canvas;
 		if (pservice == null)
-			pservice = ServiceHolder.getPaletteService();
+			pservice = ServiceProvider.getService(IPaletteService.class);
 		this.paletteData = pservice.getDirectPaletteData(colorScheme);
 		this.loThreshold = loThreshold;
 		this.hiThreshold = hiThreshold;

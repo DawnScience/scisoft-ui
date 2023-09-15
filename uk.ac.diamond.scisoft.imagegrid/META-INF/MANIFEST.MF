@@ -12,7 +12,8 @@ Require-Bundle: org.eclipse.equinox.registry,
  org.dawnsci.plotting.services,
  uk.ac.diamond.scisoft.analysis,
  org.dawb.common.ui,
- org.eclipse.january;bundle-version="1.0.0"
+ org.eclipse.january;bundle-version="1.0.0",
+ uk.ac.diamond.osgi;bundle-version="1.2.0"
 Import-Package: org.slf4j
 Export-Package: uk.ac.diamond.scisoft.imagegrid,
  uk.ac.diamond.scisoft.imagegrid.gridentry,
