@@ -35,12 +35,12 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 
+import uk.ac.diamond.osgi.services.ServiceProvider;
 import uk.ac.diamond.scisoft.analysis.utils.OSUtils;
 import uk.ac.diamond.sda.intro.navigator.NavigatorRCPActivator;
 import uk.ac.diamond.sda.navigator.preference.FileNavigatorPreferenceConstants;
 import uk.ac.diamond.sda.navigator.util.NIOUtils;
 import uk.ac.diamond.sda.navigator.util.NavigatorUtils;
-import uk.ac.diamond.sda.navigator.util.ServiceHolder;
 
 class FileLabelProvider extends ColumnLabelProvider {
 
@@ -203,7 +203,7 @@ class FileLabelProvider extends ColumnLabelProvider {
 		if (attributes==null) attributes = new HashMap<Path, Map<Integer, String>>(89);
 		if (attributes.containsKey(node)) return attributes.get(node);
 
-		IDataHolder dh = ServiceHolder.getLoaderService().getData(node.toAbsolutePath().toString(), null);
+		IDataHolder dh = ServiceProvider.getService(ILoaderService.class).getData(node.toAbsolutePath().toString(), null);
 		Tree tree = dh.getTree();
 		GroupNode rootnode = tree.getGroupNode();
 		final Map<Integer, String> attr = new HashMap<Integer, String>(3);

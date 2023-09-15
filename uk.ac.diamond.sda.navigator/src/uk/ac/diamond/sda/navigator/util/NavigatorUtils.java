@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.dawb.common.util.io.FileUtils;
 import org.eclipse.dawnsci.analysis.api.io.IDataHolder;
+import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
 import org.eclipse.dawnsci.analysis.api.tree.DataNode;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
@@ -25,6 +26,7 @@ import org.eclipse.january.metadata.IMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.diamond.osgi.services.ServiceProvider;
 import uk.ac.diamond.scisoft.analysis.io.LoaderFactory;
 
 public class NavigatorUtils {
@@ -91,7 +93,7 @@ public class NavigatorUtils {
 
 		IDataHolder dh = null;
 		try {
-			dh = ServiceHolder.getLoaderService().getData(fullpath, null);
+			dh = ServiceProvider.getService(ILoaderService.class).getData(fullpath, null);
 		} catch (Exception e) {
 			logger.debug("HDF5 file Reading Exception:", e);
 			return results;

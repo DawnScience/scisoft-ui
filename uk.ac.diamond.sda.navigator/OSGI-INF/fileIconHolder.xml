@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" enabled="true" immediate="true" name="File Icon Service Holder">
-   <implementation class="uk.ac.diamond.sda.navigator.views.FileIconServiceHolder"/>
-   <reference bind="setFileIconService" cardinality="1..1" interface="org.eclipse.dawnsci.plotting.api.image.IFileIconService" name="IFileIconService" policy="static"/>
-</scr:component>

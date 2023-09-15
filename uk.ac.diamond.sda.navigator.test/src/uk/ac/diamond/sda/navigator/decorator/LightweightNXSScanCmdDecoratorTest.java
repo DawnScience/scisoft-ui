@@ -11,14 +11,15 @@ package uk.ac.diamond.sda.navigator.decorator;
 
 import static org.junit.Assert.assertEquals;
 
+import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.diamond.osgi.services.ServiceProvider;
 import uk.ac.diamond.scisoft.analysis.io.LoaderServiceImpl;
 import uk.ac.diamond.sda.navigator.util.NavigatorUtils;
-import uk.ac.diamond.sda.navigator.util.ServiceHolder;
 
 public class LightweightNXSScanCmdDecoratorTest {
 	
@@ -29,7 +30,7 @@ public class LightweightNXSScanCmdDecoratorTest {
 	@Before
 	public void init() {
 		//initialise loader server
-		new ServiceHolder().setLoaderService(new LoaderServiceImpl());
+		ServiceProvider.setService(ILoaderService.class, new LoaderServiceImpl());
 	}
 
 	@Test

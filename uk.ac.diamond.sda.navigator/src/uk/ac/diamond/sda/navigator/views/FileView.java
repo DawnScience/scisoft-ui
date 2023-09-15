@@ -77,6 +77,7 @@ import org.eclipse.ui.part.ViewPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import uk.ac.diamond.osgi.services.ServiceProvider;
 import uk.ac.diamond.scisoft.analysis.utils.OSUtils;
 import uk.ac.diamond.sda.intro.navigator.NavigatorRCPActivator;
 import uk.ac.diamond.sda.navigator.preference.FileNavigatorPreferenceConstants;
@@ -173,7 +174,7 @@ public final class FileView extends ViewPart implements IFileView {
 		final Label fileLabel = new Label(top, SWT.NONE);
 		fileLabel.setLayoutData(new GridData(SWT.CENTER, SWT.CENTER, false, false));
 		try {
-			IFileIconService service = FileIconServiceHolder.getFileIconService();
+			IFileIconService service = ServiceProvider.getService(IFileIconService.class);
 			final Image       icon    = service.getIconForFile(OSUtils.isWindowsOS() ? "C:/Windows/" : "/");
 			fileLabel.setImage(icon);
 		} catch (Exception e) {
