@@ -20,6 +20,7 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.dawnsci.nexus.INexusFileFactory;
 import org.eclipse.dawnsci.nexus.NexusException;
 import org.eclipse.dawnsci.nexus.NexusFile;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -30,6 +31,8 @@ import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.diamond.osgi.services.ServiceProvider;
 
 public class H5Wizard extends Wizard implements INewWizard {
 
@@ -97,9 +100,9 @@ public class H5Wizard extends Wizard implements INewWizard {
 		try {
 
 			monitor.beginTask("Create " + h5Name, 5);
-			final IFile file = container instanceof IFolder ? ((IFolder) container).getFile(h5Name)
+			final IFile file = container instanceof IFolder folder ? folder.getFile(h5Name)
 					: ((IProject) container).getFile(h5Name);
-			nxfile = ServiceHolder.getNexusFileFactory().newNexusFile(file.getLocation().toOSString());
+			nxfile = ServiceProvider.getService(INexusFileFactory.class).newNexusFile(file.getLocation().toOSString());
 			nxfile.createAndOpenToWrite();
 
 			monitor.worked(1);
@@ -112,7 +115,7 @@ public class H5Wizard extends Wizard implements INewWizard {
 				try {
 					nxfile.close();
 				} catch (NexusException e) {
-					logger.error("Error closing file:", e.getMessage());
+					logger.error("Error closing file: {}", e.getMessage(), e);
 				}
 			}
 		}

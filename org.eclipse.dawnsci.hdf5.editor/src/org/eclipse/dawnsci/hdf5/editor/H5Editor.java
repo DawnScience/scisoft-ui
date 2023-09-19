@@ -18,6 +18,7 @@ import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.dawnsci.analysis.api.io.IDataHolder;
+import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.api.tree.NodeLink;
 import org.eclipse.dawnsci.analysis.api.tree.Tree;
@@ -42,6 +43,8 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.EditorPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.diamond.osgi.services.ServiceProvider;
 
 public class H5Editor extends EditorPart implements IReusableEditor, IH5Editor {
 
@@ -149,7 +152,7 @@ public class H5Editor extends EditorPart implements IReusableEditor, IH5Editor {
 		
 		try {
 			// NOTE This file may get closed externally
-			IDataHolder dh = ServiceHolder.getLoaderService().getData(getFilePath(getEditorInput()), null);
+			IDataHolder dh = ServiceProvider.getService(ILoaderService.class).getData(getFilePath(getEditorInput()), null);
 			try {
 				Tree hdftree = dh.getTree();
 				NodeLink root = hdftree.getNodeLink();
