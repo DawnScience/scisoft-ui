@@ -68,6 +68,7 @@ import org.eclipse.january.dataset.DatasetUtils;
 import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IndexIterator;
 import org.eclipse.january.dataset.IntegerDataset;
+import org.eclipse.january.dataset.InterfaceUtils;
 import org.eclipse.january.dataset.Maths;
 import org.eclipse.january.dataset.ShapeUtils;
 import org.eclipse.january.dataset.SliceND;
@@ -691,6 +692,9 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				}
 				LoadedFile f = j.getFile();
 				Dataset v = f.getLabelValue();
+				if (v != null && !InterfaceUtils.isNumerical(v.getClass())) {
+					v = null;
+				}
 				Map<String, Dataset> map = j.getData();
 				Dataset pd = map == null ? null : map.get(currentPlotOption.getDataName(r));
 	
@@ -748,7 +752,10 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				for (int r = 0; r < roiMax; r++) {
 					List<Dataset> pd = get1DPlotData(j.getData(), option.getDataName(r));
 					Dataset v = f.getLabelValue();
-					
+					if (v != null && !InterfaceUtils.isNumerical(v.getClass())) {
+						v = null;
+					}
+
 					if (pd.size() > 1) {
 						Dataset x = pd.remove(pd.size() - 1);
 						if (v == null) {
