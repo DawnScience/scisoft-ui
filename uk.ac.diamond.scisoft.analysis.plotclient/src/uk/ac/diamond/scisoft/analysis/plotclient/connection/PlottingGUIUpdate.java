@@ -99,12 +99,14 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 
 				final Collection<IRegion> regions = plottingSystem.getRegions();
 				Set<String> regNames = new HashSet<String>(); // regions not removed
-				for (IRegion reg : regions) { // clear all regions not listed
-					String regName = reg.getName();
-					if (!names.contains(regName)) {
-						plottingSystem.removeRegion(reg);
-					} else {
-						regNames.add(regName);
+				if (regions != null) {
+					for (IRegion reg : regions) { // clear all regions not listed
+						String regName = reg.getName();
+						if (!names.contains(regName)) {
+							plottingSystem.removeRegion(reg);
+						} else {
+							regNames.add(regName);
+						}
 					}
 				}
 				if (list != null) {
