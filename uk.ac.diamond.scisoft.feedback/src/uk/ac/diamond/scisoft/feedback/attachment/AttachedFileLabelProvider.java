@@ -8,59 +8,82 @@
  */
 package uk.ac.diamond.scisoft.feedback.attachment;
 
+import static uk.ac.diamond.scisoft.feedback.utils.FeedbackConstants.KIBI_MULTIPLIER;
+
 import java.io.File;
 
-import org.eclipse.jface.viewers.ILabelProviderListener;
-import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 import uk.ac.diamond.scisoft.feedback.Activator;
-import uk.ac.diamond.scisoft.feedback.utils.FeedbackUtils;
 
 /**
  * Label Provider of the Table Viewer
  */
-public class AttachedFileLabelProvider implements ITableLabelProvider {
-	public final Image DELETE = Activator.getImageDescriptor("icons/delete_obj.png").createImage();
+public class AttachedFileLabelProvider extends ColumnLabelProvider {
+	public final Image delete = Activator.getImageDescriptor("icons/delete_obj.png").createImage();
+	public final Image copy = Activator.getImageDescriptor("icons/copy_edit_on.gif").createImage();
 
-	@Override
-	public void addListener(ILabelProviderListener listener) {
+	private int column;
+	public AttachedFileLabelProvider(int column) {
+		this.column = column;
 	}
 
 	@Override
 	public void dispose() {
-		DELETE.dispose();
+		delete.dispose();
+		copy.dispose();
 	}
 
 	@Override
-	public boolean isLabelProperty(Object element, String property) {
-		return true;
+	public Image getImage(Object element) {
+		if (element != null) {
+			if (column == 2) {
+				return delete;
+			}
+			if (column == 3) {
+				return copy;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * size unit
+	 * @param value
+	 * @return the string value with unit
+	 */
+	private static String getValueWithUnit(long value){
+		if (value < KIBI_MULTIPLIER) {
+			return Long.toString(value) + "B";
+		}
+		value /= KIBI_MULTIPLIER;
+		if (value < KIBI_MULTIPLIER) {
+			return Long.toString(value) + "kB";
+		}
+		value /= KIBI_MULTIPLIER;
+		return Long.toString(value) + "MB";
 	}
 
 	@Override
-	public void removeListener(ILabelProviderListener listener) {
-	}
-
-	@Override
-	public Image getColumnImage(Object element, int columnIndex) {
-		if (columnIndex != 2)
-			return null;
-		if (element == null)
-			return null;
-		return DELETE;
-	}
-
-	@Override
-	public String getColumnText(Object element, int columnIndex) {
+	public String getText(Object element) {
 		if (element == null)
 			return null;
 		File file = (File) element;
-		if (columnIndex == 0) {
-			return file.getName().substring((file.getName().lastIndexOf(File.separator)+1));
-		} else if (columnIndex == 1) {
-			return FeedbackUtils.getValueWithUnit(file.length());
-		} else if (columnIndex == 2) {
-			return null;
+		if (column == 0) {
+			return file.getName();
+		} else if (column == 1) {
+			return getValueWithUnit(file.length());
+		}
+		return null;
+	}
+
+	@Override
+	public String getToolTipText(Object element) {
+		if (column == 2) {
+			return "Click to delete file"; 
+		} else if (column == 3) {
+			return "Copy to clipboard";
 		}
 		return null;
 	}
