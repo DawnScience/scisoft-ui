@@ -15,7 +15,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.dawnsci.common.widgets.radio.RadioGroupWidget;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
@@ -23,17 +22,17 @@ import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -67,7 +66,7 @@ public class FeedbackView extends ViewPart implements IPartListener {
 	private static Logger logger = LoggerFactory.getLogger(FeedbackView.class);
 
 	// this is the default to the java property "org.dawnsci.feedbackmail"
-	private String destinationEmail = System.getProperty(FeedbackConstants.RECIPIENT_PROPERTY, FeedbackConstants.MAIL_TO);
+	private String destinationEmail = System.getProperty(FeedbackConstants.RECIPIENT_PROPERTY, FeedbackConstants.getMailTo());
 	private String destinationName = "DAWN developers";
 
 	/**
@@ -76,21 +75,17 @@ public class FeedbackView extends ViewPart implements IPartListener {
 	public static final String ID = "uk.ac.diamond.scisoft.feedback.FeedbackView";
 	private Action feedbackAction;
 	private Action attachAction;
-	private Text emailAddress;
 	private Text messageText;
 	private Text subjectText;
 	private Label attachLabel;
 
-	private List<File> attachedFiles = new ArrayList<File>();
+	private List<File> attachedFiles = new ArrayList<>();
 	private Button btnSendFeedback;
 	private TableViewer tableViewer;
 
 	private FeedbackJob feedbackJob;
 
-	private final String ATTACH_LABEL = "Attached Files";
-
-	private static final String USER_HOME_PROP = "user.home";
-	private static final String DAWNLOG_HTML = "dawnlog.html";
+	private static final String ATTACH_LABEL = "Attached Files";
 
 	/**
 	 * The constructor.
@@ -104,29 +99,20 @@ public class FeedbackView extends ViewPart implements IPartListener {
 	@Override
 	public void createPartControl(Composite parent) {
 		final ScrolledComposite scrollComposite = new ScrolledComposite(parent, SWT.H_SCROLL | SWT.V_SCROLL);
+		scrollComposite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		scrollComposite.setExpandVertical(true);
+		scrollComposite.setExpandHorizontal(true);
+		scrollComposite.addControlListener(ControlListener.controlResizedAdapter(e -> {
+			Rectangle r = scrollComposite.getClientArea();
+			scrollComposite.setMinSize(parent.computeSize(r.width, SWT.DEFAULT));
+		}));
+
 		final Composite content = new Composite(scrollComposite, SWT.NONE);
 		content.setLayout(new GridLayout(1, false));
 		content.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		scrollComposite.setContent(content);
 
 		makeActions();
-		
-		Composite radioSelection = new Composite(content, SWT.NONE);
-		radioSelection.setLayout(new GridLayout(3, false));
-		Label label = new Label(radioSelection, SWT.NONE);
-		label.setText("Send Feedback to :");
-
-		RadioGroupWidget mailToRadios = new RadioGroupWidget(radioSelection);
-		mailToRadios.setActions(createEmailRadioActions());
-		Label lblEmailAddress = new Label(content, SWT.NONE);
-		lblEmailAddress.setText("Your email address for Feedback");
-
-		emailAddress = new Text(content, SWT.BORDER | SWT.SINGLE);
-		emailAddress.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-
-		final String email = Activator.getDefault() != null ? Activator.getDefault().getPreferenceStore()
-				.getString(FeedbackConstants.FROM_PREF) : null;
-		if (email != null && !"".equals(email))
-			emailAddress.setText(email);
 
 		Label lblSubject = new Label(content, SWT.NONE);
 		lblSubject.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
@@ -145,7 +131,7 @@ public class FeedbackView extends ViewPart implements IPartListener {
 		lblComment.setText("Comment");
 
 		messageText = new Text(content, SWT.BORDER | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL);
-		GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
+		GridData gd = new GridData(SWT.FILL, SWT.CENTER, true, false);
 		gd.heightHint = 200;
 		gd.minimumHeight = 200;
 		messageText.setLayoutData(gd);
@@ -154,13 +140,12 @@ public class FeedbackView extends ViewPart implements IPartListener {
 		attachLabel.setText("Attached Files");
 
 		tableViewer = new TableViewer(content, SWT.FULL_SELECTION | SWT.SINGLE | SWT.BORDER);
+		ColumnViewerToolTipSupport.enableFor(tableViewer);
 		createColumns(tableViewer);
-		// tableViewer.getTable().setLinesVisible(true);
-		tableViewer.getTable().setToolTipText("Delete the file by clicking on the X");
+//		tableViewer.getTable().setHeaderVisible(true);
 		tableViewer.setContentProvider(new AttachedFileContentProvider());
-		tableViewer.setLabelProvider(new AttachedFileLabelProvider());
-		tableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-		attachedFiles = new ArrayList<File>();
+		tableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		attachedFiles = new ArrayList<>();
 		tableViewer.setInput(attachedFiles);
 		tableViewer.refresh();
 
@@ -185,91 +170,64 @@ public class FeedbackView extends ViewPart implements IPartListener {
 		btnSendFeedback.setText("Send Feedback");
 		btnSendFeedback.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 
-		scrollComposite.setContent(content);
-		scrollComposite.setExpandVertical(true);
-		scrollComposite.setExpandHorizontal(true);
-		scrollComposite.addListener(SWT.Resize, event -> {
-			Rectangle clientArea = scrollComposite.getClientArea();
-			int width = clientArea.width;
-			Point computeSize = parent.computeSize(width, SWT.DEFAULT);
-			scrollComposite.setMinWidth(computeSize.x);
-			scrollComposite.setMinHeight(clientArea.height);
-		});
 
 		hookContextMenu();
 		contributeToActionBars();
 		getSite().getPage().addPartListener(this);
 	}
 
-	private List<Action> createEmailRadioActions() {
-		List<Action> radioActions = new ArrayList<Action>();
-		Action sendToMailingListAction = new Action() {
-			@Override
-			public void run() {
-				destinationEmail = FeedbackConstants.DAWN_MAILING_LIST;
-				destinationName = "DAWN mailing list";
-			}
-		};
-		sendToMailingListAction.setText("DAWN mailing list");
-		sendToMailingListAction.setToolTipText("Send feedback to the DAWN mailing list");
-
-		Action sendToDevelopersAction = new Action() {
-			@Override
-			public void run() {
-				destinationEmail = System.getProperty(FeedbackConstants.RECIPIENT_PROPERTY, FeedbackConstants.MAIL_TO);
-				destinationName = "DAWN developers";
-			}
-		};
-		sendToDevelopersAction.setText("DAWN developers");
-		sendToDevelopersAction.setToolTipText("Send feedback to DAWN developers");
-
-		radioActions.add(sendToDevelopersAction);
-		radioActions.add(sendToMailingListAction);
-		return radioActions;
-	}
-
 	private void createColumns(TableViewer tv) {
+		int c =0;
 		TableViewerColumn tvc = new TableViewerColumn(tv, SWT.NONE);
-		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, 0));
+		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, c));
+		tvc.setLabelProvider(new AttachedFileLabelProvider(c));
 		TableColumn tc = tvc.getColumn();
 		tc.setText("File Name");
 		tc.setWidth(400);
+		c++;
 
 		tvc = new TableViewerColumn(tv, SWT.NONE);
-		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, 1));
+		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, c));
+		tvc.setLabelProvider(new AttachedFileLabelProvider(c));
 		tc = tvc.getColumn();
 		tc.setText("Size");
-		tc.setWidth(60);
+		tc.setWidth(80);
+		c++;
 
 		tvc = new TableViewerColumn(tv, SWT.NONE);
-		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, 2));
+		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, c));
+		tvc.setLabelProvider(new AttachedFileLabelProvider(c));
 		tc = tvc.getColumn();
 		tc.setText("Delete");
-		tc.setWidth(40);
+		tc.setWidth(60);
+		c++;
+
+		tvc = new TableViewerColumn(tv, SWT.NONE);
+		tvc.setEditingSupport(new AttachedFileEditingSupport(tv, c));
+		tvc.setLabelProvider(new AttachedFileLabelProvider(c));
+		tc = tvc.getColumn();
+		tc.setText("Copy");
+		tc.setToolTipText("Copy to clipboard");
+		tc.setWidth(20);
 	}
 
 	private void hookContextMenu() {
 		MenuManager menuMgr = new MenuManager("#PopupMenu");
 		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(IMenuManager manager) {
-				FeedbackView.this.fillContextMenu(manager);
-			}
-		});
+		menuMgr.addMenuListener(manager -> FeedbackView.this.fillContextMenu(manager));
 	}
 
 	private void contributeToActionBars() {
 		IActionBars bars = getViewSite().getActionBars();
-		fillLocalPullDown(bars.getMenuManager());
+//		fillLocalPullDown(bars.getMenuManager());
 		fillLocalToolBar(bars.getToolBarManager());
 	}
 
-	private void fillLocalPullDown(IMenuManager manager) {
-		manager.add(attachAction);
-		manager.add(feedbackAction);
-	}
-
+//	private void fillLocalPullDown(IMenuManager manager) {
+//		manager.add(attachAction);
+//		manager.add(feedbackAction);
+//	}
+//
 	private void fillContextMenu(IMenuManager manager) {
 		manager.add(attachAction);
 		manager.add(feedbackAction);
@@ -284,21 +242,16 @@ public class FeedbackView extends ViewPart implements IPartListener {
 
 	private void makeActions() {
 		feedbackAction = new Action() {
-
-			private String fromvalue;
 			private String subjectvalue;
 			private String messagevalue;
-			private String emailvalue;
 
 			@Override
 			public void run() {
 				UIJob formUIJob = new UIJob("Getting Form data") {
 					@Override
 					public IStatus runInUIThread(IProgressMonitor monitor) {
-						fromvalue = emailAddress.getText();
 						subjectvalue = subjectText.getText();
 						messagevalue = messageText.getText();
-						emailvalue = emailAddress.getText();
 						return Status.OK_STATUS;
 					}
 				};
@@ -306,7 +259,7 @@ public class FeedbackView extends ViewPart implements IPartListener {
 					@Override
 					public void done(IJobChangeEvent event) {
 						feedbackJob = new FeedbackJob("Sending feedback to " + destinationName, 
-								fromvalue, subjectvalue, messagevalue, emailvalue, destinationEmail,
+								subjectvalue, messagevalue, destinationEmail,
 								attachedFiles);
 						feedbackJob.addJobChangeListener(getJobChangeListener());
 						feedbackJob.setUser(true);
@@ -342,6 +295,7 @@ public class FeedbackView extends ViewPart implements IPartListener {
 						if (!attachedFiles.contains(file))
 							attachedFiles.add(file);
 						tableViewer.refresh();
+						tableViewer.getControl().requestLayout();
 					}
 				}
 				attachLabel.setText(ATTACH_LABEL);
@@ -356,89 +310,85 @@ public class FeedbackView extends ViewPart implements IPartListener {
 		return new JobChangeAdapter() {
 			@Override
 			public void running(IJobChangeEvent event) {
-				Display.getDefault().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						btnSendFeedback.setText("Sending");
-						feedbackAction.setEnabled(false);
-					}
+				Display.getDefault().asyncExec(() -> {
+					btnSendFeedback.setText("Sending");
+					feedbackAction.setEnabled(false);
 				});
 			}
 
 			@Override
 			public void done(final IJobChangeEvent event) {
 				final String message = event.getResult().getMessage();
-				Display.getDefault().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						if (event.getResult().isOK()) {
-							messageText.setText("");
-							//attachedFilesList.clear();
-							Display.getDefault().asyncExec(new Runnable() {
-								@Override
-								public void run() {
-									MessageDialog.openInformation(PlatformUI.getWorkbench()
-											.getActiveWorkbenchWindow().getShell(),
-											"Feedback successfully sent", message);
+				Display.getDefault().asyncExec(() -> {
+					if (event.getResult().isOK()) {
+						messageText.setText("");
+						Display.getDefault().asyncExec(() -> MessageDialog.openInformation(PlatformUI.getWorkbench()
+								.getActiveWorkbenchWindow().getShell(),
+								"Feedback successfully sent", message));
+					} else {
+						MessageBox messageDialog = new MessageBox(PlatformUI.getWorkbench()
+								.getActiveWorkbenchWindow().getShell(), SWT.ICON_WARNING | SWT.OK
+								| SWT.CANCEL);
+						messageDialog.setText("Feedback not sent!");
+
+						messageDialog.setMessage(message);
+						int result = messageDialog.open();
+
+						if (message.startsWith("Please set") && result == SWT.OK) {
+							Display.getDefault().asyncExec(() -> {
+								try {
+									PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser()
+											.openURL(new URL("mailto:"));
+								} catch (PartInitException e) {
+									logger.error("Error opening browser:", e);
+								} catch (MalformedURLException e) {
+									logger.error("Error - Malformed URL:", e);
 								}
 							});
-						} else {
-							MessageBox messageDialog = new MessageBox(PlatformUI.getWorkbench()
-									.getActiveWorkbenchWindow().getShell(), SWT.ICON_WARNING | SWT.OK
-									| SWT.CANCEL);
-							messageDialog.setText("Feedback not sent!");
-
-							messageDialog.setMessage(message);
-							int result = messageDialog.open();
-
-							if (message.startsWith("Please check") && result == SWT.OK) {
-								Display.getDefault().asyncExec(new Runnable() {
-									@Override
-									public void run() {
-										try {
-											PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser()
-													.openURL(new URL(FeedbackRequest.SERVLET_URL));
-										} catch (PartInitException e) {
-											logger.error("Error opening browser:", e);
-										} catch (MalformedURLException e) {
-											logger.error("Error - Malformed URL:", e);
-										}
-									}
-								});
-							}
 						}
-						btnSendFeedback.setText("Send Feedback");
-						feedbackAction.setEnabled(true);
-						attachLabel.setText(ATTACH_LABEL);
 					}
+					btnSendFeedback.setText("Send Feedback");
+					feedbackAction.setEnabled(true);
+					attachLabel.setText(ATTACH_LABEL);
 				});
 			}
 
 			@Override
 			public void aboutToRun(IJobChangeEvent event) {
-				Display.getDefault().asyncExec(new Runnable() {
-					@Override
-					public void run() {
-						btnSendFeedback.setText("Sending");
-						feedbackAction.setEnabled(false);
-					}
+				Display.getDefault().asyncExec(() -> {
+					btnSendFeedback.setText("Sending");
+					feedbackAction.setEnabled(false);
 				});
 			}
 		};
 	}
 
+	private static final String LOG_DIR_PROP = "java.io.tmpdir";
+	private static final String DAWNLOG_SUFFIX = "-dawn.log";
+
 	private void autoAttachLogFile(List<File> attachedFiles) throws IllegalStateException {
-		String userhome = System.getProperty(USER_HOME_PROP);
-		File log = new File(userhome, DAWNLOG_HTML);
+		String logLocation = System.getProperty(FeedbackConstants.DAWN_LOG_PROPERTY);
+		File log;
+		if (logLocation == null) {
+			String logDir = System.getProperty(LOG_DIR_PROP);
+			log = new File(logDir, System.getProperty("user.name") + DAWNLOG_SUFFIX);
+		} else {
+			log = new File(logLocation);
+		}
+		logger.debug("Log file location: {}", log);
 		long size = log.length();
-		if (log.exists() && size > 0 && size < FeedbackConstants.MAX_SIZE) {
-			if (!attachedFiles.contains(log)) {
-				attachedFiles.add(log);
+		if (log.exists()) {
+			if (size == 0) {
+				logger.warn("Log file is empty: {}", log);
+			} else if (size < FeedbackConstants.MAX_SIZE) {
+				if (!attachedFiles.contains(log)) {
+					attachedFiles.add(log);
+				}
+			} else {
+				throw new IllegalStateException("Log file is too big: " + log.getAbsolutePath());
 			}
-		} else if (log.exists() && size >= FeedbackConstants.MAX_SIZE) {
-			throw new IllegalStateException("File is too big");
 		} else if(!log.exists()) {
-			throw new IllegalStateException("File does not exist");
+			throw new IllegalStateException("Log file does not exist: " + log.getAbsolutePath());
 		}
 	}
 
@@ -462,19 +412,22 @@ public class FeedbackView extends ViewPart implements IPartListener {
 
 	@Override
 	public void partBroughtToTop(IWorkbenchPart part) {
-		
+		// do nothing
 	}
 
 	@Override
 	public void partClosed(IWorkbenchPart part) {
+		// do nothing
 	}
 
 	@Override
 	public void partDeactivated(IWorkbenchPart part) {
+		// do nothing
 	}
 
 	@Override
 	public void partOpened(IWorkbenchPart part) {
+		// do nothing
 	}
 
 	private void attachLogFile() {
@@ -488,26 +441,4 @@ public class FeedbackView extends ViewPart implements IPartListener {
 			tableViewer.refresh();
 		}
 	}
-	
-	/**
-	 * Allow other views to programmatically set the contents of the email field
-	 */
-	public void setEmail(String text){
-		emailAddress.setText(text);
-	}
-	
-	/**
-	 * Allow other views to programmatically set the contents of the subject field
-	 */
-	public void setSubject(String text){
-		subjectText.setText(text);
-	}
-	
-	/**
-	 * Allow other views to programmatically set the contents of the message field
-	 */
-	public void setMessage(String text){
-		messageText.setText(text);
-	}
-
 }

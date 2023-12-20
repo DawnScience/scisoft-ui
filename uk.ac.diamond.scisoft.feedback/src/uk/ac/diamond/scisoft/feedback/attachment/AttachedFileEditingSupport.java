@@ -9,7 +9,6 @@
 package uk.ac.diamond.scisoft.feedback.attachment;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jface.viewers.CellEditor;
@@ -17,6 +16,10 @@ import org.eclipse.jface.viewers.CheckboxCellEditor;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * Editing Support of the table cells (the boolean delete icon)
@@ -38,9 +41,7 @@ public class AttachedFileEditingSupport extends EditingSupport {
 
 	@Override
 	protected boolean canEdit(Object element) {
-		if (column == 2)
-			return true;
-		return false;
+		return column == 2 || column == 3;
 	}
 
 	@Override
@@ -52,12 +53,16 @@ public class AttachedFileEditingSupport extends EditingSupport {
 	@Override
 	protected void setValue(Object element, Object value) {
 		if (column == 2) {
-			File file = (File) element;
-			List<File> files = new ArrayList<File>();
-			files = (List<File>) tv.getInput();
-			files.remove(file);
+			List<File> files = (List<File>) tv.getInput();
+			files.remove(element);
 			tv.setInput(files);
 			tv.refresh();
+			tv.getControl().getParent().requestLayout();
+		} else if (column == 3) {
+			Clipboard cb = new Clipboard(Display.getDefault());
+			cb.setContents(new Object[] { ((File) element).getAbsolutePath() },
+					new Transfer[] { TextTransfer.getInstance()});
+			cb.dispose();
 		}
 	}
 }
