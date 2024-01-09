@@ -12,7 +12,9 @@ package uk.ac.diamond.sda.navigator.decorator;
 import static org.junit.Assert.assertEquals;
 
 import org.eclipse.dawnsci.analysis.api.io.ILoaderService;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +29,17 @@ public class LightweightNXSScanCmdDecoratorTest {
 	
 	private static final Logger logger = LoggerFactory.getLogger(LightweightNXSScanCmdDecoratorTest.class);
 	
-	@Before
-	public void init() {
+	@BeforeClass
+	public static void setUpServices() {
 		//initialise loader server
 		ServiceProvider.setService(ILoaderService.class, new LoaderServiceImpl());
 	}
-
+	
+	@AfterClass
+	public static void tearDownServices() {
+		ServiceProvider.reset();
+	}
+	
 	@Test
 	public void testGetHDF5TitleAndScanCmd(){
 		try {
