@@ -49,7 +49,7 @@ import uk.ac.diamond.scisoft.analysis.plotserver.IBeanScriptingManager;
  */
 public class ScriptingConnection implements IObservable {
 	
-	static private Logger logger = LoggerFactory.getLogger(ScriptingConnection.class);
+	private static final Logger logger = LoggerFactory.getLogger(ScriptingConnection.class);
 
 	protected IPlottingSystem<Composite> plottingSystem;
 	protected String name;
@@ -64,7 +64,7 @@ public class ScriptingConnection implements IObservable {
 	protected IPlotConnection plotConnection = null;
 	private boolean isUpdatePlot = false;
 
-	private GuiPlotMode previousMode;
+	private GuiPlotMode previousMode = GuiPlotMode.EMPTY;
 
 	/**
 	 * 
@@ -103,33 +103,27 @@ public class ScriptingConnection implements IObservable {
 	 * @param system
 	 */
 	public void setPlottingSystem(IPlottingSystem<Composite> system) {
-		
 		if (plottingSystem!=null) throw new IllegalArgumentException("The plotting system has already been set!");
-		
+
 		plottingSystem = system;
 
 		system.addRegionListener(getRoiManager());
 		system.addTraceListener(getRoiManager().getTraceListener());
-		
-		if (manager instanceof BeanScriptingManagerImpl) {
-			
-			BeanScriptingManagerImpl man = (BeanScriptingManagerImpl)manager;
+
+		if (manager instanceof BeanScriptingManagerImpl man) {
 			man.setConnection(this);
-							
-			GuiBean bean = manager.getGUIInfo();
+			GuiBean bean = man.getGUIInfo();
 			updatePlotMode(bean);
 			
 			final PlotEvent evt = new PlotEvent();
-			if (manager instanceof BeanScriptingManagerImpl) {
-				try {
-					evt.setDataBean(((BeanScriptingManagerImpl) manager).getPlotServer().getData(name));
-				} catch (Exception e) {
-					logger.warn("Could not retrieve plot data from server", e);
-				}
+			try {
+				evt.setDataBean(man.getPlotServer().getData(name));
+			} catch (Exception e) {
+				logger.warn("Could not retrieve plot data from server - {}", name, e);
 			}
+			logger.trace("Stashing gui bean - {}: {}", name, manager.getGUIInfo());
 			evt.setStashedGuiBean(manager.getGUIInfo());
 			man.offer(evt);
-
 		}
 
 		GuiPlotMode plotMode = getPlotMode();
@@ -139,7 +133,7 @@ public class ScriptingConnection implements IObservable {
 
 	/**
 	 * Set the default plot mode
-	 * @return plotmode
+	 * @return gui plotmode
 	 */
 	public GuiPlotMode getPlotMode() {
 		return PlotConnectionFactory.getPlotMode(plottingSystem);
@@ -227,16 +221,19 @@ public class ScriptingConnection implements IObservable {
 	 */
 	public void processPlotUpdate(DataBean dbPlot) {
 		// there may be some gui information in the databean, if so this also needs to be updated
-		if (dbPlot.getGuiParameters() != null) {
+		GuiBean guiBean = dbPlot.getGuiParameters();
+		if (guiBean != null && !guiBean.isEmpty()) {
 			if (plottingSystem!=null && plottingSystem.isDisposed()) {
 				// this can be caused by the same plot view shown on 2 difference perspectives.
 				throw new IllegalStateException("parentComp is already disposed");
 			}
 
+			logger.trace("Processing GUI bean - {}: {}", name, guiBean);
 			processGUIUpdate(dbPlot.getGuiParameters());
 		}
 		
 		if (plotConnection != null) {
+			logger.trace("Processing dBean - {}: {}", name, dbPlot.getData());
 			plotConnection.processPlotUpdate(dbPlot, isUpdatePlot());
 			setDataBean(dbPlot);
 			createRegion();
@@ -247,7 +244,7 @@ public class ScriptingConnection implements IObservable {
 	 * Creates a region if needed
 	 */
 	public void createRegion() {
-		
+		// do nothing
 	}
 
 	/**
@@ -301,9 +298,7 @@ public class ScriptingConnection implements IObservable {
 		 * for the original change
 		 */
 		plottingSystem.getPlotComposite().getDisplay().asyncExec(
-				new Runnable() {
-			@Override
-			public void run() {
+			() -> {
 				String title = operation.getTitle();
 				String type = operation.getOperationType();
 				IAxis a = null;
@@ -312,23 +307,22 @@ public class ScriptingConnection implements IObservable {
 					a = AxisUtils.findAxis(isYAxis, title, plottingSystem);
 					int side = operation.getSide();
 					if (a != null) {
-						logger.warn("Axis already exists: {}", title);
+						logger.warn("Axis already exists - {}: {}", name, title);
 						return;
 					}
-					a = plottingSystem.createAxis(title, isYAxis, side);
-					logger.trace("Created: {}", title);
-					return;
+					plottingSystem.createAxis(title, isYAxis, side);
+					logger.trace("Created - {}: {}", name, title);
 				} else if (type.equals(AxisOperation.RENAMEX)) {
 					a = plottingSystem.getSelectedXAxis();
 					a.setTitle(title);
-					logger.trace("Renamed x: {}", title);
+					logger.trace("Renamed x - {}: {}", name, title);
 				} else if (type.equals(AxisOperation.RENAMEY)) {
 					a = plottingSystem.getSelectedYAxis();
 					a.setTitle(title);
-					logger.trace("Renamed y: {}", title);
+					logger.trace("Renamed y - {}: {}", name, title);
 				}
 			}
-		});
+		);
 	}
 
 	protected void changePlotMode(GuiPlotMode plotMode) {
@@ -343,9 +337,10 @@ public class ScriptingConnection implements IObservable {
 			plotConnection.dispose();
 		}
 
-		this.plotConnection = PlotConnectionFactory.getConnection(plotMode, plottingSystem);
-		if (plotConnection!=null) ((AbstractPlotConnection)plotConnection).setManager(getRoiManager());
-		
+		AbstractPlotConnection pc = PlotConnectionFactory.getConnection(plotMode, plottingSystem);
+		plotConnection = pc;
+		if (pc != null) pc.setManager(getRoiManager());
+
 		if (plotMode.equals(GuiPlotMode.EMPTY)) {
 			resetAxes();
 		}
@@ -355,10 +350,9 @@ public class ScriptingConnection implements IObservable {
 	/**
 	 * Update the Plot Mode
 	 * @param plotMode
-	 * @param async
 	 */
 	public void updatePlotMode(final GuiPlotMode plotMode) {
-		logger.debug("Update plot mode: {}", plotMode);
+		logger.debug("Update plot mode - {}: {}", name, plotMode);
 		try {
 			if (plotMode.equals(GuiPlotMode.EXPORT)) {
 				GuiBean bean = getGuiManager().getGUIInfo();
@@ -368,15 +362,15 @@ public class ScriptingConnection implements IObservable {
 				resetAxes();
 			} else {
 				GuiPlotMode oldMode = getPreviousMode();
-				if (oldMode == null || !plotMode.equals(oldMode)) {
+				if (!plotMode.equals(oldMode)) {
+					logger.debug("Changing plot mode - {}: {} to {}", name, oldMode, plotMode);
 					changePlotMode(plotMode);
 					setPreviousMode(plotMode);
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.error("Error exporting plot:"+e.getMessage());
-		} finally {
+			logger.error("Error exporting plot - {}: {}", name, e.getMessage());
 		}
 	}
 
@@ -386,12 +380,10 @@ public class ScriptingConnection implements IObservable {
 	 */
 	public void updatePlotMode(GuiBean bean) {
 		if (bean != null) {
-			if (bean.containsKey(GuiParameters.PLOTMODE)) { // bean does not necessarily have a plot mode (eg, it
-															// contains ROIs only)
-				GuiPlotMode plotMode = (GuiPlotMode) bean.get(GuiParameters.PLOTMODE);
-				if (plotMode != null)
-					updatePlotMode(plotMode);
-			}
+			// bean does not necessarily have a plot mode (eg, it contains ROIs only)
+			GuiPlotMode plotMode = (GuiPlotMode) bean.get(GuiParameters.PLOTMODE);
+			if (plotMode != null)
+				updatePlotMode(plotMode);
 		}
 	}
 
@@ -419,12 +411,9 @@ public class ScriptingConnection implements IObservable {
 		if (regions == null)
 			return;
 
-		plottingSystem.getPlotComposite().getDisplay().syncExec(new Runnable() {
-			@Override
-			public void run() {
-				for (IRegion iRegion : regions) {
-					iRegion.setVisible(iRegion.getPlotType().equals(type));
-				}
+		plottingSystem.getPlotComposite().getDisplay().syncExec(() -> {
+			for (IRegion iRegion : regions) {
+				iRegion.setVisible(iRegion.getPlotType().equals(type));
 			}
 		});
 
@@ -490,7 +479,7 @@ public class ScriptingConnection implements IObservable {
 				plottingSystem.removeRegionListener(getRoiManager());
 			}
 		} catch (Exception ne) {
-			logger.debug("Cannot clean up plotter!", ne);
+			logger.debug("Cannot clean up plotter - {}!", name, ne);
 		}
 		deleteIObservers();
 		plotConnection = null;

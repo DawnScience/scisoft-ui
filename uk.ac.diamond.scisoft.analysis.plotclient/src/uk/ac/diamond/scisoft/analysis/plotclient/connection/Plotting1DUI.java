@@ -76,19 +76,17 @@ class Plotting1DUI extends PlottingGUIUpdate {
 					if (plots <= traces) {
 						int nt = 0;
 						for (ITrace t : oldTraces) {
-							if (t instanceof ILineTrace) {
+							if (t instanceof ILineTrace lt) {
 								String oyn = t.getName();
-								Dataset ox = DatasetUtils.convertToDataset(((ILineTrace) t).getXData());
+								Dataset ox = DatasetUtils.convertToDataset(lt.getXData());
 								String oxn = ox == null ? null : ox.getName();
 								if (oyn != null && oxn != null) {
 									for (DatasetWithAxisInformation d : plotData) {
 										String nyn = d.getData().getName();
 										String nxn = dbPlot.getAxis(d.getAxisMap().getAxisID()[0]).getName();
-										if (oyn.equals(nyn)) {
-											if (oxn.equals(nxn)) {
-												nt++;
-												break;
-											}
+										if (oyn.equals(nyn) && oxn.equals(nxn)) {
+											nt++;
+											break;
 										}
 									}
 								}
@@ -123,8 +121,7 @@ class Plotting1DUI extends PlottingGUIUpdate {
 				if (useOldTraces) {
 					List<ITrace> unused = new ArrayList<ITrace>();
 					for (ITrace t : oldTraces) {
-						if (t instanceof ILineTrace) {
-							ILineTrace lt = (ILineTrace) t;
+						if (t instanceof ILineTrace lt) {
 							boolean used = false;
 							String oyn = lt.getName();
 							Dataset x = DatasetUtils.convertToDataset(lt.getXData());
@@ -153,7 +150,7 @@ class Plotting1DUI extends PlottingGUIUpdate {
 					// if rescale axis option is checked in the x/y plot menu
 					if (plottingSystem.isRescale())
 						plottingSystem.autoscaleAxes();
-					logger.debug("Plot 1D updated");
+					logger.debug("Plot 1D updated - {}", name);
 				} else {
 					// populate when adding lines to plot
 					Set<String> oldTraceNames = new HashSet<>();
@@ -197,22 +194,20 @@ class Plotting1DUI extends PlottingGUIUpdate {
 								ax = AxisUtils.findXAxis(an, plottingSystem); // in case of overwrite by plotting system
 							}
 							if (ax == null) {
-								if (plots == 1) {
-									logger.debug("Renaming solo x axis to {}", an);
+								if (plots == 1 && firstXAxis != null) {
+									logger.debug("Renaming solo x axis to {} - {}", an, name);
 									firstXAxis.setTitle(an);
 									ax = firstXAxis;
 								} else {
-									logger.debug("Haven't found x axis {}", an);
+									logger.debug("Haven't found x axis {} - {}", an, name);
 									ax = plottingSystem.createAxis(an, false, AxisOperation.BOTTOM);
 								}
 							}
 						}
 						ax.setVisible(true);
 						plottingSystem.setSelectedXAxis(ax);
-						if (!hasTitle) {
-							if (AxisMapBean.XAXIS.equals(ax.getTitle())) {
-								against = false; // don't use against when using "X-Axis"
-							}
+						if (!hasTitle && AxisMapBean.XAXIS.equals(ax.getTitle())) {
+							against = false; // don't use against when using "X-Axis"
 						}
 
 						an = names[1];
@@ -223,12 +218,12 @@ class Plotting1DUI extends PlottingGUIUpdate {
 								ay = firstYAxis;
 							}
 							if (ay == null) {
-								if (plots == 1) {
-									logger.debug("Renaming solo y axis to {}", an);
+								if (plots == 1 && firstYAxis != null) {
+									logger.debug("Renaming solo y axis to {} - {}", an, name);
 									firstYAxis.setTitle(an);
 									ay = firstYAxis;
 								} else {
-									logger.debug("Haven't found y axis {}", an);
+									logger.debug("Haven't found y axis {} - {}", an, name);
 									ay = plottingSystem.createAxis(an, true, AxisOperation.LEFT);
 								}
 							}
@@ -285,7 +280,7 @@ class Plotting1DUI extends PlottingGUIUpdate {
 						plottingSystem.autoscaleAxes();
 					}
 
-					logger.debug("Plot 1D created");
+					logger.debug("Plot 1D created - {}", name);
 				}
 			}
 		});

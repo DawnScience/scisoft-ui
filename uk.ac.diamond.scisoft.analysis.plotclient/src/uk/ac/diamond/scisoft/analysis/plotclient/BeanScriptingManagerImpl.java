@@ -43,7 +43,6 @@ import uk.ac.diamond.scisoft.analysis.plotserver.IBeanScriptingManager;
  * 
  */
 public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserver {
-	
 	private static final Logger logger = LoggerFactory.getLogger(BeanScriptingManagerImpl.class);
 	
 	private final PlotServer    server;
@@ -64,10 +63,10 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 		this.viewName = viewName;
 		
 		this.plotID = UUID.randomUUID();
-		logger.info("Plot view uuid: {}", plotID);
+		logger.info("Plot view uuid - {}: {}", viewName, plotID);
 
 		// Blocking queue to which we add plot update events.
-		this.queue = new LinkedBlockingDeque<PlotEvent>(25);
+		this.queue = new LinkedBlockingDeque<>(25);
 	}
 
 	private Thread plotThread;
@@ -99,43 +98,42 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	}
 
 	private Thread createPlotEventThread() {
-		return new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while (!window.getPlottingSystem().isDisposed()) {
-					try {
-						PlotEvent event = queue.take();
-						if (event.getStashedGuiBean()==null && event.getGuiBean()==null) {
-							// This event is not of interest
-							continue;
-						}
-						
-						GuiBean bean = event.getStashedGuiBean();
-						DataBean dataBean = event.getDataBean();
-	
-						// if there is a stashedGUIBean to update then do that update first
-						if (bean != null) {
-							event.setStashedGuiBean(null);
-							if (window != null) {
-								window.processGUIUpdate(bean);
-							}
-						}
-
-						// once the guiBean has been sorted out, see if there is any need to update the dataBean
-						if (dataBean != null) {
-							event.setDataBean(null);
-							if (window != null) {
-								window.processPlotUpdate(dataBean);
-							}
-							notifyDataObservers(dataBean, null);
-						}
-					} catch (Throwable ne) {
-						logger.debug("Exception raised in plot server job", ne);
-						continue; // We still keep going until the part is disposed
+		return new Thread(() -> {
+			while (!window.getPlottingSystem().isDisposed()) {
+				try {
+					PlotEvent event = queue.take();
+					GuiBean bean = event.getStashedGuiBean();
+					DataBean dataBean = event.getDataBean();
+					logger.trace("Plot event for {} ({}): {}; {}; {}; {}", viewName, queue.size(), bean,
+							event.getGuiBean(), dataBean, dataBean == null ? "" : dataBean.getGuiParameters());
+					if (bean ==null && event.getGuiBean()==null) {
+						// This event is not of interest
+						continue;
 					}
+
+					// if there is a stashedGUIBean to update then do that update first
+					if (bean != null && !bean.isEmpty()) {
+						event.setStashedGuiBean(null);
+						if (window != null) {
+							logger.trace("Processing stashed GUI bean - {}: {}", viewName, bean);
+							window.processGUIUpdate(bean);
+						}
+					}
+
+					// once the guiBean has been sorted out, see if there is any need to update the dataBean
+					if (dataBean != null) {
+						event.setDataBean(null);
+						if (window != null) {
+							window.processPlotUpdate(dataBean);
+						}
+						notifyDataObservers(dataBean, null);
+					}
+				} catch (Throwable ne) {
+					// We still keep going until the part is disposed
+					logger.warn("Exception raised in plot server job - {}", viewName, ne);
 				}
 			}
-		}, "Bean Scripting Manager for '"+plotID+"'");
+		}, "Bean Scripting Manager for '" + plotID + "'" + ": " + viewName);
 	}
 
 	/**
@@ -182,27 +180,22 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 			logger.debug("Getting a plot data update for {}; thd {} {}",  viewName, thd.getId(), thd.getName());
 			// Execute an update job. If one is already queued this request will be discarded
 			updateHandlingExecutor.execute(this::queuePlotUpdate);
-		} else if (changeCode instanceof GuiUpdate) {
-			GuiUpdate gu = (GuiUpdate) changeCode;
-			if (gu.getGuiName().contains(viewName)) {
-				
-				GuiBean        bean = gu.getGuiData();
-				final PlotEvent evt = new PlotEvent();
-				GuiBean     guiBean = getGUIBean();
-				
-				UUID id = (UUID) bean.get(GuiParameters.PLOTID);
-				if (id == null || plotID.compareTo(id) != 0) { // filter out own beans
-					logger.debug("Getting a plot gui update for {}; thd {} {}; bean {}", new Object[] {viewName, thd.getId(), thd.getName(), bean});
-					if (guiBean == null) {
-						guiBean = bean.copy(); // cache a local copy
-					} else if (bean != guiBean) {
-						guiBean.merge(bean); // or merge it
-					}
-					guiBean.remove(GuiParameters.ROICLEARALL); // this parameter must not persist
-					evt.setStashedGuiBean(bean);
-					evt.setGuiBean(guiBean);
-					offer(evt);
+		} else if (changeCode instanceof GuiUpdate gu && gu.getGuiName().equals(viewName)) {
+			GuiBean        bean = gu.getGuiData();
+			final PlotEvent evt = new PlotEvent();
+			GuiBean     guiBean = getGUIBean();
+			UUID id = (UUID) bean.get(GuiParameters.PLOTID);
+			if (id == null || plotID.compareTo(id) != 0) { // filter out own beans
+				logger.debug("Getting a plot gui update for {}; thd {} {}; bean {}", viewName, thd.getId(),
+						thd.getName(), bean);
+				if (bean != guiBean) {
+					logger.debug("Merging GUI bean - {}: {} -> {}", viewName, bean, guiBean);
+					guiBean.merge(bean); // or merge it
 				}
+				guiBean.remove(GuiParameters.ROICLEARALL); // this parameter must not persist
+				evt.setStashedGuiBean(bean);
+				evt.setGuiBean(guiBean);
+				offer(evt);
 			}
 		}
 	}
@@ -217,14 +210,14 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 				if (logger.isTraceEnabled()) {
 					// don't pass databean itself to logger to prevent slow loggers holding
 					// references to it for longer than necessary
-					String beanString = dataBean.toString();
-					logger.trace("BSM copied data bean ({}) {}", dataBean.getData().size(), beanString);
+					logger.trace("Copied data bean - {}: ({}) {}", viewName, dataBean.getData(), dataBean);
 				}
 			}
 			evt.setDataBean(dataBean);
 		} catch (Exception e) {
-			logger.error("There has been an issue retrieving the databean from the plotserver", e);
+			logger.error("There has been an issue retrieving the databean from the plotserver - {}", viewName, e);
 		}
+		logger.trace("Data update has gui bean - {}: {}", viewName, guiBean);
 		evt.setGuiBean(guiBean);
 		// Put the update onto the queue
 		offer(evt);
@@ -244,7 +237,7 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 		try {
 			guiBean = getPlotServer().getGuiState(viewName);
 		} catch (Exception e) {
-			logger.warn("Problem with getting GUI data from plot server", e);
+			logger.warn("Problem with getting GUI data from plot server - {}", viewName, e);
 		}
 		if (guiBean == null) {
 			logger.error("This should not happen! View name '{}' is not found.", viewName);
@@ -293,7 +286,7 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 		try {
 			getPlotServer().updateGui(viewName, guiBean);
 		} catch (Exception e) {
-			logger.warn("Problem with updating plot server with GUI data", e);
+			logger.warn("Problem with updating plot server with GUI data - {}", viewName, e);
 		}
 	}
 
@@ -323,8 +316,20 @@ public class BeanScriptingManagerImpl implements IBeanScriptingManager, IObserve
 	 * @param evt
 	 */
 	public synchronized void offer(PlotEvent evt) {
-		if (queue.offer(evt)) return;
-		queue.remove(); // drop the head - TODO FIXME not region events!
+		if (logger.isTraceEnabled()) {
+			GuiBean bean = evt.getStashedGuiBean();
+			DataBean dataBean = evt.getDataBean();
+			logger.trace("Adding event for {} ({}): {}; {}; {}; {}", viewName, queue.size(), bean, evt.getGuiBean(),
+					dataBean, dataBean == null ? "" : dataBean.getGuiParameters());
+		}
+		if (queue.offer(evt)) {
+			return;
+		}
+		logger.warn("Queue full for {}", viewName);
+		if (queue.remove() == null) {
+			// drop the head - TODO FIXME not region events!
+			logger.warn("Dropped head of queue full but it was null - {}", viewName);
+		}
 		if (!queue.offer(evt)) {
 			throw new RuntimeException("Cannot offer plot events to queue!");
 		}

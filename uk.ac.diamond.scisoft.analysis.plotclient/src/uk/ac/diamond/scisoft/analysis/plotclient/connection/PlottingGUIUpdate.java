@@ -37,14 +37,17 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 
 	protected IPlottingSystem<?> plottingSystem;
 
+	protected String name;
+
 	public PlottingGUIUpdate(IPlottingSystem<?> plottingSystem) {
 		this.plottingSystem = plottingSystem;
+		name = plottingSystem.getPlotName();
 	}
 
 	@Override
 	public void processGUIUpdate(final GuiBean guiBean) {
 		
-		logger.debug("There is a guiBean update: {}", guiBean);
+		logger.debug("There is a guiBean update - {}: {}", name, guiBean);
 
 		Display.getDefault().syncExec(new Runnable() {
 			@Override
@@ -64,7 +67,7 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 				final Set<String> names = new HashSet<String>(); // names of ROIs
 				if (rName != null) {
 					names.add(rName);
-					logger.trace("R: {}", rName);
+					logger.trace("R - {}: {}", name, rName);
 				}
 				if (list != null) {
 					for (IROI r : list) {
@@ -72,7 +75,7 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 						if (n != null) {
 							n = n.trim();
 							if (n.length() > 0) {
-								logger.trace("L: {}", r.getName());
+								logger.trace("L - {}: {}", name, r.getName());
 								names.add(n);
 								if (n.equals(rName) && roi == null) {
 									roi = r;
@@ -182,7 +185,7 @@ public class PlottingGUIUpdate extends AbstractPlotConnection {
 			}
 			return region;
 		} catch (Exception e) {
-			logger.error("Problem creating new region from ROI", e);
+			logger.error("Problem creating new region from ROI - {}", name, e);
 		}
 		return null;
 	}

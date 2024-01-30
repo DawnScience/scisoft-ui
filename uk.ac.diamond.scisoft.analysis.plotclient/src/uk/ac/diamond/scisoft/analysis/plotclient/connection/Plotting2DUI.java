@@ -83,16 +83,17 @@ class Plotting2DUI extends PlottingGUIUpdate {
 					if (data != null) {
 
 						final Collection<ITrace> traces = plottingSystem.getTraces();
-						if (traces != null && traces.size() > 0) {
+						if (traces != null && !traces.isEmpty()) {
 							ITrace trace = traces.iterator().next();
 							List<IDataset> currentAxes = null;
 							int[] shape = trace.getData() != null ? trace.getData().getShape() : null;
-							if (trace instanceof IAxesTrace) {
-								currentAxes = ((IAxesTrace) trace).getAxes();
+							if (trace instanceof IAxesTrace axesTrace) {
+								currentAxes = axesTrace.getAxes();
 							}
 							boolean newAxes = true;
-							String lastXAxisName = "", lastYAxisName = "";
-							if (currentAxes != null && currentAxes.size() > 0) {
+							String lastXAxisName = "";
+							String lastYAxisName = "";
+							if (currentAxes != null && !currentAxes.isEmpty()) {
 								IDataset axis = currentAxes.get(0);
 								if (axis != null) {
 									lastXAxisName = axis.getName();
@@ -108,26 +109,26 @@ class Plotting2DUI extends PlottingGUIUpdate {
 							if (!ISurfaceMeshTrace.class.isAssignableFrom(clazz) && shape != null && Arrays.equals(shape, data.getShape())
 									&& lastXAxisName.equals(xAxisName) && lastYAxisName.equals(yAxisName)) {
 								plottingSystem.updatePlot2D(data, axes, null);
-								logger.debug("Plot 2D updated");
+								logger.debug("Plot 2D updated - {}", name);
 							} else {
 								if (!IImageTrace.class.isAssignableFrom(clazz)) {
 									plottingSystem.removeTrace(trace);
 								}
 
 								plottingSystem.createPlot2D(data, axes, null);
-								logger.debug("Plot 2D created");
+								logger.debug("Plot 2D created - {}", name);
 							}
 							if (newAxes) {
 								plottingSystem.repaint();
 							}
 						} else {
 							plottingSystem.createPlot2D(data, axes, null);
-							logger.debug("Plot 2D created");
+							logger.debug("Plot 2D created - {}", name);
 						}
 						// COMMENTED TO FIX SCI-808: no need for a repaint
 						// plottingSystem.repaint();
 					} else {
-						logger.debug("No data to plot");
+						logger.debug("No data to plot - {}", name);
 					}
 				}
 			}
