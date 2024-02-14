@@ -15,6 +15,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.dawnsci.analysis.api.message.DataMessageComponent;
 import org.eclipse.dawnsci.analysis.api.tree.GroupNode;
 import org.eclipse.dawnsci.analysis.tree.TreeFactory;
+import org.eclipse.dawnsci.nexus.INexusFileFactory;
 import org.eclipse.dawnsci.nexus.NexusConstants;
 import org.eclipse.dawnsci.nexus.NexusException;
 import org.eclipse.dawnsci.nexus.NexusFile;
@@ -22,6 +23,8 @@ import org.eclipse.january.dataset.IDataset;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import uk.ac.diamond.osgi.services.ServiceProvider;
 
 public class CalibrationSaver implements IRunnableWithProgress {
 
@@ -46,7 +49,7 @@ public class CalibrationSaver implements IRunnableWithProgress {
 			} else if (isOverwrite && file.exists()) {
 				file.delete();
 			}
-			nexus = ServiceHolder.getNexusFactory().newNexusFile(filePath);
+			nexus = ServiceProvider.getService(INexusFileFactory.class).newNexusFile(filePath);
 			nexus.openToWrite(true);
 			// save raw data
 			IDataset data = (IDataset) calibrationData.getList(ARPESCalibrationConstants.DATANAME);
