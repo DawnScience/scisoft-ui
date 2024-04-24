@@ -20,7 +20,7 @@ public class TreeFilter {
 	Collection<String> unwantedAttributeNames;
 
 	/**
-	 * Constructor that needs an array of the names of unwanted nodes
+	 * Constructor that needs an array of the names of unwanted nodes. Treated as regular expressions.
 	 *
 	 * @param names
 	 */
@@ -54,7 +54,7 @@ public class TreeFilter {
 	 * @return true if attr is not of those unwanted
 	 */
 	public boolean selectAttribute(String attr) {
-		return !unwantedAttributeNames.contains(attr);
+		return !unwantedAttributeNames.contains(attr) && unwantedAttributeNames.stream().noneMatch(attr::matches);
 	}
 
 	/**

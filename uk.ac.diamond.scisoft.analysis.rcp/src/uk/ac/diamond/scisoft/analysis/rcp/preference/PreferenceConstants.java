@@ -92,4 +92,6 @@ public class PreferenceConstants {
 	public static final String PRINTSETTINGS_RESOLUTION = "printsettings.resolution";
 	public static final String PRINTSETTINGS_ASPECTRATIO = "printsettings.aspectratio";
 
+	// File Attribute preferences
+	public static final String FILE_ATTRIBUTE_FILTERS= "fileAttribute.filters";
 }
