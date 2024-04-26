@@ -90,7 +90,7 @@ public class HDF5Utils {
 		if (dNode == null) return null;
 		if (!dNode.isAugmented()) {
 			try {
-				NexusTreeUtils.augmentNodeLink(filePath, link, true);
+				NexusTreeUtils.augmentNodeLink(filePath, nodePath, link, true);
 			} catch (Exception e) {
 				logger.debug("Problem augmenting node: {}", link, e);
 			}

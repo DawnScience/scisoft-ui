@@ -37,6 +37,8 @@ import org.eclipse.january.dataset.ILazyDataset;
 import org.eclipse.january.dataset.IntegerDataset;
 import org.eclipse.january.dataset.PositionIterator;
 import org.eclipse.january.dataset.Slice;
+import org.eclipse.january.dataset.SliceND;
+import org.eclipse.january.metadata.AxesMetadata;
 import org.eclipse.january.metadata.IMetadata;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
@@ -228,7 +230,7 @@ abstract class ATab implements InspectionTab {
 class PlotTab extends ATab {
 	private static final Logger logger = LoggerFactory.getLogger(PlotTab.class);
 
-	private static final String VOLVIEWNAME = "Remote Volume Viewer";
+//	private static final String VOLVIEWNAME = "Remote Volume Viewer";
 	private String explorerName;
 	// this is the current limit on the number of lines that stack can handle well
 	private static final int STACKPLOTLIMIT = 100;
@@ -738,37 +740,29 @@ class PlotTab extends ATab {
 		return slicedAxes;
 	}
 
-	protected Dataset sliceData(IMonitor monitor, Slice[] slices) {
+	protected Dataset sliceData(IMonitor monitor, SliceND slices) {
 		Dataset slicedData = null;
 		try {
-			if (dataset instanceof IDataset) {
-				slicedData = DatasetUtils.convertToDataset((IDataset) dataset.getSliceView(slices));
+			if (dataset instanceof IDataset d) {
+				slicedData = DatasetUtils.convertToDataset(d.getSliceView(slices));
 			} else {
-				slicedData = DatasetUtils.convertToDataset(dataset.getSlice(monitor, slices));
+				// work around January bug
+				ILazyDataset ld = dataset.clone();
+				ld.clearMetadata(AxesMetadata.class);
+				slicedData = DatasetUtils.convertToDataset(ld.getSlice(monitor, slices));
 			}
-			
 		} catch (Exception e) {
-			logger.error("Problem getting slice of data: {}", e);
-			logger.error("Tried to get slices: {}", Arrays.toString(slices));
+			logger.error("Problem getting slice of data: {}", slices, e);
 		}
 		return slicedData;
 	}
 
-	protected Dataset sliceData(IMonitor monitor, int[] start, int[] stop, int[] step) {
-		Dataset slicedData = null;
-		try {
-			if (dataset instanceof IDataset) {
-				slicedData = DatasetUtils.convertToDataset((IDataset) dataset.getSliceView(start, stop, step));
-			} else {
-				slicedData = DatasetUtils.convertToDataset(dataset.getSlice(monitor, start, stop, step));
-			}
+	protected Dataset sliceData(IMonitor monitor, Slice[] slices) {
+		return sliceData(monitor, new SliceND(dataset.getShape(), slices));
+	}
 
-		} catch (Exception e) {
-			logger.error("Problem getting slice of data: {}", e);
-			logger.error("Tried to get slice: start={}, stop={}, step={}",
-					new Object[] {Arrays.toString(start), Arrays.toString(stop), Arrays.toString(step)});
-		}
-		return slicedData;
+	protected Dataset sliceData(IMonitor monitor, int[] start, int[] stop, int[] step) {
+		return sliceData(monitor, SliceND.createSlice(dataset, start, stop, step));
 	}
 
 	protected Dataset slicedAndReorderData(IMonitor monitor, Slice[] slices, boolean[] average, int[] order, IMetadata meta) {
@@ -778,7 +772,7 @@ class PlotTab extends ATab {
 		if (ArrayUtils.contains(average, true)) {
 			Dataset averagedData = null;
 			Dataset averagedError = null;
-			List<Integer> axs = new ArrayList<Integer>();
+			List<Integer> axs = new ArrayList<>();
 			int[] slicesShape = new int[slices.length];
 			int resDim = 0;
 			for (int idx = 0; idx < slices.length; idx++) {
@@ -817,7 +811,10 @@ class PlotTab extends ATab {
 				}
 				
 				try {
-					Dataset tmpSlice = DatasetUtils.convertToDataset(dataset.getSlice(tmpSlices));
+					// work around January bug
+					ILazyDataset ld = dataset.clone();
+					ld.clearMetadata(AxesMetadata.class);
+					Dataset tmpSlice = DatasetUtils.convertToDataset(ld.getSlice(new SliceND(dataset.getShape(), tmpSlices)));
 					Dataset errSlice = tmpSlice.getErrorBuffer(); // TODO remove when done internally
 					tmpSlice.setErrors(null);
 					if (meanAxis != -1) {
@@ -993,7 +990,6 @@ class PlotTab extends ATab {
 				SDAPlotter.updatePlot(PLOTNAME, slicedAxes.get(0), reorderedData);
 			} catch (Exception e) {
 				logger.error("Could not plot 1d line", e);
-				return;
 			}
 
 			break;
