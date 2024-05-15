@@ -535,6 +535,12 @@
             id="uk.ac.diamond.scisoft.analysis.rcp.diffractionViewerPreferencePage"
             name="Diffraction Viewer">
       </page>
+      <page
+            category="uk.ac.diamond.scisoft.analysis.rcp.preferences.root"
+            class="uk.ac.diamond.scisoft.analysis.rcp.preference.FileAttributesPreferencePage"
+            id="uk.ac.diamond.scisoft.analysis.rcp.fileAttributesPreferencePage"
+            name="File Attribute Preferences">
+      </page>
       
       <!-- Commented out old preference page for now as defect logged that this causes confusion
       <page

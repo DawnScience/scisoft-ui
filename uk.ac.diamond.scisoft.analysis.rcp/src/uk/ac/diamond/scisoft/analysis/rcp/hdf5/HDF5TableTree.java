@@ -11,6 +11,7 @@ package uk.ac.diamond.scisoft.analysis.rcp.hdf5;
 
 import java.io.File;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.dawb.common.ui.selection.SelectedTreeItemInfo;
@@ -52,7 +53,7 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeColumn;
 
 import uk.ac.diamond.scisoft.analysis.rcp.adapters.HDF5Adaptable;
-
+import uk.ac.diamond.scisoft.analysis.rcp.preference.FileAttributesPreferencePage;
 /**
  * Class to contain a table-tree view of a HDF5 tree
  */
@@ -83,7 +84,7 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 		this.clistener = clistener;
 
 		// set up tree filter to omit following node names
-		treeFilter = new TreeFilter(new String[] { "target", NexusConstants.NXCLASS, NexusConstants.UNITS});
+		treeFilter = new TreeFilter(getFilters());
 
 		// set up tree and its columns
 		tViewer = new TreeViewer(this, SWT.BORDER|SWT.VIRTUAL);
@@ -167,9 +168,15 @@ public class HDF5TableTree extends Composite implements ISelectionProvider {
 		if (dlistener != null)
 			tree.addListener(SWT.MouseDoubleClick, dlistener);
 	}
-	
+
 	public Viewer getViewer() {
 		return tViewer;
+	}
+
+	private String[] getFilters() {
+		String[] filters = FileAttributesPreferencePage.getFilterValue().split(",");
+		filters = Arrays.stream(filters).map(s -> s.replace("*", ".*").trim()).toArray(String[]::new);
+		return filters;
 	}
 
 	@Override

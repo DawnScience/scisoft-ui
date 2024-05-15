@@ -16,7 +16,7 @@ import uk.ac.diamond.scisoft.analysis.rcp.AnalysisRCPActivator;
 
 public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	public static final String DELIMITER =  "]}¬¬{[";
-	
+
 	private static final Boolean DEFAULT_SIDEPLOTTER1D_USE_LOG = false;
 
 	private static final int DEFAULT_GRIDSCAN_BEAMLINE_POSITION = 0;
@@ -45,7 +45,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 
 	private static final String DEFAULT_STANDARD_NAME_LIST = "Cr2O3"+DELIMITER+"Silicon"+DELIMITER+"Bees Wax";
 	private static final String DEFAULT_STANDARD_NAME = "Cr2O3";
-	
+
 	private static final String DEFAULT_STANDARD_DISTANCES_LIST = "3.645, 2.672, 2.487, 2.181, 1.819, 1.676, 1.467, 1.433"+DELIMITER+"3.6, 2.05, 1.89,1.5,0.25"+DELIMITER+"3.6,2.4";
 	private static final String DEFAULT_STANDARD_DISTANCES = "3.645, 2.672, 2.487, 2.181, 1.819, 1.676, 1.467, 1.433";
 
@@ -72,6 +72,8 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 	private static final Double DEFAULT_PRINTSETTINGS_SCALE = 0.5;
 	private static final int DEFAULT_PRINTSETTINGS_RESOLUTION = 2;
 	private static final String DEFAULT_PRINTSETTINGS_ORIENTATION = "Portrait";
+
+	private static final String DEFAULT_FILE_ATTRIBUTE_FILTERS = "target, NX_class, units";
 
 	@Override
 	public void initializeDefaultPreferences() {
@@ -136,5 +138,6 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		store.setDefault(PreferenceConstants.PRINTSETTINGS_RESOLUTION, DEFAULT_PRINTSETTINGS_RESOLUTION);
 		store.setDefault(PreferenceConstants.PRINTSETTINGS_ORIENTATION, DEFAULT_PRINTSETTINGS_ORIENTATION);
 
+		store.setDefault(PreferenceConstants.FILE_ATTRIBUTE_FILTERS, DEFAULT_FILE_ATTRIBUTE_FILTERS);
 	}
 }
