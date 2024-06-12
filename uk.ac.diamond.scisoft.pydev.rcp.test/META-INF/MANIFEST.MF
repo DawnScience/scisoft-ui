@@ -4,7 +4,7 @@ Bundle-Name: Dawn PyDev RCP Tests
 Bundle-SymbolicName: uk.ac.diamond.scisoft.pydev.rcp.test
 Bundle-Version: 1.0.0.qualifier
 Fragment-Host: uk.ac.diamond.scisoft.pydev.rcp;bundle-version="1.0.0"
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Require-Bundle: org.junit,
  org.eclipse.dawnsci.analysis.tree,
  uk.ac.diamond.scisoft.analysis.rcp

@@ -8,7 +8,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  uk.ac.diamond.scisoft.system.info;bundle-version="1.0.0",
  org.dawb.common.util
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Import-Package: org.slf4j;version="[1.7.2,2.0.0)"
 Export-Package: uk.ac.diamond.scisoft.feedback
 Bundle-Vendor: Diamond Light Source

@@ -10,6 +10,6 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.january;bundle-version="2.3.0",
  uk.ac.diamond.scisoft.analysis;bundle-version="1.5.0",
  uk.ac.diamond.scisoft.analysis.plotserver;bundle-version="1.0.0"
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-ActivationPolicy: lazy
 Automatic-Module-Name: uk.ac.diamond.scisoft.analysis.polling

@@ -15,7 +15,7 @@ Require-Bundle: org.eclipse.ui,
  org.dawnsci.datavis.api,
  org.eclipse.e4.ui.workbench
 Bundle-ActivationPolicy: lazy
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-21
 Import-Package: org.eclipse.core.resources,
  org.slf4j;version="[1.7.2,2.0.0)"
 Export-Package: uk.ac.diamond.sda.meta,
