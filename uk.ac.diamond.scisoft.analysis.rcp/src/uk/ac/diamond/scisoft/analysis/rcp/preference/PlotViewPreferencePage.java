@@ -41,6 +41,7 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 	private Button chkExpertMode;
 	private Button chkAutoContrast;
 	private Button chkScrollbars;
+	private Button chkInterpolatePixelPosn;
 	private Spinner spnAutoLoThreshold;
 	private Spinner spnAutoHiThreshold;
 
@@ -155,6 +156,10 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 		lblAspectRatio.setText("Keep Aspect Ratio");
 		chkAspectRatio = new Button(plot2DGroup, SWT.CHECK | SWT.RIGHT);
 
+		Label lblInterpolatePixelPosn = new Label(plot2DGroup, SWT.LEFT);
+		lblInterpolatePixelPosn.setText("Interpolate pixel position");
+		chkInterpolatePixelPosn = new Button(plot2DGroup, SWT.CHECK | SWT.RIGHT);
+
 		initializePage();
 
 		return comp;
@@ -189,6 +194,7 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 		cmbCameraPerspective.select(getPerspectivePreference());
 		chkScrollbars.setSelection(getScrollBarPreference());
 		chkAspectRatio.setSelection(getAspectRatioPreference());
+		chkInterpolatePixelPosn.setSelection(getInterpolatePixelPosnPreference());
 	}
 
 	/**
@@ -204,6 +210,7 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 		cmbCameraPerspective.select(getDefaultPerspectivePreference());
 		chkScrollbars.setSelection(getDefaultScrollBarPreference());
 		chkAspectRatio.setSelection(getDefaultAspectRatioPreference());
+		chkInterpolatePixelPosn.setSelection(getDfaultInterpolatePixelPosnPreference());
 	}
 
 	/**
@@ -219,6 +226,7 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 		setCameraPerspective(cmbCameraPerspective.getSelectionIndex());
 		setScrollBarPreference(chkScrollbars.getSelection());
 		setAspectRatioPreference(chkAspectRatio.getSelection());
+		setInterpolatePixelPosn(chkInterpolatePixelPosn.getSelection());
 	}
 
 	private int getDefaultPerspectivePreference() {
@@ -227,6 +235,10 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 
 	private boolean getDefaultAspectRatioPreference() {
 		return AnalysisRCPActivator.getPlottingPreferenceStore().getDefaultBoolean(BasePlottingConstants.ASPECT);
+	}
+
+	private boolean getDfaultInterpolatePixelPosnPreference() {
+		return AnalysisRCPActivator.getPlottingPreferenceStore().getDefaultBoolean(BasePlottingConstants.INTERPOLATE_PIXEL_POSN);
 	}
 
 	private String getDefaultColourMapChoicePreference() {
@@ -269,6 +281,13 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 			return AnalysisRCPActivator.getPlottingPreferenceStore().getDefaultBoolean(BasePlottingConstants.ASPECT);
 		}
 		return AnalysisRCPActivator.getPlottingPreferenceStore().getBoolean(BasePlottingConstants.ASPECT);
+	}
+
+	private boolean getInterpolatePixelPosnPreference() {
+		if (getPreferenceStore().isDefault(BasePlottingConstants.INTERPOLATE_PIXEL_POSN)) {
+			return getPreferenceStore().getDefaultBoolean(BasePlottingConstants.INTERPOLATE_PIXEL_POSN);
+		}
+		return getPreferenceStore().getBoolean(BasePlottingConstants.INTERPOLATE_PIXEL_POSN);
 	}
 
 	private String getColourMapChoicePreference() {
@@ -327,6 +346,10 @@ public class PlotViewPreferencePage extends PreferencePage implements IWorkbench
 
 	private void setAspectRatioPreference(boolean value) {
 		AnalysisRCPActivator.getPlottingPreferenceStore().setValue(BasePlottingConstants.ASPECT, value);
+	}
+
+	private void setInterpolatePixelPosn(boolean value) {
+		AnalysisRCPActivator.getPlottingPreferenceStore().setValue(BasePlottingConstants.INTERPOLATE_PIXEL_POSN, value);
 	}
 
 	private void setColourScaleChoicePreference(int value) {
