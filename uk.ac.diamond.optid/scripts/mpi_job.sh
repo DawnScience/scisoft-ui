@@ -1,7 +1,7 @@
 #!/bin/bash
 
 module load global/cluster
-module load python/ana
+module load python/3
 source activate mpi2
 module load openmpi/1.6.5
 
