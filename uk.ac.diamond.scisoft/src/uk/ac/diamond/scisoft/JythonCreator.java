@@ -154,19 +154,25 @@ public class JythonCreator implements IStartup {
 			// Set cache directory to something not in the installation directory
 			IPreferenceStore pyStore = PyDevUiPrefs.getPreferenceStore();
 			String cachePath = pyStore.getString(IInterpreterManager.JYTHON_CACHE_DIR);
-			final File cacheDir;
-			if (cachePath == null || cachePath.length() == 0) {
-				final String workspace = ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString();
-				cacheDir = new File(workspace, ".jython_cachedir");
-				cachePath = cacheDir.getAbsolutePath();
-				pyStore.setValue(IInterpreterManager.JYTHON_CACHE_DIR, cachePath);
+			if (System.getProperty("python.cachedir.skip") != null) {
+				System.clearProperty("python.cachedir");
+				pyStore.setValue(IInterpreterManager.JYTHON_CACHE_DIR, "");
+				logger.debug("Do not cache jars as python.cachedir.skip is set - clearing python.cachedir property");
 			} else {
-				cacheDir = new File(cachePath);
+				final File cacheDir;
+				if (cachePath == null || cachePath.isEmpty()) {
+					final String workspace = ResourcesPlugin.getWorkspace().getRoot().getLocation().toOSString();
+					cacheDir = new File(workspace, ".jython_cachedir");
+					cachePath = cacheDir.getAbsolutePath();
+					pyStore.setValue(IInterpreterManager.JYTHON_CACHE_DIR, cachePath);
+				} else {
+					cacheDir = new File(cachePath);
+				}
+				if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+					logger.error("Could not create Jython cache directory: {}", cachePath);
+				}
+				System.setProperty("python.cachedir", cachePath);
 			}
-			if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-				logger.error("Could not create Jython cache directory: {}", cachePath);
-			}
-			System.setProperty("python.cachedir", cachePath);
 
 			// check for the existence of this standard pydev script
 			final File script = CorePlugin.getScriptWithinPySrc("interpreterInfo.py").getCanonicalFile();
@@ -204,6 +210,7 @@ public class JythonCreator implements IStartup {
 //					"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:8000",
 					"-Dpython.cachedir.skip=true", // this works in Windows
 					"-jar", executable,
+//					"-B", 
 					FileUtils.getFileAbsolutePath(script)};
 			File workingDir = new File(System.getProperty("java.io.tmpdir"));
 			logger.debug("Cache and tmp working dirs are {} and {}", cachePath, workingDir);
@@ -401,7 +408,7 @@ public class JythonCreator implements IStartup {
 		}
 	}
 
-	final static String HDF5_PLUGIN_PATH = "HDF5_PLUGIN_PATH";
+	static final String HDF5_PLUGIN_PATH = "HDF5_PLUGIN_PATH";
 
 	/**
 	 * Add HDF5 OS and architecture-specific native plugin libraries location to environment variables
