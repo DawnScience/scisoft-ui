@@ -281,7 +281,8 @@ public class QuickRIXSAnalyser implements PropertyChangeListener {
 				new ModelField(elModel, "cutoff"),
 				new ModelField(elModel, "peakFittingFactor"),
 				new ModelField(elModel, "roiA"),
-				new ModelField(elModel, "roiB")
+				new ModelField(elModel, "roiB"),
+				new ModelField(elModel, "cropROI")
 		);
 		modelViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
